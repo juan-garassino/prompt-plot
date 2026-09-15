@@ -7,6 +7,7 @@ and configurable pen_down_s_value (default 1000).
 """
 
 import os
+import re
 import json
 import logging
 from typing import Dict, Any, Optional, Union, List, Tuple
@@ -135,11 +136,21 @@ class PaperConfig:
     def from_size(
         cls, size: str, orientation: str = "portrait", margin: float = 10.0
     ) -> "PaperConfig":
-        """Build a PaperConfig from an ISO size name (a3/a4/a5/a6)."""
+        """Build a PaperConfig from an ISO size name (a3/a4/a5/a6) or a custom
+        ``WxH`` string. ``WxH`` values below 60 are read as centimetres (so
+        ``17x24`` → 170×240 mm), otherwise as millimetres (``170x240``)."""
         key = size.strip().lower()
-        if key not in cls.SIZES:
-            raise ValueError(f"Unknown paper size {size!r}. Valid: {sorted(cls.SIZES)}")
-        pw, ph = cls.SIZES[key]
+        if key in cls.SIZES:
+            pw, ph = cls.SIZES[key]
+        else:
+            m = re.fullmatch(r"(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)", key)
+            if not m:
+                raise ValueError(
+                    f"Unknown paper size {size!r}. Valid: {sorted(cls.SIZES)} or WxH (e.g. 17x24)"
+                )
+            pw, ph = float(m.group(1)), float(m.group(2))
+            if max(pw, ph) < 60:  # given in centimetres
+                pw, ph = pw * 10.0, ph * 10.0
         w, h = (ph, pw) if orientation == "landscape" else (pw, ph)
         return cls(width=w, height=h, margin_x=margin, margin_y=margin, orientation=orientation)
 
@@ -172,6 +183,7 @@ class PenConfig:
     down_position: float = 0.0
     up_speed: float = 500.0
     down_speed: float = 200.0
+    tip_width: float = 0.5  # mm — pen tip diameter; drives the overlap guardrail
     pen_up_delay: float = 0.2  # seconds — wired to G4 dwell injection
     pen_down_delay: float = 0.2  # seconds — wired to G4 dwell injection
     pen_down_s_value: int = 1000  # S parameter for M3 command (was hardcoded S100)
@@ -296,9 +308,9 @@ class SerialConfig:
 class VisualizationConfig:
     """Visualization/preview configuration."""
 
-    figure_width: float = 10.0
-    figure_height: float = 10.0
-    figure_dpi: int = 100
+    figure_width: float = 14.0
+    figure_height: float = 14.0
+    figure_dpi: int = 200
     drawing_color: str = "blue"
     travel_color: str = "lightgray"
     line_width: float = 1.0

@@ -20,8 +20,7 @@ from ._group import cli, console, _print_score
 @click.option("--simulate", is_flag=True, help="Simulated plotter (no hardware)")
 @click.option(
     "--paper", "paper_size", default=None,
-    type=click.Choice(["a3", "a4", "a5", "a6"], case_sensitive=False),
-    help="Paper/canvas size (overrides config)",
+    help="Paper/canvas size: a3/a4/a5/a6 or a custom WxH (e.g. 17x24 cm, 170x240 mm)",
 )
 @click.option(
     "--orientation", default="portrait",
