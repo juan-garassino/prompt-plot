@@ -57,9 +57,15 @@ want a guaranteed-immutable snapshot.
 The system is now one pipeline — science illustration as art, natively:
 
 ```
-ENGINE   promptplot/generative/engine3d.py + kit.py
-         the from-scratch 3D pen-plotter renderer (z-buffer hidden-line
-         terrains/ribbons) + the 2D design kit (fills, type, furniture).
+ENGINE   promptplot/generative/engine/  (scene3d, geometry, kit, policies, looks)
+         Scene3D is the composition engine: z-buffer hidden-line surfaces with
+         NATIVE anti-crowding (ScreenThin both-family depth-aware floors,
+         PolarLOD spider-web polar meshing, Occupancy + lines(pause_resume)
+         crowd control), text halos, fill/rescue fit. geometry = exact 2D
+         region clip/trim/offset (FreeCAD vocabulary). policies = guardrails
+         (occlude priority/weave, enforce_line_spacing, focal_void, max-ink);
+         looks = aesthetic transforms (anaglyph, echo, dash_rain, glitch_slice).
+         Old paths engine3d.py/kit.py/geometry.py/effects.py are compat shims.
    ↓
 PIECES   promptplot/generative/pieces/{ml,abstract,physics}.py
          seeded compositions by science domain (neural nets today; quantum,

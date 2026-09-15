@@ -2470,27 +2470,6 @@ def bauhaus_relevance(
 
     mk_sheet(cyL[0], s1, 0.9, penfn=pen1)
 
-    # red swoop arrows: wells → the similarity peaks
-    def swoop(p0, p1, bend, pen):
-        mx, my = (p0[0] + p1[0]) / 2 + bend, (p0[1] + p1[1]) / 2
-        pts = []
-        for t in range(21):
-            u = t / 20.0
-            x = (1 - u) ** 2 * p0[0] + 2 * (1 - u) * u * mx + u * u * p1[0]
-            y = (1 - u) ** 2 * p0[1] + 2 * (1 - u) * u * my + u * u * p1[1]
-            pts.append((x, y))
-        scene.poly(pts, pen=pen)
-        ux, uy = pts[-1][0] - pts[-2][0], pts[-1][1] - pts[-2][1]
-        L = math.hypot(ux, uy) or 1.0
-        ux, uy = ux / L, uy / L
-        nxv, nyv = -uy, ux
-        b = pts[-1]
-        scene.poly([(b[0] - (ux + nxv * 0.5) * 2.6, b[1] - (uy + nyv * 0.5) * 2.6), b,
-                    (b[0] - (ux - nxv * 0.5) * 2.6, b[1] - (uy - nyv * 0.5) * 2.6)], pen=pen)
-
-    swoop(at(cyL[0], *qw), at(cyL[1], qw[0] * 0.7, qw[1] * 0.7), -9.0, red)
-    swoop(at(cyL[0], *kw), at(cyL[1], kw[0] * 0.7, kw[1] * 0.7), 9.0, red)
-
     # ---- stage 2: similarity landscape (red side peaks, black centre)
     def pen2(wx, wz):
         side = max(g2(wx, wz, qw, 0.16), k_amp * g2(wx, wz, kw, 0.16))
@@ -2515,33 +2494,27 @@ def bauhaus_relevance(
     br = [at(cyL[2], -1, -1), at(cyL[2], 1, -1), at(cyL[2], 1, 1), at(cyL[2], -1, 1), at(cyL[2], -1, -1)]
     scene.poly(br, pen=blk)
 
-    # blue dashed arrows: weights falling onto V
-    for wxa in (-0.5, -0.15, 0.2, 0.55):
-        p0 = at(cyL[2], wxa, 0.1)
-        p1 = at(cyL[3], wxa, 0.1)
-        n = 8
-        for q in range(0, n, 2):
-            a = (p0[0], p0[1] + (p1[1] - p0[1]) * q / n)
-            b = (p0[0], p0[1] + (p1[1] - p0[1]) * (q + 1) / n)
-            scene.poly([a, b], pen=blue)
-        scene.poly([(p1[0] - 1.4, p1[1] + 2.6), p1, (p1[0] + 1.4, p1[1] + 2.6)], pen=blue)
-
     # ---- stage 4: VALUES — full red rolling terrain
     mk_sheet(cyL[3], s4, 0.75, pen=red)
 
     # ---- stage 5: OUTPUT — green attended terrain
     mk_sheet(cyL[4], s5, 0.80, pen=green)
 
-    # dashed anchor droplines through the whole stack (Q site and K site)
+    # STRICT AXONOMETRY: thin dotted PROJECTION LINES tie the stack together —
+    # the four diamond corners run top sheet → bottom sheet, plus the Q and K
+    # anchor sites; every element stays in registration (no arrows).
+    def projection_line(p0, p1, pen):
+        L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        n = max(6, int(L / 3.4))
+        for q in range(0, n, 2):
+            a = (p0[0] + (p1[0] - p0[0]) * q / n, p0[1] + (p1[1] - p0[1]) * q / n)
+            b = (p0[0] + (p1[0] - p0[0]) * (q + 0.55) / n, p0[1] + (p1[1] - p0[1]) * (q + 0.55) / n)
+            scene.poly([a, b], pen=pen)
+
+    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
+        projection_line(at(cyL[0], *corner), at(cyL[n_stage - 1], *corner), blk)
     for site in (qw, kw):
-        for k in range(n_stage - 1):
-            p0 = at(cyL[k], *site)
-            p1 = at(cyL[k + 1], *site)
-            n = 9
-            for q in range(0, n, 2):
-                a = (p0[0], p0[1] + (p1[1] - p0[1]) * q / n)
-                b = (p0[0], p0[1] + (p1[1] - p0[1]) * (q + 1) / n)
-                scene.poly([a, b], pen=blk)
+        projection_line(at(cyL[0], *site), at(cyL[n_stage - 1], *site), blk)
 
     # ---- title
     out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.13 * W, y1 - 0.035 * H, 3.0, color=blk, f=feed)
