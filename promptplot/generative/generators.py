@@ -604,7 +604,7 @@ def turning_weave(
     long_frac: float = 0.18,
     long_turn_prob: float = 0.06,
     double_frac: float = 0.2,
-    double_gap: float = 0.5,
+    lane_gap: float = 0.55,
     feed: int = 1500,
 ) -> List[GCodeCommand]:
     """Grid-aligned woven field of turning diagonal ('L') paths.
@@ -615,19 +615,29 @@ def turning_weave(
     another edge. All corners land on the lattice, so it reads as a woven grid
     rather than a random scatter.
 
-    Aesthetic controls: ``long_frac`` of paths sweep with the lower
-    ``long_turn_prob`` (long runs for length contrast); ``double_frac`` of paths
-    are drawn as a tight parallel pair (``double_gap`` mm) for a bolder weight.
-    ``black_bias`` biases toward pen 0 for a dominant color. ``density`` = fraction
-    of boundary starts used.
+    Ink is strictly single-pass: every unit lattice hop carries a lane registry,
+    and a leg whose hops are already claimed draws in the next free lane —
+    offset perpendicular by multiples of ``lane_gap`` with mitered corners — so
+    shared diagonals become tight parallel bundles instead of stacked wet ink.
+    ``double_frac`` of paths are drawn twice (claiming two adjacent lanes) for a
+    bolder weight; ``long_frac`` of paths sweep with the lower
+    ``long_turn_prob`` (length contrast); ``black_bias`` biases toward pen 0.
+    ``density`` = fraction of boundary starts used.
     """
     x0, y0, x1, y1 = bounds
     g = spacing
-    nx = max(2, int((x1 - x0) / g))
-    ny = max(2, int((y1 - y0) / g))
+    root2 = math.sqrt(2.0)
+    # lanes must stay inside the corridor between adjacent parallel diagonals
+    max_off = g / root2 / 2.0 - 0.4
+    max_k = int(max_off / lane_gap)
+    # inset the lattice by the worst-case lane/miter excursion so offset lines
+    # never leave bounds (clamping would collapse distinct lanes at the edge)
+    pad = max_k * lane_gap * root2
+    nx = max(2, int((x1 - x0 - 2.0 * pad) / g))
+    ny = max(2, int((y1 - y0 - 2.0 * pad) / g))
 
     def node(i, j):
-        return (x0 + i * g, y0 + j * g)
+        return (x0 + pad + i * g, y0 + pad + j * g)
 
     def inb(i, j):
         return 0 <= i <= nx and 0 <= j <= ny
@@ -639,16 +649,63 @@ def turning_weave(
             return 0
         return rng.randint(1, colors - 1)
 
-    def _emit(pts, di, dj, color, thick):
-        if thick:
-            # perpendicular to the LAST segment direction (grid-preserving offset)
-            px, py = -dj, di
-            n = math.hypot(px, py) or 1.0
-            ox, oy = px / n * double_gap / 2, py / n * double_gap / 2
-            out.extend(_poly([(x + ox, y + oy) for x, y in pts], color=color, f=feed))
-            out.extend(_poly([(x - ox, y - oy) for x, y in pts], color=color, f=feed))
-        else:
-            out.extend(_poly(pts, color=color, f=feed))
+    used: dict = {}  # unit hop (sorted node pair) -> set of taken signed lanes
+    # physical lane order: center first, then alternating sides
+    lane_order = [0] + [s * m for m in range(1, max_k + 1) for s in (1, -1)]
+
+    def _clamp(p):
+        return (min(max(p[0], x0), x1), min(max(p[1], y0), y1))
+
+    def _emit_lanes(ipts, color):
+        # assign each straight leg the innermost PHYSICAL lane free on ALL its
+        # unit hops; lanes are signed in the hop's canonical frame so opposite
+        # travel directions can never share a line
+        legs = []
+        for (ia, ja), (ib, jb) in zip(ipts, ipts[1:]):
+            n = abs(ib - ia)
+            if n == 0:
+                continue
+            di, dj = (ib - ia) // n, (jb - ja) // n
+            canon = 1 if (ia, ja) <= (ib, jb) else -1
+            hops = [
+                tuple(
+                    sorted(((ia + k * di, ja + k * dj), (ia + (k + 1) * di, ja + (k + 1) * dj)))
+                )
+                for k in range(n)
+            ]
+            taken = set()
+            for h in hops:
+                taken |= used.setdefault(h, set())
+            lane = next((k for k in lane_order if k not in taken), None)
+            if lane is None:
+                legs.append((None, None, None, None))  # corridor full — break the run
+                continue
+            for h in hops:
+                used[h].add(lane)
+            legs.append(((ia, ja), (ib, jb), (di, dj), lane * lane_gap * canon))
+
+        run = []
+        prev = None  # (normal_x, normal_y, offset) of the previous drawn leg
+        for a, b, d, o in legs:
+            if o is None:
+                if len(run) >= 2:
+                    out.extend(_poly([_clamp(p) for p in run], color=color, f=feed))
+                run, prev = [], None
+                continue
+            di, dj = d
+            nxv, nyv = -dj / root2, di / root2
+            axm, aym = node(*a)
+            bxm, bym = node(*b)
+            if prev is None:
+                run = [(axm + nxv * o, aym + nyv * o)]
+            else:
+                pnx, pny, po = prev
+                # perpendicular legs: the miter join is just the sum of both offsets
+                run[-1] = (axm + pnx * po + nxv * o, aym + pny * po + nyv * o)
+            run.append((bxm + nxv * o, bym + nyv * o))
+            prev = (nxv, nyv, o)
+        if len(run) >= 2:
+            out.extend(_poly([_clamp(p) for p in run], color=color, f=feed))
 
     # Boundary start nodes, each with its inward axis component.
     starts = []
@@ -671,7 +728,7 @@ def turning_weave(
         else:
             di, dj = rng.choice([-1, 1]), ay
         i, j = si, sj
-        pts = [node(i, j)]
+        ipts = [(i, j)]
         for _ in range(2 * (nx + ny)):
             run = 0
             while inb(i + di, j + dj):
@@ -680,15 +737,19 @@ def turning_weave(
                 run += 1
                 if run >= min_run and rng.random() < tp:
                     break
-            pts.append(node(i, j))
+            ipts.append((i, j))
             # turn onto the perpendicular diagonal if there's room
             ndi, ndj = (-dj, di) if rng.random() < 0.5 else (dj, -di)
             if inb(i + ndi, j + ndj):
                 di, dj = ndi, ndj
             else:
                 break
-        if len(pts) >= 2:
-            _emit(pts, di, dj, _pick_color(), double_frac > 0 and rng.random() < double_frac)
+        if len(ipts) >= 2:
+            color = _pick_color()
+            thick = double_frac > 0 and rng.random() < double_frac
+            _emit_lanes(ipts, color)
+            if thick:
+                _emit_lanes(ipts, color)
     return out
 
 
@@ -4629,7 +4690,11 @@ def black_hole_bauhaus(
         return (x0 + (px + ex) * sc, y0 + (py + ey) * sc)
 
     out: List[GCodeCommand] = []
-    BLUE, PINK, BLACK = 0 % colors, 1 % colors, (colors - 1)
+    BLUE, PINK, BLACK = 0 % colors, 1 % colors, 2 % colors
+    # dedicated legend/text pen: its own layer so it can be a fine 0.1 tip while
+    # the drawing stays 0.5. Falls back to BLACK when fewer than 4 colors.
+    LEGEND = (3 % colors) if colors >= 4 else BLACK
+    R_center = 6.0  # central circle radius: bar clearance + isoradial stop + boundary
 
     def poly_u(pts, pen):
         out.extend(_poly([mm(px, py) for px, py in pts], color=pen, f=feed))
@@ -4646,7 +4711,7 @@ def black_hole_bauhaus(
         for k in range(161)
     ]
     ring = [(px, py) for px, py in ring if abs(px) < ex - 0.5 and abs(py) < ey - 0.5]
-    poly_u(ring, BLACK)
+    poly_u(ring, LEGEND)  # big orbit circle → fine 0.1 pen
     seg = []
     for k in range(241):
         a_ = 2 * math.pi * k / 240
@@ -4655,81 +4720,104 @@ def black_hole_bauhaus(
             seg.append((px, py))
         else:
             if len(seg) >= 2:
-                poly_u(seg, BLACK)
+                poly_u(seg, LEGEND)  # dashed orbit ring → fine 0.1 pen
             seg = []
     if len(seg) >= 2:
-        poly_u(seg, BLACK)
+        poly_u(seg, LEGEND)
 
-    # ---- solid vertical bar (serpentine fill), gap at the shadow
+    # ---- solid vertical bar, exact circular clearance around the shadow:
+    # each column ends ON the clearance circle (no y-sampling, no stair-steps)
     fill_u = fill_mm / sc
     bx = 0.0
     xw = bar_w / 2.0
-    xf = bx - xw
-    while xf <= bx + xw:
-        seg = []
-        yv = -ey + 0.4
-        while yv <= ey - 0.4:
-            if math.hypot(xf, yv) > 6.1:
-                seg.append((xf, yv))
-            else:
-                if len(seg) >= 2:
-                    poly_u(seg, BLACK)
-                seg = []
-            yv += 0.8
-        if len(seg) >= 2:
-            poly_u(seg, BLACK)
+    r_clear = R_center
+    # bar narrowed by two columns per side (user feedback on the plotted piece)
+    bar_lo = bx - xw + 2.0 * fill_u
+    bar_hi = bx + xw - 2.0 * fill_u
+    xf = bar_lo
+    while xf <= bar_hi + 1e-9:
+        if abs(xf) < r_clear:
+            ygap = math.sqrt(r_clear * r_clear - xf * xf)
+            spans = [(-ey + 0.4, -ygap), (ygap, ey - 0.4)]
+        else:
+            spans = [(-ey + 0.4, ey - 0.4)]
+        for ya, yb in spans:
+            if yb - ya > 0.2:
+                poly_u([(xf, ya), (xf, yb)], BLACK)
         xf += fill_u
 
-    # ---- Luminet ring family, side-split pens, clipped behind the bar
+    # ---- Luminet ring family: build full rings, then CLIP with the geometry
+    # engine (exact, no sample-snap) — trim OUTSIDE the bar-band ∪ central disc,
+    # keep INSIDE the frame. Straight bar edges give a crisp vertical stop;
+    # crossing rings cut exactly on the circle, grazing rings stay whole.
+    from .geometry import Band as _Band, Circle as _Circle, Rect as _Rect, clip as _clip
+
     alphas = [2.0 * math.pi * k / samples for k in range(samples + 1)]
     rings_r = [6.0 * (r_max / 6.0) ** (k / max(1, n_iso - 1)) for k in range(n_iso)]
     tbl = _luminet_b_table(inc, 0, alphas, rings_r)
+    R_bound = R_center  # the clean circle the isoradials stop on (drawn full, below)
+    trim = _Band("x", bar_lo, bar_hi) | _Circle(0.0, 0.0, R_bound)
+    frame = _Rect(-(ex - 0.5), -(ey - 0.5), ex - 0.5, ey - 0.5)
+
     for r in rings_r:
         bs = [tbl.get((a, r), float("nan")) for a in alphas]
         if sum(1 for b in bs if math.isfinite(b)) < len(bs) * 0.5:
             continue
-        run = []
-        run_pen = None
+        # contiguous ring polylines (split at non-finite b)
+        polylines: List[list] = []
+        cur: list = []
         for a, b in zip(alphas, bs):
-            if not math.isfinite(b):
-                continue
-            px = b * math.cos(a - math.pi / 2)
-            py = b * math.sin(a - math.pi / 2)
-            pen = BLUE if px < 0 else PINK
-            hidden = abs(px - bx) < xw + 0.6 or abs(px) > ex - 0.5 or abs(py) > ey - 0.5
-            if hidden or (run_pen is not None and pen != run_pen):
-                if len(run) >= 2:
-                    sm, _ = _catmull_subdivide(run)
-                    poly_u(sm, run_pen)
-                run = [] if hidden else run[-1:]
-                run_pen = pen
-            if not hidden:
-                if run_pen is None:
-                    run_pen = pen
-                run.append((px, py))
-        if len(run) >= 2:
-            sm, _ = _catmull_subdivide(run)
-            poly_u(sm, run_pen)
+            if math.isfinite(b):
+                cur.append((b * math.cos(a - math.pi / 2), b * math.sin(a - math.pi / 2)))
+            elif len(cur) >= 2:
+                polylines.append(cur)
+                cur = []
+            else:
+                cur = []
+        if len(cur) >= 2:
+            polylines.append(cur)
+        for pl in polylines:
+            for run in _clip(pl, trim, keep="outside"):
+                for sub in _clip(run, frame, keep="inside"):
+                    if len(sub) < 2:
+                        continue
+                    mpx = sum(p[0] for p in sub) / len(sub)
+                    sm, _ = _catmull_subdivide(sub)
+                    poly_u(sm, BLUE if mpx < 0 else PINK)
 
-    # ---- solid shadow disc (spiral fill) + broken photon-ring arcs
-    turns = int(5.0 / fill_u)
+    # ---- central spiral disc (kept tighter) + broken photon-ring SEGMENTS +
+    # the FULL boundary circle. All circular elements go on the fine 0.1 pen.
+    spiral_r = 3.6
+    turns = int(spiral_r / fill_u)
     spiral = []
     for k in range(turns * 40 + 1):
         t = k / (turns * 40.0)
-        rr = 5.0 * t
+        rr = spiral_r * t
         a_ = 2 * math.pi * turns * t
         spiral.append((rr * math.cos(a_), rr * math.sin(a_)))
     poly_u(spiral, BLACK)
-    for a0_, a1_ in (
-        (math.radians(100), math.radians(320)),
-        (math.radians(345), math.radians(430)),
-    ):
+    # broken photon-ring segments between the spiral and the boundary (as the
+    # original had, but a few concentric rings with staggered openings)
+    photon = [
+        (4.2, math.radians(15), math.radians(160)),
+        (4.2, math.radians(200), math.radians(345)),
+        (4.9, math.radians(60), math.radians(210)),
+        (4.9, math.radians(250), math.radians(30 + 360)),
+        (5.5, math.radians(110), math.radians(265)),
+        (5.5, math.radians(300), math.radians(80 + 360)),
+    ]
+    for pr, a0_, a1_ in photon:
         arc = []
         k = a0_
         while k <= a1_:
-            arc.append((6.1 * math.cos(k), 6.1 * math.sin(k)))
-            k += 0.05
-        poly_u(arc, BLACK)
+            arc.append((pr * math.cos(k), pr * math.sin(k)))
+            k += 0.06
+        poly_u(arc, LEGEND)
+    boundary = [
+        (R_bound * math.cos(2 * math.pi * k / 220), R_bound * math.sin(2 * math.pi * k / 220))
+        for k in range(221)
+    ]
+    poly_u(boundary, LEGEND)  # full boundary circle → fine 0.1 pen
 
     # ---- quarter-disc stack (lower left) + dots + plus marks + swatches
     qc = (-17.0, -12.0)
@@ -4755,8 +4843,8 @@ def black_hole_bauhaus(
         for k in range(41)
     ]
     poly_u(arc, BLACK)
-    # planet on the dotted orbit + small dot
-    for dx_, dy_, rr in ((13.0, 14.0, 1.9), (-17.0, -15.5, 0.7)):
+    # planet on the dotted orbit + small dot — both bold 0.5
+    for dx_, dy_, rr, pen_ in ((13.0, 14.0, 1.9, BLACK), (-17.0, -15.5, 0.7, BLACK)):
         rr_ = rr
         while rr_ > 0.15:
             ring = [
@@ -4766,7 +4854,7 @@ def black_hole_bauhaus(
                 )
                 for k in range(37)
             ]
-            poly_u(ring, BLACK)
+            poly_u(ring, pen_)
             rr_ -= fill_u
     for mx_, my_ in ((-30.0, 9.0), (30.0, -12.0)):
         poly_u([(mx_ - 0.9, my_), (mx_ + 0.9, my_)], BLACK)
@@ -4789,14 +4877,14 @@ def black_hole_bauhaus(
     fx = x0 + (ex - 13.0) * sc  # top right block x
     yy = y1 - 6.0
     for ln in ("GRAVITY", "IN", "BALANCE"):
-        out.extend(_stroke_text(spaced(ln), fx, yy, th, color=BLACK, f=feed))
+        out.extend(_stroke_text(spaced(ln), fx, yy, th, color=LEGEND, f=feed))
         yy -= lh
-    out.extend(_poly([(fx, yy + lh - 2.0), (fx + 5.0, yy + lh - 2.0)], color=BLACK, f=feed))
+    out.extend(_poly([(fx, yy + lh - 2.0), (fx + 5.0, yy + lh - 2.0)], color=LEGEND, f=feed))
     yy = y0 + 6.0 + 3 * lh
     for ln in ("MASS", "CURVES", "SPACE", "TIME"):
-        out.extend(_stroke_text(spaced(ln), x0 + 5.0, yy, th, color=BLACK, f=feed))
+        out.extend(_stroke_text(spaced(ln), x0 + 5.0, yy, th, color=LEGEND, f=feed))
         yy -= lh
-    out.extend(_stroke_text(spaced("M 1:80"), x1 - 32.0, y0 + 5.0, th, color=BLACK, f=feed))
+    out.extend(_stroke_text(spaced("M 1:80"), x1 - 32.0, y0 + 5.0, th, color=LEGEND, f=feed))
     return out
 
 

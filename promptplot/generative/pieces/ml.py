@@ -393,6 +393,11 @@ def bauhaus_gradient(
     shallow_depth: float = 0.55,
     settle_eps: float = 0.006,
     momentum: float = 0.9,
+    fill_spacing: float = 0.5,
+    sink_scale: float = 1.0,
+    sink_spacing: float = 0.0,
+    joint_gap: float = 2.4,
+    braid_passes: int = 3,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
     """WATERSHED — gradient descent as a BASIN OF ATTRACTION. The whole
@@ -453,7 +458,7 @@ def bauhaus_gradient(
     ssink = (sum(p[0] for p in sc) / len(sc), sum(p[1] for p in sc) / len(sc)) if sc else (sux, svy)
     gpx, spx = (u2px(gsink[0]), v2py(gsink[1])), (u2px(ssink[0]), v2py(ssink[1]))
     rscale = max(0.6, min(1.0, min(fw, fh) / 160))
-    deep_r, shallow_r = 13.0 * rscale, 5.0 * rscale
+    deep_r, shallow_r = 13.0 * rscale * sink_scale, 5.0 * rscale * sink_scale
 
     # evenly-spaced streamlines (Jobard–Lefebvre, seed-based)
     cell = max(min_sep, 0.5)
@@ -540,13 +545,34 @@ def bauhaus_gradient(
             if d > best_d:
                 best_d, hero_idx = d, i
 
-    # draw the field: black plateau, destination-hued last stretch
+    # draw the field: black plateau, destination-hued last stretch.
+    # NO OVERLAP joint: black ends joint_gap/2 BEFORE the cut and the colored
+    # tail starts joint_gap/2 AFTER it, so round acrylic pen caps butt cleanly
+    # instead of overpainting each other (feedback from the plotted 17×24).
+    def _split_gap(pts, ncut, gap):
+        acc = 0.0
+        b_end = ncut
+        while b_end > 1 and acc < gap / 2.0:
+            acc += math.hypot(
+                pts[b_end][0] - pts[b_end - 1][0], pts[b_end][1] - pts[b_end - 1][1]
+            )
+            b_end -= 1
+        acc = 0.0
+        t_start = ncut
+        while t_start < len(pts) - 1 and acc < gap / 2.0:
+            acc += math.hypot(
+                pts[t_start + 1][0] - pts[t_start][0], pts[t_start + 1][1] - pts[t_start][1]
+            )
+            t_start += 1
+        return b_end, t_start
+
     for i, (pts, skey, _st) in enumerate(streams):
         if i == hero_idx:
             continue
         ncut = max(1, int(len(pts) * 0.85))
-        out += _poly(pts[: ncut + 1], color=black, f=feed)
-        tail = pts[ncut:]
+        b_end, t_start = _split_gap(pts, ncut, joint_gap)
+        out += _poly(pts[: b_end + 1], color=black, f=feed)
+        tail = pts[t_start:]
         if len(tail) >= 2:
             out += _poly(tail, color=(blue if skey == "b" else pink), f=feed)
 
@@ -585,36 +611,59 @@ def bauhaus_gradient(
             if left and near < 0.02 and math.hypot(vel[0], vel[1]) < 0.006:
                 break
         smax = max(spd) or 1.0
-        out += _poly(path, color=blue, f=feed)  # center pass always
-        for d in (-0.38, 0.38):  # outer passes only on the fast opening reach
-            seg = []
-            for i, p in enumerate(path):
-                if spd[i] > 0.4 * smax:
-                    seg.append(p)
-                elif len(seg) >= 2:
-                    out += _poly(offset_poly(seg, d), color=blue, f=feed)
-                    seg = []
-                else:
-                    seg = []
-            if len(seg) >= 2:
-                out += _poly(offset_poly(seg, d), color=blue, f=feed)
+        # the descent line gets its OWN pen (distinct from the sink circles)
+        # when a 5th pen is available; falls back to the basin hue otherwise
+        braid_pen = _pen(4, colors) if colors >= 5 else blue
+        out += _poly(path, color=braid_pen, f=feed)  # center pass always
+        if braid_passes >= 3:
+            # companion passes fake thickness for FINE pens only — at 2mm tips
+            # they sit inside the tip width and just fight the crowding
+            # guardrail (render with braid_passes=1 for acrylics)
+            for d in (-0.38, 0.38):  # outer passes only on the fast opening reach
+                seg = []
+                for i, p in enumerate(path):
+                    if spd[i] > 0.4 * smax:
+                        seg.append(p)
+                    elif len(seg) >= 2:
+                        out += _poly(offset_poly(seg, d), color=braid_pen, f=feed)
+                        seg = []
+                    else:
+                        seg = []
+                if len(seg) >= 2:
+                    out += _poly(offset_poly(seg, d), color=braid_pen, f=feed)
 
-    # the sinks: hierarchy at 3m
-    out += circle(gpx[0], gpx[1], deep_r + 2.5, pen=black, f=feed)  # one seating ring = a well
-    out += fill_disc(gpx[0], gpx[1], deep_r, spacing=0.5, pen=blue, f=feed)
-    out += fill_disc(spx[0], spx[1], shallow_r, spacing=0.5, pen=pink, f=feed)
+    # the sinks: hierarchy at 3m — CONCENTRIC rings (clean at 2mm tips), not
+    # spirals; ``sink_spacing`` tightens the ring pitch independently of the
+    # streamline separation (0 → same as fill_spacing)
+    ring_pitch = sink_spacing if sink_spacing > 0 else fill_spacing
+
+    def _concentric(cx_, cy_, r_max_, pen_):
+        rr = ring_pitch
+        cmds: List[GCodeCommand] = []
+        while rr <= r_max_ + 1e-9:
+            cmds += circle(cx_, cy_, rr, pen=pen_, f=feed)
+            rr += ring_pitch
+        return cmds
+
+    # both sinks ringed by DOTTED circles in their own hue (feedback ④: blue dots
+    # around the deep basin, mirroring the pink dots around the shallow one)
+    out += dotted_circle(gpx[0], gpx[1], deep_r + 2.5, pen=blue, bounds=bounds, f=feed)
+    out += _concentric(gpx[0], gpx[1], deep_r, blue)
+    out += _concentric(spx[0], spx[1], shallow_r, pink)
     out += dotted_circle(spx[0], spx[1], shallow_r + 4, pen=pink, bounds=bounds, f=feed)
 
-    # furniture on a shared left axis
+    # furniture on a shared left axis — type on its own LEGEND pen (mount 0.5/0.1
+    # while the drawing runs 2mm acrylics); falls back to black when colors < 4
+    legend = _pen(3, colors) if colors >= 4 else black
     xT = x0 + 0.02 * W
-    out += type_block(["WATER", "SHED"], xT, y1 - 6.0, height=3.2, pen=black, f=feed)
+    out += type_block(["WATER", "SHED"], xT, y1 - 6.0, height=3.2, pen=legend, f=feed)
     out += _stroke_text(
-        _spaced("EVERY START FINDS THE VALLEY"), xT, y1 - 20.0, 2.0, color=black, f=feed
+        _spaced("EVERY START FINDS THE VALLEY"), xT, y1 - 20.0, 2.0, color=legend, f=feed
     )
     out += swatch_bar(x1 - 9.0, y1 - 4.0, [black, blue, pink], size=2.6, f=feed)
     sad = (u2px((gsink[0] + ssink[0]) / 2), v2py((gsink[1] + ssink[1]) / 2))
     out += plus_mark(sad[0], sad[1], s=1.4, pen=black, f=feed)
-    out += scale_footer(bounds, text="DTH = -GRAD L . DT", pen=black, height=2.4, f=feed)
+    out += scale_footer(bounds, text="DTH = -GRAD L . DT", pen=legend, height=2.4, f=feed)
     return out
 
 
@@ -1829,12 +1878,14 @@ def bauhaus_manifold(
     rng: SeededRNG,
     bounds: Bounds,
     colors: int = 3,
-    nu: int = 34,
-    nv: int = 84,
+    nu: int = 44,
+    nv: int = 168,
     petals: int = 3,
     fold: float = 1.05,
     twist: float = 1.2,
     nstream: int = 52,
+    stream_sep: float = 2.2,
+    mesh_weave: float = 0.0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
     """NONLINEAR TRANSFORMATION — an MLP rendered by a from-scratch 3D pen-plotter
@@ -1847,7 +1898,10 @@ def bauhaus_manifold(
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
-    accent, black = _pen(PINK, colors), _pen(BLACK, colors)  # PINK slot → crimson
+    # three pens: surface mesh (fine 0.1) · red accents · the rest black (0.5)
+    surface = _pen(BLUE, colors)  # slot 0 → 0.1 pen
+    accent = _pen(PINK, colors)  # slot 1 → red 0.5
+    black = _pen(BLACK, colors)  # slot 2 → black 0.5
     out: List[GCodeCommand] = []
 
     # ---- 3D world → isometric screen -------------------------------------
@@ -1924,11 +1978,38 @@ def bauhaus_manifold(
             return True  # off-surface → nothing to occlude
         return dep >= zbuf[py, px] - bias
 
+    # ---- text labels: positions fixed up front so the mesh leaves halos ---
+    xT = x0 + 0.02 * W
+    wmax = _text_width(_spaced("LINEAR TRANSFORM"), 1.7)
+    rx = min(x1 - 0.205 * W, x1 - wmax - 2.0)
+    ci = proj(0.0, Hy, 0.0)
+    co = proj(0.0, -Hy, 0.0)
+    labels = [
+        (_spaced("MLP"), xT, y1 - 8.0, 3.6, black),
+        (_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, black),
+        (_spaced("INPUT SPACE"), ci[0] - 0.10 * W, ci[1] + 14.0, 2.3, black),
+        (_spaced("OUTPUT SPACE"), co[0] - 0.10 * W, co[1] - 8.0, 2.3, black),
+        (_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, black),
+        (_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, accent),
+        (_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, accent),
+        (_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, black),
+    ]
+    text_boxes = []
+    for _txt, lx, ly, lh, _col in labels:
+        w = _text_width(_txt, lh)
+        text_boxes.append((lx - 1.4, ly - 0.5 * lh, lx + w + 1.4, ly + 1.35 * lh))
+
+    def _blocked(sx, sy):
+        for bx0, by0, bx1, by1 in text_boxes:
+            if bx0 <= sx <= bx1 and by0 <= sy <= by1:
+                return True
+        return False
+
     def emit_visible(samples):
         # samples: list of (sx, sy, dep, pen); draw only visible runs
         run, runpen = [], None
         for sx, sy, dep, pen in samples:
-            if visible(sx, sy, dep):
+            if visible(sx, sy, dep) and not _blocked(sx, sy):
                 if runpen is None or pen == runpen:
                     run.append((sx, sy))
                     runpen = pen
@@ -1944,14 +2025,121 @@ def bauhaus_manifold(
             out.extend(_poly(run, color=runpen, f=feed))
 
     # ---- draw the visible surface mesh (the fold, hidden-line removed) ----
-    ridge = {0, nv // (2 * petals)}  # crease columns → red fold-ridges
-    for j in range(nv + 1):  # radial lines
-        red = (j % (nv // petals)) < 1 or ((j - nv // (2 * petals)) % (nv // petals)) < 1
-        emit_visible([(SX[i, j], SY[i, j], DEP[i, j], accent if red else black) for i in range(nu + 1)])
-    for i in range(2, nu + 1):  # rings (skip the tiny center rings)
-        emit_visible([(SX[i, j], SY[i, j], DEP[i, j], black) for j in range(nv + 1)])
+    # STRUCTURAL POLAR LOD — "reduce the mesh, don't decorate the knot": the
+    # polar grid converges at the pole, so radials thin toward the centre in
+    # halving levels (spider-web meshing: every 8th reaches the pole, every
+    # 4th stops at 30% radius, every 2nd at 55%, the rest at 75%), and the
+    # tiny centre rings are dropped / halved. Fold-ridge radials (the red
+    # creases) always run full length — they are the structure.
+    ridge_step = max(1, nv // petals)
+    half_step = nv // (2 * petals)
 
-    # ---- streamlines: INPUT plane → through the fold → OUTPUT plane -------
+    def _is_ridge(j):
+        return (j % ridge_step) < 1 or ((j - half_step) % ridge_step) < 1
+
+    def _start_i(j):
+        # five halving levels: only every 16th radial reaches the pole, and the
+        # finest level (odd j) exists only on the OPEN outer band — more detail
+        # exactly where the quads are widest
+        if _is_ridge(j) or j % 16 == 0:
+            return 2
+        if j % 8 == 0:
+            return max(2, int(nu * 0.30))
+        if j % 4 == 0:
+            return max(2, int(nu * 0.55))
+        if j % 2 == 0:
+            return max(2, int(nu * 0.75))
+        return max(2, int(nu * 0.88))
+
+    # paper-mm → pre-fit projection units (the whole piece is fit-scaled at the end)
+    _pw = float(SX.max() - SX.min()) or 1.0
+    _ph = float(SY.max() - SY.min()) or 1.0
+    _fit = min((W - 8.0) / _pw, (H - 8.0) / _ph) or 1.0
+
+    # LOCAL screen-space thinning in BOTH grid directions, DEPTH-AWARE: the far
+    # half of the surface (lowest view depth — "furthest from the viewer") gets
+    # a 2× coarser floor in I and J, atmospheric-perspective style; near faces
+    # keep full detail. Where any face turns edge-on, samples drop locally —
+    # silhouette bands instead of gray pile-ups. Ridges are never thinned.
+    mesh_gap_pre = 0.8 / _fit
+    HIDE = -1e19
+    dep_med = float(np.median(DEP))
+
+    # DIRECTION LEADERSHIP (the mesh weave): checkerboard patches over the
+    # (i, j) grid — in each patch ONE family leads (fine floor) and the other
+    # recedes (floor × mesh_weave), alternating like over/under in a textile.
+    # mesh_weave=0 → both directions equal (uniform grid).
+    _wbi = max(1, nu // 4)
+    _wbj = max(1, nv // 8)
+
+    def _rings_lead(i, j):
+        return ((i // _wbi) + (j // _wbj)) % 2 == 0
+
+    def _gap2(i, j, family):
+        g = mesh_gap_pre * (2.0 if DEP[i, j] < dep_med else 1.0)
+        if mesh_weave > 0:
+            leads = _rings_lead(i, j) if family == "ring" else not _rings_lead(i, j)
+            if not leads:
+                g *= mesh_weave
+        return g * g
+
+    last_ring = [None] * (nv + 1)  # per-radial memory for the ring family
+    last_rad = [None] * (nu + 1)  # per-ring memory for the radial family
+
+    # streamline occupancy (defined early: red fold-ridges register here too,
+    # so a red streamline can never shadow a red crease — cross-family gap)
+    sep_pre = stream_sep / _fit
+    socc: dict = {}
+
+    def _scell(sx, sy):
+        return (int(sx / sep_pre), int(sy / sep_pre))
+
+    for j in range(nv + 1):  # radial lines, pole-thinned / outer-densified
+        red = _is_ridge(j)
+        i0 = _start_i(j)
+        samples = []
+        for i in range(i0, nu + 1):
+            sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
+            lk = last_rad[i]
+            if (
+                not red
+                and lk is not None
+                and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < _gap2(i, j, "rad")
+            ):
+                samples.append((sx, sy, HIDE, surface))
+            else:
+                samples.append((sx, sy, dp, accent if red else surface))
+                last_rad[i] = (sx, sy)
+                if red:
+                    socc.setdefault(_scell(sx, sy), []).append((sx, sy))
+        emit_visible(samples)
+
+    for i in range(3, nu + 1):  # rings
+        if i < int(nu * 0.35) and i % 2:
+            continue
+        samples = []
+        for j in range(nv + 1):
+            sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
+            lk = last_ring[j]
+            if lk is not None and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < _gap2(i, j, "ring"):
+                samples.append((sx, sy, HIDE, surface))
+            else:
+                samples.append((sx, sy, dp, surface))
+                last_ring[j] = (sx, sy)
+        emit_visible(samples)
+
+    # ---- streamlines: INPUT plane → through the fold → OUTPUT plane.
+    # Minimum separation AT GENERATION (Jobard–Lefebvre idiom) against both
+    # earlier streamlines AND the red fold-ridges (registered above).
+    def _scrowded(sx, sy):
+        ci, cj = _scell(sx, sy)
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                for qx, qy in socc.get((ci + di, cj + dj), ()):
+                    if (qx - sx) ** 2 + (qy - sy) ** 2 < sep_pre * sep_pre:
+                        return True
+        return False
+
     for s_i in range(nstream):
         th0 = 2 * math.pi * s_i / nstream
         r0 = 0.6 + 0.4 * rng.random()
@@ -1967,25 +2155,33 @@ def bauhaus_manifold(
             wy = wy_lin * (1 - blend) + surf(min(1.0, rr), th) * blend
             wx, wz = rr * math.cos(th), rr * math.sin(th)
             sx, sy = proj(wx, wy, wz)
-            samples.append((sx, sy, depth(wx, wy, wz), pen))
+            # PAUSE-AND-RESUME, not delete: a line goes silent through the
+            # congested stretch and resumes where space opens — every line
+            # keeps its course, the waist self-limits to its capacity
+            crowded = k > 6 and _scrowded(sx, sy)
+            samples.append((sx, sy, HIDE if crowded else depth(wx, wy, wz), pen))
+        kept = [(sx, sy) for sx, sy, d, _p in samples if d != HIDE]
+        if len(kept) < 6:
+            continue
+        for sx, sy in kept:
+            socc.setdefault(_scell(sx, sy), []).append((sx, sy))
         emit_visible(samples)
 
     # ---- INPUT / OUTPUT planes: dot lattice + frame + droplines ----------
-    def plane(wy, label, above):
+    def plane(wy, above):
         g = 11
         for ia in range(g):
             for ib in range(g):
                 gu, gv = -1.15 + 2.3 * ia / (g - 1), -1.15 + 2.3 * ib / (g - 1)
                 sx, sy = proj(gu, wy, gv)
-                out.extend(_dot(sx, sy, 0.45, color=black, f=feed))
+                if _blocked(sx, sy):
+                    continue
+                out.extend(_dot(sx, sy, 0.45, color=surface, f=feed))
         corners = [(-1.15, -1.15), (1.15, -1.15), (1.15, 1.15), (-1.15, 1.15), (-1.15, -1.15)]
-        out.extend(_poly([proj(gu, wy, gv) for gu, gv in corners], color=black, f=feed))
-        c = proj(0, wy, 0)
-        ly = c[1] + (14 if above else -8)
-        out.extend(_stroke_text(_spaced(label), c[0] - 0.10 * W, ly, 2.3, color=black, f=feed))
+        out.extend(_poly([proj(gu, wy, gv) for gu, gv in corners], color=surface, f=feed))
 
-    plane(Hy, "INPUT SPACE", True)
-    plane(-Hy, "OUTPUT SPACE", False)
+    plane(Hy, True)
+    plane(-Hy, False)
     for dl in range(10):  # a few vertical droplines through the ambient volume
         gu = -1.0 + 2.0 * rng.random()
         gv = -1.0 + 2.0 * rng.random()
@@ -1995,17 +2191,29 @@ def bauhaus_manifold(
             p = proj(gu, wy, gv)
             seg.append(p)
         for k in range(0, len(seg) - 1, 2):
+            if _blocked(*seg[k]) or _blocked(*seg[k + 1]):
+                continue
             out += _poly([seg[k], seg[k + 1]], color=black, f=feed)
 
-    # ---- furniture -------------------------------------------------------
-    xT = x0 + 0.02 * W
-    out += type_block(["MLP"], xT, y1 - 6.0, height=3.6, pen=black, underline=False, f=feed)
-    out += _stroke_text(_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, color=black, f=feed)
-    rx = x1 - 0.20 * W
-    out += _stroke_text(_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, color=black, f=feed)
-    out += _stroke_text(_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, color=accent, f=feed)
-    out += _stroke_text(_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, color=accent, f=feed)
-    out += _stroke_text(_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, color=black, f=feed)
+    # ---- text labels (drawn last, in the mesh halos) ---------------------
+    for txt, lx, ly, lh, col in labels:
+        out += _stroke_text(txt, lx, ly, lh, color=col, f=feed)
+
+    # ---- fit the whole composition uniformly into the drawable area ------
+    pts_x = [c.x for c in out if c.x is not None]
+    pts_y = [c.y for c in out if c.y is not None]
+    if pts_x and pts_y:
+        bx0, bx1, by0, by1 = min(pts_x), max(pts_x), min(pts_y), max(pts_y)
+        bw, bh = (bx1 - bx0) or 1.0, (by1 - by0) or 1.0
+        pad = 4.0
+        s = min((W - 2 * pad) / bw, (H - 2 * pad) / bh)
+        ox = x0 + (W - bw * s) / 2.0 - bx0 * s
+        oy = y0 + (H - bh * s) / 2.0 - by0 * s
+        for c in out:
+            if c.x is not None:
+                c.x = round(c.x * s + ox, 3)
+            if c.y is not None:
+                c.y = round(c.y * s + oy, 3)
     return out
 
 
