@@ -2383,7 +2383,9 @@ def bauhaus_relevance(
     stepy = (cy_top - cy_bot) / (n_stage - 1)
     cyL = [cy_top - k * stepy for k in range(n_stage)]
 
-    def mk_sheet(cyc, hfun, hscale, penfn=None, pen=blk):
+    def mk_sheet(cyc, hfun, hscale, penfn=None, pen=blk, cxE=None, scale=1.0):
+        AA, CDD, HYY = A * scale, CD * scale, HY * scale
+        cxx = cx if cxE is None else cxE
         SX = np.zeros((ns + 1, ns + 1))
         SY = np.zeros((ns + 1, ns + 1))
         DE = np.zeros((ns + 1, ns + 1))
@@ -2393,8 +2395,8 @@ def bauhaus_relevance(
             for j in range(ns + 1):
                 wz = -1 + 2 * j / ns
                 wy = hfun(wx, wz) * hscale
-                SX[i, j] = cx + (wx - wz) * A
-                SY[i, j] = cyc + wy * HY - (wx + wz) * CD
+                SX[i, j] = cxx + (wx - wz) * AA
+                SY[i, j] = cyc + wy * HYY - (wx + wz) * CDD
                 DE[i, j] = (wx + wz) + 0.12 * wy
                 if penfn is not None:
                     PV[i, j] = penfn(wx, wz)
@@ -2431,6 +2433,11 @@ def bauhaus_relevance(
     def s5(wx, wz):  # attended output: V pulled up where attention mass sits
         return 0.35 * s4(wx, wz) + 1.05 * s_attn(wx, wz) * (0.4 + 0.6 * s4(wx, wz))
 
+    # lateral V-branch geometry (used by labels + sheets + projection lines)
+    v_scale = 0.55
+    vX = cx + 0.335 * W
+    vY = (cyL[2] + cyL[4]) / 2.0 + 0.02 * H
+
     # ---- halo labels (stage numbers left, formulas right, sub-notes) ------
     Lx = x0 + 0.020 * W
     Rx = x1 - 0.235 * W
@@ -2450,11 +2457,11 @@ def bauhaus_relevance(
             (_spaced("SOFTMAX QK T"), Rx, cyL[2] + 0.040 * H, 1.8, blk),
             (_spaced("NORMALIZED"), Rx, cyL[2] + 0.020 * H, 1.4, blk),
             (_spaced("ATTENTION WEIGHTS"), Rx, cyL[2] + 0.002 * H, 1.4, blk),
-            ("4", Lx, cyL[3] + 0.030 * H, 2.6, blk),
-            (_spaced("VALUES V"), Lx + 6, cyL[3] + 0.030 * H, 1.7, blk),
-            (_spaced("V VALUES"), Rx, cyL[3] + 0.040 * H, 1.8, red),
-            (_spaced("CONTENT TO"), Rx, cyL[3] - 0.030 * H, 1.4, blk),
-            (_spaced("BE MIXED"), Rx, cyL[3] - 0.048 * H, 1.4, blk),
+            ("4", vX - 0.11 * W, vY + 0.085 * H, 2.6, blk),
+            (_spaced("VALUES V"), vX - 0.095 * W, vY + 0.085 * H, 1.7, blk),
+            (_spaced("V VALUES"), vX + 0.02 * W, vY + 0.070 * H, 1.8, red),
+            (_spaced("CONTENT TO"), vX + 0.03 * W, vY - 0.070 * H, 1.4, blk),
+            (_spaced("BE MIXED"), vX + 0.03 * W, vY - 0.088 * H, 1.4, blk),
             ("5", Lx, cyL[4] + 0.030 * H, 2.6, blk),
             (_spaced("OUTPUT"), Lx + 6, cyL[4] + 0.030 * H, 1.7, blk),
             (_spaced("SOFTMAX QK T V"), Rx, cyL[4] + 0.040 * H, 1.8, blk),
@@ -2494,11 +2501,16 @@ def bauhaus_relevance(
     br = [at(cyL[2], -1, -1), at(cyL[2], 1, -1), at(cyL[2], 1, 1), at(cyL[2], -1, 1), at(cyL[2], -1, -1)]
     scene.poly(br, pen=blk)
 
-    # ---- stage 4: VALUES — full red rolling terrain
-    mk_sheet(cyL[3], s4, 0.75, pen=red)
+    # ---- VALUES enters PERPENDICULAR to the column (multi-axis explosion):
+    # a smaller red sheet displaced along the lateral axonometric direction,
+    # tied into OUTPUT by dotted projection lines along that axis
+    mk_sheet(vY, s4, 0.75, pen=red, cxE=vX, scale=v_scale)
 
-    # ---- stage 5: OUTPUT — green attended terrain
+    # ---- OUTPUT — green attended terrain (bottom of the column)
     mk_sheet(cyL[4], s5, 0.80, pen=green)
+
+    def _at_sheet(cxx, cyc, wx, wz, scale=1.0):
+        return (cxx + (wx - wz) * A * scale, cyc - (wx + wz) * CD * scale)
 
     # STRICT AXONOMETRY: thin dotted PROJECTION LINES tie the stack together —
     # the four diamond corners run top sheet → bottom sheet, plus the Q and K
@@ -2515,6 +2527,12 @@ def bauhaus_relevance(
         projection_line(at(cyL[0], *corner), at(cyL[n_stage - 1], *corner), blk)
     for site in (qw, kw):
         projection_line(at(cyL[0], *site), at(cyL[n_stage - 1], *site), blk)
+    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
+        projection_line(
+            _at_sheet(vX, vY, *corner, scale=v_scale),
+            _at_sheet(cx, cyL[4], *corner),
+            red,
+        )
 
     # ---- title
     out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.13 * W, y1 - 0.035 * H, 3.0, color=blk, f=feed)
