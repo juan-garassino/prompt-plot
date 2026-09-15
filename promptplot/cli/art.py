@@ -172,6 +172,12 @@ def _parse_params(pairs):
     help="Pen tip width mm (drives the default line-crowding/overlap guardrails; "
     "default from config.pen.tip_width; 0 disables)",
 )
+@click.option(
+    "--paper-color",
+    "paper_color",
+    default=None,
+    help="Preview background: white (default), cream (the house warm sheet), or any color",
+)
 @click.option("--simulate", is_flag=True, help="Simulated plotter (no hardware)")
 @click.option("--preview", "save_preview", is_flag=True, help="Save a color-coded preview PNG")
 @click.option("--save", "-o", default=None, help="Save GCode to this path")
@@ -206,6 +212,7 @@ def art(
     max_ink_cell,
     min_gap,
     pen_tip,
+    paper_color,
     simulate,
     save_preview,
     save,
@@ -263,6 +270,8 @@ def art(
             )
         config.color.pause_for_swap = not simulate
 
+    if paper_color:
+        config.visualization.paper_color = paper_color
     bounds = config.paper.get_drawable_area()
     param_dict = _parse_params(params)
 

@@ -68,6 +68,31 @@ class ScreenThin:
     weave_blocks: Optional[Tuple[int, int]] = None
 
 
+class Occupancy:
+    """Jobard–Lefebvre spacing grid: line families keep a minimum separation.
+    Engine-native crowd control for ANY family of sampled lines."""
+
+    def __init__(self, sep: float):
+        self.sep = max(1e-6, sep)
+        self._grid: dict = {}
+
+    def _cell(self, sx: float, sy: float) -> Tuple[int, int]:
+        return (int(sx / self.sep), int(sy / self.sep))
+
+    def crowded(self, sx: float, sy: float) -> bool:
+        ci, cj = self._cell(sx, sy)
+        s2 = self.sep * self.sep
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                for qx, qy in self._grid.get((ci + di, cj + dj), ()):
+                    if (qx - sx) ** 2 + (qy - sy) ** 2 < s2:
+                        return True
+        return False
+
+    def add(self, sx: float, sy: float) -> None:
+        self._grid.setdefault(self._cell(sx, sy), []).append((sx, sy))
+
+
 class Scene3D:
     HIDE = HIDE
 
@@ -307,6 +332,43 @@ class Scene3D:
         return self
 
     # ------------------------------------------------------------- strokes
+    def occupancy(self, sep_mm: float) -> Occupancy:
+        return Occupancy(self.mm(sep_mm))
+
+    def lines(
+        self,
+        sample_lines,
+        *,
+        mode: str = "pause_resume",
+        occupancy: Optional[Occupancy] = None,
+        sep_mm: Optional[float] = None,
+        warmup: int = 6,
+        min_kept: int = 6,
+        feed: Optional[int] = None,
+    ) -> "Scene3D":
+        """Draw families of sampled lines ((sx, sy, dep, pen) per sample) with
+        NATIVE crowd control: ``pause_resume`` (default) silences a line through
+        stretches owned by earlier lines and resumes where space opens — the
+        family self-limits to the paper's capacity. ``mode='over'`` = exact.
+        Separation defaults to 4× the pen tip."""
+        if mode == "over":
+            for line in sample_lines:
+                self._emit_runs(line, feed)
+            return self
+        occ = occupancy or self.occupancy(sep_mm if sep_mm is not None else 4.0 * self.tip)
+        for line in sample_lines:
+            samples = []
+            for idx, (sx, sy, dep, pen) in enumerate(line):
+                crowded = idx > warmup and occ.crowded(sx, sy)
+                samples.append((sx, sy, HIDE if crowded else dep, pen))
+            kept = [(s[0], s[1]) for s in samples if s[2] != HIDE]
+            if len(kept) < min_kept:
+                continue
+            for sx, sy in kept:
+                occ.add(sx, sy)
+            self._emit_runs(samples, feed)
+        return self
+
     def poly(self, pts, *, pen=None, feed: Optional[int] = None, halos: bool = True) -> "Scene3D":
         """A plain polyline (no occlusion), split around halo boxes."""
         feed = self.feed if feed is None else feed

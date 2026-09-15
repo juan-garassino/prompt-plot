@@ -314,6 +314,7 @@ class VisualizationConfig:
     drawing_color: str = "blue"
     travel_color: str = "lightgray"
     line_width: float = 1.0
+    paper_color: str = "white"  # preview background: "white", "cream", or any hex/named color
 
 
 @dataclass
