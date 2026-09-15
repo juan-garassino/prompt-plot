@@ -376,6 +376,52 @@ def _first_drawn_point(
     return None
 
 
+def stroke_spans(cmds: List[GCodeCommand]) -> List[int]:
+    """Indices of every ``M3`` in ``cmds`` — one entry per stroke."""
+    return [i for i, c in enumerate(cmds) if c.command == "M3"]
+
+
+def slice_stroke_range(cmds: List[GCodeCommand], s: int, e: int) -> List[GCodeCommand]:
+    """Commands for strokes ``s..e`` inclusive, INCLUDING each stroke's
+    positioning travel (the playbook batch math — safe to stream alone)."""
+    m3 = stroke_spans(cmds)
+    if not m3:
+        return []
+    s = max(0, min(s, len(m3) - 1))
+    e = max(s, min(e, len(m3) - 1))
+    lo = max(0, m3[s] - 1)
+    hi = m3[e + 1] - 1 if e + 1 < len(m3) else len(cmds)
+    return cmds[lo:hi]
+
+
+async def trace_frame_full(
+    plotter: BasePlotter,
+    width: float,
+    height: float,
+    margin: float,
+    dwell: float = 0.4,
+    hold: float = 1.2,
+    edge_hold: float = 3.0,
+) -> None:
+    """MANDATORY pre-plot guardrail, full version: pen-UP tour of the PAPER
+    EDGE from the corner — holding ``edge_hold`` seconds after the FIRST edge
+    so the user can verify the sheet — then the drawable margin rectangle,
+    then park at exactly (0, 0)."""
+    await plotter.send_command("M5")
+    await plotter.send_command(f"G0 X{width:g} Y0")
+    await plotter.send_command(f"G4 P{edge_hold:g}")
+    for x, y in ((width, height), (0.0, height), (0.0, 0.0)):
+        await plotter.send_command(f"G0 X{x:g} Y{y:g}")
+        await plotter.send_command(f"G4 P{dwell:g}")
+    await plotter.send_command(f"G4 P{hold:g}")
+    m = margin
+    for x, y in ((m, m), (width - m, m), (width - m, height - m), (m, height - m), (m, m)):
+        await plotter.send_command(f"G0 X{x:g} Y{y:g}")
+        await plotter.send_command(f"G4 P{dwell:g}")
+    await plotter.send_command("M5")
+    await plotter.send_command("G0 X0 Y0")
+
+
 async def trace_frame(plotter: BasePlotter, paper, laps: int = 1, dwell: float = 0.4) -> None:
     """Pen-UP tour of the drawable-area corners so the user can see the limits.
 
