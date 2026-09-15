@@ -6,6 +6,6 @@ anti-crowding (depth-aware screen thinning, pause-resume line separation),
 text halos and fit-to-page. Opt-OUT for exact/legacy modes, never opt-in.
 """
 
-from .scene3d import HIDE, Iso, Camera, Occupancy, ScreenThin, Scene3D
+from .scene3d import HIDE, Iso, Camera, Occupancy, PolarLOD, ScreenThin, Scene3D
 
-__all__ = ["HIDE", "Iso", "Camera", "Occupancy", "ScreenThin", "Scene3D"]
+__all__ = ["HIDE", "Iso", "Camera", "Occupancy", "PolarLOD", "ScreenThin", "Scene3D"]

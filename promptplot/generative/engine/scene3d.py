@@ -52,6 +52,36 @@ class Camera:
 
 
 @dataclass
+class PolarLOD:
+    """Spider-web structural meshing for POLAR grids (axis 0 = radius, axis 1
+    = angle): only every ``levels[0][0]``-th angular line reaches the pole,
+    coarser levels start further out (fraction of the radius), and the tiny
+    inner rings are skipped/halved. ``ridge_every``/``ridge_half`` mark the
+    structural crease lines: full length, never thinned, optionally registered
+    into an :class:`Occupancy` so other families keep their distance."""
+
+    levels: Tuple[Tuple[int, float], ...] = ((16, 0.0), (8, 0.30), (4, 0.55), (2, 0.75), (1, 0.88))
+    ring_start: int = 3
+    ring_skip_inner: float = 0.35
+    ridge_every: int = 0
+    ridge_half: int = 0
+    ridge_register: Optional["Occupancy"] = None
+
+    def is_ridge(self, j: int) -> bool:
+        if self.ridge_every <= 0:
+            return False
+        return (j % self.ridge_every) < 1 or ((j - self.ridge_half) % self.ridge_every) < 1
+
+    def start_index(self, j: int, R: int) -> int:
+        if self.is_ridge(j):
+            return 2
+        for mod, frac in self.levels:
+            if j % mod == 0:
+                return max(2, int(R * frac))
+        return max(2, int(R * self.levels[-1][1]))
+
+
+@dataclass
 class ScreenThin:
     """Depth-aware minimum line gap for grid surfaces, in PAPER mm.
 
@@ -138,6 +168,12 @@ class Scene3D:
         if self._mm_scale is None:
             return 1.0
         return self._mm_scale
+
+    def prime_scale(self, SX, SY) -> "Scene3D":
+        """Estimate the fill-fit scale from a surface's extents BEFORE any
+        surface call — so occupancies created up front use true paper mm."""
+        self._estimate_scale(SX, SY)
+        return self
 
     def _estimate_scale(self, SX, SY) -> None:
         if self.fit != "fill" or self.bounds is None or self._mm_scale is not None:
@@ -256,12 +292,15 @@ class Scene3D:
         pen: Optional[int] = None,
         pens=None,
         thin="auto",
+        lod: Optional[PolarLOD] = None,
         feed: Optional[int] = None,
     ) -> "Scene3D":
         """Rasterize a grid surface (fresh field) and draw its mesh lines with
         hidden-line occlusion. ``thin="auto"`` (default) applies the native
         anti-crowding ScreenThin derived from ``tip``; ``thin=None`` is the
-        exact/legacy mode (every grid line drawn, occlusion only)."""
+        exact/legacy mode. ``lod`` (PolarLOD) adds structural spider-web
+        meshing for polar grids: angular lines thin toward the pole in halving
+        levels, ridges run full and register their space."""
         import numpy as np
 
         self._estimate_scale(SX, SY)
@@ -269,6 +308,61 @@ class Scene3D:
         R, C = SX.shape[0] - 1, SX.shape[1] - 1
 
         cfg = ScreenThin(gap_mm=1.6 * self.tip) if thin == "auto" else thin
+
+        if lod is not None:
+            gap_pre = self.mm(cfg.gap_mm) if cfg else 0.0
+            dep_med = float(np.median(DEP)) if cfg else 0.0
+            wbi, wbj = (cfg.weave_blocks or (max(1, R // 4), max(1, C // 8))) if cfg else (1, 1)
+
+            def gap2(i, j, family):
+                if not cfg:
+                    return 0.0
+                g = gap_pre * (cfg.far_mult if DEP[i, j] < dep_med else 1.0)
+                if cfg.weave > 0:
+                    rows_lead = ((i // wbi) + (j // wbj)) % 2 == 0
+                    leads = rows_lead if family == "row" else not rows_lead
+                    if not leads:
+                        g *= cfg.weave
+                return g * g
+
+            def pen_at(i, j):
+                return int(pens[i, j]) if pens is not None else pen
+
+            last_col = [None] * (R + 1)
+            last_row = [None] * (C + 1)
+            for j in range(C + 1):  # angular lines, pole-thinned; ridges full
+                ridge = lod.is_ridge(j)
+                i0 = lod.start_index(j, R)
+                samples = []
+                for i in range(i0, R + 1):
+                    sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
+                    lk = last_col[i]
+                    if (
+                        not ridge
+                        and lk is not None
+                        and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < gap2(i, j, "col")
+                    ):
+                        samples.append((sx, sy, HIDE, pen_at(i, j)))
+                    else:
+                        samples.append((sx, sy, dp, pen_at(i, j)))
+                        last_col[i] = (sx, sy)
+                        if ridge and lod.ridge_register is not None:
+                            lod.ridge_register.add(sx, sy)
+                self._emit_runs(samples, feed)
+            for i in range(lod.ring_start, R + 1):  # rings
+                if i < int(R * lod.ring_skip_inner) and i % 2:
+                    continue
+                samples = []
+                for j in range(C + 1):
+                    sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
+                    lk = last_row[j]
+                    if lk is not None and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < gap2(i, j, "row"):
+                        samples.append((sx, sy, HIDE, pen_at(i, j)))
+                    else:
+                        samples.append((sx, sy, dp, pen_at(i, j)))
+                        last_row[j] = (sx, sy)
+                self._emit_runs(samples, feed)
+            return self
         if cfg is None:
             for i in range(R + 1):
                 self._emit_runs(

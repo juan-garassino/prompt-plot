@@ -13,7 +13,7 @@ from typing import List, Optional, Tuple
 
 from ...models import GCodeCommand
 from ..rng import SeededRNG
-from ..engine import Scene3D  # noqa: F401
+from ..engine import Occupancy, PolarLOD, Scene3D, ScreenThin  # noqa: F401
 from ..engine3d import _fit_out, _zbuf_terrain  # noqa: F401
 from ..kit import (  # noqa: F401
     Bounds,
@@ -1889,37 +1889,40 @@ def bauhaus_manifold(
     mesh_weave: float = 0.0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """NONLINEAR TRANSFORMATION — an MLP rendered by a from-scratch 3D pen-plotter
-    engine. A parametric petal-saddle (the nonlinear activation FOLDING space so
-    far-apart points meet) is projected isometrically and hidden-line removed via
-    a z-buffer, so near folds occlude far ones and it reads as a solid form.
-    Streamlines funnel from the INPUT plane through the fold to the OUTPUT plane.
-    All output is lines. Black surface, red fold-ridges + flow accents."""
+    """NONLINEAR TRANSFORMATION — an MLP as a folded petal-saddle, now a SHORT
+    declaration on the Scene3D engine: the surface renders with native polar
+    LOD (spider-web pole), depth-aware screen thinning in both families and
+    optional mesh weave; streamlines flow INPUT→OUTPUT with pause-resume crowd
+    control, cross-registered against the red fold-ridges; labels reserve
+    halos; the whole composition fill-fits the page. 3 pens: surface+planes
+    on the fine slot 0, red ridges/flow on 1, the rest black on 2."""
     import numpy as np
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
-    # three pens: surface mesh (fine 0.1) · red accents · the rest black (0.5)
-    surface = _pen(BLUE, colors)  # slot 0 → 0.1 pen
-    accent = _pen(PINK, colors)  # slot 1 → red 0.5
-    black = _pen(BLACK, colors)  # slot 2 → black 0.5
-    out: List[GCodeCommand] = []
+    surface_pen = _pen(BLUE, colors)
+    accent = _pen(PINK, colors)
+    black = _pen(BLACK, colors)
+    scene = Scene3D(
+        rng, bounds, feed=feed, tip=0.5, px=(240, 320), pad=4.0, fit="fill", fit_pad=4.0
+    )
+    out = scene.out
 
     # ---- 3D world → isometric screen -------------------------------------
     cx0, cy0 = x0 + 0.50 * W, y0 + 0.50 * H
-    a, cd, bwy = 0.29 * W, 0.070 * H, 0.195 * H  # lower camera: taller wy, shallower iso
-    Hy = 1.30  # plane height (INPUT +Hy top, OUTPUT −Hy bottom)
+    a, cd, bwy = 0.29 * W, 0.070 * H, 0.195 * H
+    Hy = 1.30
 
     def proj(wx, wy, wz):
         return (cx0 + (wx - wz) * a, cy0 + wy * bwy - (wx + wz) * cd)
 
     def depth(wx, wy, wz):
-        return (wx + wz) + 0.12 * wy  # larger = nearer (front)
+        return (wx + wz) + 0.12 * wy
 
     def surf(r, th):
         return fold * ((r ** 1.1) * math.cos(petals * th) + 0.20 * (r ** 2) * math.cos(2 * petals * th))
 
-    # ---- surface vertex grid --------------------------------------------
+    # ---- surface grid ------------------------------------------------------
     SX = np.zeros((nu + 1, nv + 1))
     SY = np.zeros((nu + 1, nv + 1))
     DEP = np.zeros((nu + 1, nv + 1))
@@ -1932,290 +1935,86 @@ def bauhaus_manifold(
             sx, sy = proj(wx, wy, wz)
             SX[i, j], SY[i, j], DEP[i, j] = sx, sy, depth(wx, wy, wz)
 
-    # ---- z-buffer (hidden-line): rasterize the surface quads -------------
-    PXW, PXH = 240, 320
-    pad = 4.0
-    sxmin, sxmax = float(SX.min()) - pad, float(SX.max()) + pad
-    symin, symax = float(SY.min()) - pad, float(SY.max()) + pad
-    zbuf = np.full((PXH, PXW), -1e18)
-    PX = (SX - sxmin) / (sxmax - sxmin) * (PXW - 1)
-    PY = (SY - symin) / (symax - symin) * (PXH - 1)
-    dspan = float(DEP.max() - DEP.min()) or 1.0
-    bias = 0.02 * dspan
+    scene.prime_scale(SX, SY)
+    occ = scene.occupancy(stream_sep)
 
-    def fill_tri(p0, p1, p2, d0, d1, d2):
-        minx = int(max(0, math.floor(min(p0[0], p1[0], p2[0]))))
-        maxx = int(min(PXW - 1, math.ceil(max(p0[0], p1[0], p2[0]))))
-        miny = int(max(0, math.floor(min(p0[1], p1[1], p2[1]))))
-        maxy = int(min(PXH - 1, math.ceil(max(p0[1], p1[1], p2[1]))))
-        if maxx < minx or maxy < miny:
-            return
-        den = (p1[1] - p2[1]) * (p0[0] - p2[0]) + (p2[0] - p1[0]) * (p0[1] - p2[1])
-        if abs(den) < 1e-9:
-            return
-        X, Y = np.meshgrid(np.arange(minx, maxx + 1), np.arange(miny, maxy + 1))
-        aa = ((p1[1] - p2[1]) * (X - p2[0]) + (p2[0] - p1[0]) * (Y - p2[1])) / den
-        bb = ((p2[1] - p0[1]) * (X - p2[0]) + (p0[0] - p2[0]) * (Y - p2[1])) / den
-        cc = 1 - aa - bb
-        inside = (aa >= -1e-4) & (bb >= -1e-4) & (cc >= -1e-4)
-        d = aa * d0 + bb * d1 + cc * d2
-        sub = zbuf[miny : maxy + 1, minx : maxx + 1]
-        m = inside & (d > sub)
-        sub[m] = d[m]
-
-    for i in range(nu):
-        for j in range(nv):
-            p00 = (PX[i, j], PY[i, j])
-            p10 = (PX[i + 1, j], PY[i + 1, j])
-            p11 = (PX[i + 1, j + 1], PY[i + 1, j + 1])
-            p01 = (PX[i, j + 1], PY[i, j + 1])
-            fill_tri(p00, p10, p11, DEP[i, j], DEP[i + 1, j], DEP[i + 1, j + 1])
-            fill_tri(p00, p11, p01, DEP[i, j], DEP[i + 1, j + 1], DEP[i, j + 1])
-
-    def visible(sx, sy, dep):
-        px = int((sx - sxmin) / (sxmax - sxmin) * (PXW - 1))
-        py = int((sy - symin) / (symax - symin) * (PXH - 1))
-        if px < 0 or px >= PXW or py < 0 or py >= PXH:
-            return True  # off-surface → nothing to occlude
-        return dep >= zbuf[py, px] - bias
-
-    # ---- text labels: positions fixed up front so the mesh leaves halos ---
+    # ---- text labels reserve halos up front --------------------------------
     xT = x0 + 0.02 * W
     wmax = _text_width(_spaced("LINEAR TRANSFORM"), 1.7)
     rx = min(x1 - 0.205 * W, x1 - wmax - 2.0)
     ci = proj(0.0, Hy, 0.0)
     co = proj(0.0, -Hy, 0.0)
-    labels = [
-        (_spaced("MLP"), xT, y1 - 8.0, 3.6, black),
-        (_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, black),
-        (_spaced("INPUT SPACE"), ci[0] - 0.10 * W, ci[1] + 14.0, 2.3, black),
-        (_spaced("OUTPUT SPACE"), co[0] - 0.10 * W, co[1] - 8.0, 2.3, black),
-        (_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, black),
-        (_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, accent),
-        (_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, accent),
-        (_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, black),
-    ]
-    text_boxes = []
-    for _txt, lx, ly, lh, _col in labels:
-        w = _text_width(_txt, lh)
-        text_boxes.append((lx - 1.4, ly - 0.5 * lh, lx + w + 1.4, ly + 1.35 * lh))
+    scene.halo_labels(
+        [
+            (_spaced("MLP"), xT, y1 - 8.0, 3.6, black),
+            (_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, black),
+            (_spaced("INPUT SPACE"), ci[0] - 0.10 * W, ci[1] + 14.0, 2.3, black),
+            (_spaced("OUTPUT SPACE"), co[0] - 0.10 * W, co[1] - 8.0, 2.3, black),
+            (_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, black),
+            (_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, accent),
+            (_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, accent),
+            (_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, black),
+        ]
+    )
 
-    def _blocked(sx, sy):
-        for bx0, by0, bx1, by1 in text_boxes:
-            if bx0 <= sx <= bx1 and by0 <= sy <= by1:
-                return True
-        return False
+    # ---- the fold, one declaration ------------------------------------------
+    ridge_every = max(1, nv // petals)
+    lod = PolarLOD(
+        ridge_every=ridge_every,
+        ridge_half=nv // (2 * petals),
+        ridge_register=occ,
+    )
+    PENS = np.full((nu + 1, nv + 1), surface_pen if surface_pen is not None else 0)
+    for j in range(nv + 1):
+        if lod.is_ridge(j):
+            PENS[:, j] = accent if accent is not None else 0
+    thin = ScreenThin(gap_mm=0.8, far_mult=2.0, weave=mesh_weave)
+    scene.surface(SX, SY, DEP, pens=PENS, lod=lod, thin=thin)
 
-    def emit_visible(samples):
-        # samples: list of (sx, sy, dep, pen); draw only visible runs
-        run, runpen = [], None
-        for sx, sy, dep, pen in samples:
-            if visible(sx, sy, dep) and not _blocked(sx, sy):
-                if runpen is None or pen == runpen:
-                    run.append((sx, sy))
-                    runpen = pen
-                else:
-                    if len(run) >= 2:
-                        out.extend(_poly(run, color=runpen, f=feed))
-                    run, runpen = [(sx, sy)], pen
-            else:
-                if len(run) >= 2:
-                    out.extend(_poly(run, color=runpen, f=feed))
-                run, runpen = [], None
-        if len(run) >= 2:
-            out.extend(_poly(run, color=runpen, f=feed))
-
-    # ---- draw the visible surface mesh (the fold, hidden-line removed) ----
-    # STRUCTURAL POLAR LOD — "reduce the mesh, don't decorate the knot": the
-    # polar grid converges at the pole, so radials thin toward the centre in
-    # halving levels (spider-web meshing: every 8th reaches the pole, every
-    # 4th stops at 30% radius, every 2nd at 55%, the rest at 75%), and the
-    # tiny centre rings are dropped / halved. Fold-ridge radials (the red
-    # creases) always run full length — they are the structure.
-    ridge_step = max(1, nv // petals)
-    half_step = nv // (2 * petals)
-
-    def _is_ridge(j):
-        return (j % ridge_step) < 1 or ((j - half_step) % ridge_step) < 1
-
-    def _start_i(j):
-        # five halving levels: only every 16th radial reaches the pole, and the
-        # finest level (odd j) exists only on the OPEN outer band — more detail
-        # exactly where the quads are widest
-        if _is_ridge(j) or j % 16 == 0:
-            return 2
-        if j % 8 == 0:
-            return max(2, int(nu * 0.30))
-        if j % 4 == 0:
-            return max(2, int(nu * 0.55))
-        if j % 2 == 0:
-            return max(2, int(nu * 0.75))
-        return max(2, int(nu * 0.88))
-
-    # paper-mm → pre-fit projection units (the whole piece is fit-scaled at the end)
-    _pw = float(SX.max() - SX.min()) or 1.0
-    _ph = float(SY.max() - SY.min()) or 1.0
-    _fit = min((W - 8.0) / _pw, (H - 8.0) / _ph) or 1.0
-
-    # LOCAL screen-space thinning in BOTH grid directions, DEPTH-AWARE: the far
-    # half of the surface (lowest view depth — "furthest from the viewer") gets
-    # a 2× coarser floor in I and J, atmospheric-perspective style; near faces
-    # keep full detail. Where any face turns edge-on, samples drop locally —
-    # silhouette bands instead of gray pile-ups. Ridges are never thinned.
-    mesh_gap_pre = 0.8 / _fit
-    HIDE = -1e19
-    dep_med = float(np.median(DEP))
-
-    # DIRECTION LEADERSHIP (the mesh weave): checkerboard patches over the
-    # (i, j) grid — in each patch ONE family leads (fine floor) and the other
-    # recedes (floor × mesh_weave), alternating like over/under in a textile.
-    # mesh_weave=0 → both directions equal (uniform grid).
-    _wbi = max(1, nu // 4)
-    _wbj = max(1, nv // 8)
-
-    def _rings_lead(i, j):
-        return ((i // _wbi) + (j // _wbj)) % 2 == 0
-
-    def _gap2(i, j, family):
-        g = mesh_gap_pre * (2.0 if DEP[i, j] < dep_med else 1.0)
-        if mesh_weave > 0:
-            leads = _rings_lead(i, j) if family == "ring" else not _rings_lead(i, j)
-            if not leads:
-                g *= mesh_weave
-        return g * g
-
-    last_ring = [None] * (nv + 1)  # per-radial memory for the ring family
-    last_rad = [None] * (nu + 1)  # per-ring memory for the radial family
-
-    # streamline occupancy (defined early: red fold-ridges register here too,
-    # so a red streamline can never shadow a red crease — cross-family gap)
-    sep_pre = stream_sep / _fit
-    socc: dict = {}
-
-    def _scell(sx, sy):
-        return (int(sx / sep_pre), int(sy / sep_pre))
-
-    for j in range(nv + 1):  # radial lines, pole-thinned / outer-densified
-        red = _is_ridge(j)
-        i0 = _start_i(j)
-        samples = []
-        for i in range(i0, nu + 1):
-            sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
-            lk = last_rad[i]
-            if (
-                not red
-                and lk is not None
-                and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < _gap2(i, j, "rad")
-            ):
-                samples.append((sx, sy, HIDE, surface))
-            else:
-                samples.append((sx, sy, dp, accent if red else surface))
-                last_rad[i] = (sx, sy)
-                if red:
-                    socc.setdefault(_scell(sx, sy), []).append((sx, sy))
-        emit_visible(samples)
-
-    for i in range(3, nu + 1):  # rings
-        if i < int(nu * 0.35) and i % 2:
-            continue
-        samples = []
-        for j in range(nv + 1):
-            sx, sy, dp = SX[i, j], SY[i, j], DEP[i, j]
-            lk = last_ring[j]
-            if lk is not None and (sx - lk[0]) ** 2 + (sy - lk[1]) ** 2 < _gap2(i, j, "ring"):
-                samples.append((sx, sy, HIDE, surface))
-            else:
-                samples.append((sx, sy, dp, surface))
-                last_ring[j] = (sx, sy)
-        emit_visible(samples)
-
-    # ---- streamlines: INPUT plane → through the fold → OUTPUT plane.
-    # Minimum separation AT GENERATION (Jobard–Lefebvre idiom) against both
-    # earlier streamlines AND the red fold-ridges (registered above).
-    def _scrowded(sx, sy):
-        ci, cj = _scell(sx, sy)
-        for di in (-1, 0, 1):
-            for dj in (-1, 0, 1):
-                for qx, qy in socc.get((ci + di, cj + dj), ()):
-                    if (qx - sx) ** 2 + (qy - sy) ** 2 < sep_pre * sep_pre:
-                        return True
-        return False
-
+    # ---- streamlines: INPUT plane → fold → OUTPUT plane (engine crowd control)
+    streams = []
     for s_i in range(nstream):
         th0 = 2 * math.pi * s_i / nstream
         r0 = 0.6 + 0.4 * rng.random()
-        samples = []
         pen = accent if s_i % 4 == 0 else black
+        line = []
         STEPS = 74
         for k in range(STEPS + 1):
-            s = k / STEPS
-            wy_lin = Hy - 2 * Hy * s
-            rr = r0 * (0.42 + 0.58 * abs(2 * s - 1))  # funnel to a ring, not a point
-            th = th0 + twist * s
-            blend = math.exp(-((s - 0.5) / 0.22) ** 2)
+            sfr = k / STEPS
+            wy_lin = Hy - 2 * Hy * sfr
+            rr = r0 * (0.42 + 0.58 * abs(2 * sfr - 1))
+            th = th0 + twist * sfr
+            blend = math.exp(-((sfr - 0.5) / 0.22) ** 2)
             wy = wy_lin * (1 - blend) + surf(min(1.0, rr), th) * blend
             wx, wz = rr * math.cos(th), rr * math.sin(th)
             sx, sy = proj(wx, wy, wz)
-            # PAUSE-AND-RESUME, not delete: a line goes silent through the
-            # congested stretch and resumes where space opens — every line
-            # keeps its course, the waist self-limits to its capacity
-            crowded = k > 6 and _scrowded(sx, sy)
-            samples.append((sx, sy, HIDE if crowded else depth(wx, wy, wz), pen))
-        kept = [(sx, sy) for sx, sy, d, _p in samples if d != HIDE]
-        if len(kept) < 6:
-            continue
-        for sx, sy in kept:
-            socc.setdefault(_scell(sx, sy), []).append((sx, sy))
-        emit_visible(samples)
+            line.append((sx, sy, depth(wx, wy, wz), pen))
+        streams.append(line)
+    scene.lines(streams, occupancy=occ, warmup=6, min_kept=6)
 
-    # ---- INPUT / OUTPUT planes: dot lattice + frame + droplines ----------
-    def plane(wy, above):
+    # ---- INPUT / OUTPUT planes: dot lattice + frame -------------------------
+    def plane(wy):
         g = 11
         for ia in range(g):
             for ib in range(g):
                 gu, gv = -1.15 + 2.3 * ia / (g - 1), -1.15 + 2.3 * ib / (g - 1)
                 sx, sy = proj(gu, wy, gv)
-                if _blocked(sx, sy):
+                if scene._blocked(sx, sy):
                     continue
-                out.extend(_dot(sx, sy, 0.45, color=surface, f=feed))
+                out.extend(_dot(sx, sy, 0.45, color=surface_pen, f=feed))
         corners = [(-1.15, -1.15), (1.15, -1.15), (1.15, 1.15), (-1.15, 1.15), (-1.15, -1.15)]
-        out.extend(_poly([proj(gu, wy, gv) for gu, gv in corners], color=surface, f=feed))
+        scene.poly([proj(gu, wy, gv) for gu, gv in corners], pen=surface_pen)
 
-    plane(Hy, True)
-    plane(-Hy, False)
-    for dl in range(10):  # a few vertical droplines through the ambient volume
+    plane(Hy)
+    plane(-Hy)
+    for dl in range(10):  # dashed droplines through the ambient volume
         gu = -1.0 + 2.0 * rng.random()
         gv = -1.0 + 2.0 * rng.random()
-        seg = []
-        for k in range(0, 21, 2):
-            wy = Hy - 2 * Hy * k / 20
-            p = proj(gu, wy, gv)
-            seg.append(p)
+        seg = [proj(gu, Hy - 2 * Hy * k / 20, gv) for k in range(0, 21, 2)]
         for k in range(0, len(seg) - 1, 2):
-            if _blocked(*seg[k]) or _blocked(*seg[k + 1]):
-                continue
-            out += _poly([seg[k], seg[k + 1]], color=black, f=feed)
+            scene.poly([seg[k], seg[k + 1]], pen=black)
 
-    # ---- text labels (drawn last, in the mesh halos) ---------------------
-    for txt, lx, ly, lh, col in labels:
-        out += _stroke_text(txt, lx, ly, lh, color=col, f=feed)
-
-    # ---- fit the whole composition uniformly into the drawable area ------
-    pts_x = [c.x for c in out if c.x is not None]
-    pts_y = [c.y for c in out if c.y is not None]
-    if pts_x and pts_y:
-        bx0, bx1, by0, by1 = min(pts_x), max(pts_x), min(pts_y), max(pts_y)
-        bw, bh = (bx1 - bx0) or 1.0, (by1 - by0) or 1.0
-        pad = 4.0
-        s = min((W - 2 * pad) / bw, (H - 2 * pad) / bh)
-        ox = x0 + (W - bw * s) / 2.0 - bx0 * s
-        oy = y0 + (H - bh * s) / 2.0 - by0 * s
-        for c in out:
-            if c.x is not None:
-                c.x = round(c.x * s + ox, 3)
-            if c.y is not None:
-                c.y = round(c.y * s + oy, 3)
-    return out
+    return scene.render()
 
 
 
