@@ -13,6 +13,7 @@ from typing import List, Optional, Tuple
 
 from ...models import GCodeCommand
 from ..rng import SeededRNG
+from ..engine import Scene3D  # noqa: F401
 from ..engine3d import _fit_out, _zbuf_terrain  # noqa: F401
 from ..kit import (  # noqa: F401
     Bounds,
@@ -2456,7 +2457,10 @@ def bauhaus_locality(
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     accent, black = _pen(PINK, colors), _pen(BLACK, colors)
-    out: List[GCodeCommand] = []
+    # Scene3D renders the terrains with native anti-crowding; `out` aliases the
+    # scene buffer so every append keeps its historical draw order.
+    scene = Scene3D(rng, bounds, feed=feed, px=(230, 180), fit="rescue")
+    out = scene.out
 
     LW, DX, DY = 0.50 * W, 0.24 * W, 0.065 * H
     gap, STAGGER_X = 0.150 * H, 0.045 * W
@@ -2509,7 +2513,7 @@ def bauhaus_locality(
                 SX[iu, jv], SY[iu, jv], DEP[iu, jv] = p[0], p[1], dep(i, v, z)
                 if top and math.hypot(u - pun, v - pvn) < 0.16:
                     PENV[iu, jv] = accent if accent is not None else 0
-        _zbuf_terrain(out, SX, SY, DEP, feed=feed, PENV=PENV, PXW=230, PXH=180)
+        scene.surface(SX, SY, DEP, pens=PENV)
 
     # top-layer object contours (faint black, skip the crimson cap)
     top = layers - 1
@@ -2569,7 +2573,7 @@ def bauhaus_locality(
     out += type_block(["CNN"], xT, y1 - 6.0, height=4.2, pen=black, underline=False, f=feed)
     out += _stroke_text(_spaced("FROM PIXELS TO MEANING"), xT, y1 - 16.0, 2.4, color=black, f=feed)
     out += scale_footer(bounds, text="M 1:80", pen=black, height=2.4, f=feed)
-    return _fit_out(out, bounds)
+    return scene.render()
 
 
 
@@ -2609,7 +2613,10 @@ def bauhaus_relevance(
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     blue, red, green, blk = 0, 1, 2, 3
-    out: List[GCodeCommand] = []
+    # Scene3D renders the basin with native anti-crowding; `out` aliases the
+    # scene buffer so every append keeps its historical draw order.
+    scene = Scene3D(rng, bounds, feed=feed, px=(230, 310), fit="rescue")
+    out = scene.out
 
     # 1. real attention (single source of truth)
     S = np.asarray(_attention_matrix(rng, tokens, head, temp=tau, causal=False, weights=weights, block=block, return_scores=True), dtype=float)
@@ -2689,7 +2696,7 @@ def bauhaus_relevance(
     PV[Bg > 0.42] = blue
     if float((PV == blue).mean()) > 0.15:
         PV[(PV == blue) & (Bg < 0.55)] = blk
-    _zbuf_terrain(out, SX, SY, DEP, feed=feed, PENV=PV, PXW=230, PXH=310)
+    scene.surface(SX, SY, DEP, pens=PV)
 
     # 6. softmax rings on the basin wall (green, inside the footprint)
     gN = 90
@@ -2752,5 +2759,5 @@ def bauhaus_relevance(
     out += _stroke_text(_spaced("ONE QUERY BENDS THE FIELD OF KEYS"), xL, y1 - 21.0, 1.6, color=blk, f=feed)
     out += swatch_bar(xL, y1 - 27.0, [blue, red, green, blk], size=2.4, f=feed)
     out += scale_footer(bounds, text="A = SOFTMAX(QK T)", pen=blk, height=2.4, f=feed)
-    return _fit_out(out, bounds)
+    return scene.render()
 
