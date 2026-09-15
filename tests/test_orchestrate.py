@@ -159,8 +159,10 @@ class TestStreamChunk:
     async def test_counts_failures(self):
         plotter = Mock()
         plotter.send_command = AsyncMock(side_effect=[True, False, True])
+        # pen-correct stroke so the pen-state guardrail is a no-op (no injected
+        # M3/M5); this test is about counting successes/failures, not pen logic
         cmds = [
-            GCodeCommand(command="G0", x=10.0, y=10.0),
+            GCodeCommand(command="M3", s=1000),
             GCodeCommand(command="G1", x=20.0, y=20.0),
             GCodeCommand(command="M5"),
         ]

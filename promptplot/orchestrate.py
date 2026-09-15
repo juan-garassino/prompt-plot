@@ -255,16 +255,54 @@ async def stream_chunk(
     plotter: BasePlotter,
     on_pause: Optional[Callable[[int, int], Any]] = None,
     verbose: bool = False,
+    enforce_pen_state: bool = True,
+    settle_dwell: float = 0.3,
 ) -> Tuple[int, int]:
-    """Stream a chunk to the plotter, then optionally invoke on_pause."""
+    """Stream a chunk to the plotter, then optionally invoke on_pause.
+
+    GUARDRAIL (``enforce_pen_state``, on by default): the pen convention is
+    ``G0`` = rapid travel (pen must be UP) and ``G1`` = draw (pen must be DOWN).
+    This tracks pen state from ``M3``/``M5`` and, if a command would violate it,
+    injects the missing lift/lower (plus a short ``settle_dwell``) BEFORE the
+    move. So a travel can never be inked and a draw can never float — even if the
+    upstream g-code forgot an ``M5``/``M3`` or mis-ordered a stroke. The pen
+    convention is load-bearing: never emit ``G1`` for a pen-up move (use ``G0``),
+    or the guardrail will (correctly) drop the pen onto it.
+    """
     success = 0
     errors = 0
     total = len(commands)
+    pen_down = False  # plotter homes/enters chunks pen-up
+
+    async def _send(g: str) -> bool:
+        if g == "COMPLETE":
+            return True
+        return await plotter.send_command(g)
+
     for i, cmd in enumerate(commands):
         gcode = cmd.to_gcode()
         if gcode == "COMPLETE":
             continue
-        ok = await plotter.send_command(gcode)
+        name = cmd.command
+        if enforce_pen_state:
+            if name == "G0" and cmd.x is not None and pen_down:
+                # travel with pen down → lift + settle first
+                await _send(GCodeCommand(command="M5").to_gcode())
+                if settle_dwell > 0:
+                    await _send(GCodeCommand(command="G4", p=settle_dwell).to_gcode())
+                pen_down = False
+            elif name == "G1" and cmd.x is not None and not pen_down:
+                # draw with pen up → lower + settle first
+                await _send(GCodeCommand(command="M3", s=1000).to_gcode())
+                if settle_dwell > 0:
+                    await _send(GCodeCommand(command="G4", p=settle_dwell).to_gcode())
+                pen_down = True
+        ok = await _send(gcode)
+        if enforce_pen_state:
+            if name == "M3":
+                pen_down = True
+            elif name == "M5":
+                pen_down = False
         if ok:
             success += 1
         else:
@@ -284,7 +322,23 @@ def split_color_layers(program: GCodeProgram) -> List[Tuple[int, List[GCodeComma
 
     Non-drawing commands (M5, travel, dwells) with no color attach to the
     current layer. Returns ``[(color_index, commands), ...]`` in draw order.
+
+    GUARDRAIL: on a colour switch, the trailing pen-up block (the M5 + G0/G1
+    travel + dwells that reposition the head for the *next* colour's first
+    stroke) is moved to the FRONT of the new layer. Without this, streaming a
+    single layer on its own would begin with ``M3`` (pen down) at whatever
+    position the head is parked at and drag a line to the first real stroke —
+    the pen never gets a chance to travel there with the pen up. Keeping the
+    repositioning travel attached to the layer it serves makes every layer
+    safe to stream in isolation (per-pen swaps) through any code path.
+    Concatenating the returned layers in order reproduces the input exactly.
     """
+    def _is_penup_tail(cmd: GCodeCommand) -> bool:
+        # travel / lift / dwell that carries no colour → belongs to the NEXT stroke
+        return cmd.command in ("M5", "G0", "G4") or (
+            cmd.command == "G1" and getattr(cmd, "color", None) is None
+        )
+
     layers: List[Tuple[int, List[GCodeCommand]]] = []
     current_color: Optional[int] = None
     current: List[GCodeCommand] = []
@@ -292,13 +346,34 @@ def split_color_layers(program: GCodeProgram) -> List[Tuple[int, List[GCodeComma
         c = getattr(cmd, "color", None)
         if c is not None and c != current_color:
             if current and current_color is not None:
-                layers.append((current_color, current))
-                current = []
+                # peel the trailing pen-up block into the incoming layer
+                k = len(current)
+                while k > 0 and _is_penup_tail(current[k - 1]):
+                    k -= 1
+                head, tail = current[:k], current[k:]
+                layers.append((current_color, head))
+                current = tail
             current_color = c
         current.append(cmd)
     if current:
         layers.append((current_color if current_color is not None else 0, current))
     return layers
+
+
+def _first_drawn_point(
+    cmds: List[GCodeCommand],
+) -> Optional[Tuple[float, float]]:
+    """Position where the pen first goes DOWN in ``cmds`` (the coordinate that
+    precedes the first ``M3``). Returns None if the chunk never lowers the pen
+    or has no positioning move — used to guarantee a pen-up travel before the
+    first stroke so no layer can drag from the park/home position."""
+    last_xy: Optional[Tuple[float, float]] = None
+    for c in cmds:
+        if c.command == "M3":
+            return last_xy
+        if c.x is not None:
+            last_xy = (c.x, c.y)
+    return None
 
 
 async def trace_frame(plotter: BasePlotter, paper, laps: int = 1, dwell: float = 0.4) -> None:
@@ -360,6 +435,15 @@ async def stream_pen_layers(
                     await result
             elif pause:
                 await _wait_for_keypress(f"  ↻ Swap to '{name}' pen, then press Enter...")
+        # GUARDRAIL: never drop the pen before it has travelled to the first
+        # stroke. Lift, then rapid pen-up to the layer's first drawn point so a
+        # leading M3 can never drag a line from the park/home position.
+        first_xy = _first_drawn_point(cmds)
+        if first_xy is not None:
+            await plotter.send_command(GCodeCommand(command="M5").to_gcode())
+            await plotter.send_command(
+                GCodeCommand(command="G0", x=float(first_xy[0]), y=float(first_xy[1])).to_gcode()
+            )
         if verbose:
             print(f"── color layer {i + 1}/{len(layers)}: {name} ({len(cmds)} cmds) ──", flush=True)
         ok, err = await stream_chunk(cmds, plotter, verbose=verbose)
