@@ -2545,23 +2545,24 @@ def bauhaus_relevance(
     block: int = 0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """ATTENTION AS TOPOGRAPHY — the WHOLE mechanism as an exploded vertical
-    stack (the machine has several parts, not one): 1 THE CANVAS where Q (red)
-    and K (blue) arrive · 2 THE INTERFERENCE — Q and K landscapes meet, rings
-    of interference radiating from the resonance point · 3 SOFTMAX contours ·
-    4 THE ATTENTION MAP after softmax (green) · 5 THE VALUE LANDSCAPE ·
-    6 OUTPUT — V reshaped where attention mass sits, plus the z vector.
-    Driven by a real attention row (checkpoint/GPT-2 via ``weights``)."""
+    """ATTENTION AS TOPOGRAPHY — the mechanism as a tight ISOMETRIC diamond
+    stack: 1 QUERY + KEY SPACES (one shared sheet, Q and K as two red wells) ·
+    2 DOT PRODUCT (the similarity landscape: black central peak flanked by red
+    Q/K peaks, red swoop arrows falling in) · 3 SOFTMAX (contour rings
+    tightening to the winner) · 4 VALUES (a full red rolling terrain) ·
+    5 OUTPUT (green attended terrain, one dominant contextualized peak).
+    Dashed anchor droplines tie the Q and K sites through every stage. Driven
+    by a real attention row (checkpoint/GPT-2 via ``weights``)."""
     import numpy as np
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     blue, red, green, blk = 0, 1, 2, 3
-    scene = Scene3D(rng, bounds, feed=feed, px=(230, 200), fit="rescue")
+    scene = Scene3D(rng, bounds, feed=feed, px=(230, 210), fit="rescue")
     out = scene.out
-    ns = max(24, (nu * 2) // 3)  # per-stage grid (6 surfaces)
+    ns = max(26, nu // 2)
 
-    # ---- real attention row (single source of truth)
+    # real attention row → relative Q/K energy
     S = np.asarray(
         _attention_matrix(rng, tokens, head, temp=tau, causal=False, weights=weights, block=block, return_scores=True),
         dtype=float,
@@ -2570,70 +2571,20 @@ def bauhaus_relevance(
     qi = int(np.argmax(S.max(axis=1)))
     w = np.exp(S[qi] / tau)
     w = w / w.sum()
+    k_amp = 0.75 + 0.5 * float(max(w))  # K side scaled by the winning weight
 
-    # ---- key sites + the resonance point
-    order = list(np.argsort(-w))
-    kx = [rng.uniform(-0.8, 0.8) for _ in range(n_keys)]
-    kz = [rng.uniform(-0.8, 0.8) for _ in range(n_keys)]
-    q_site = (0.30 + rng.uniform(-0.05, 0.05), -0.12 + rng.uniform(-0.05, 0.05))
-    slots = sorted(range(n_keys), key=lambda m: math.hypot(kx[m] - q_site[0], kz[m] - q_site[1]))
-    wk = [0.02] * n_keys
-    for rank, tok in enumerate(order[:n_keys]):
-        wk[slots[rank]] = float(w[tok])
-    for m in range(n_keys):
-        kx[m] += lean * wk[m] * (q_site[0] - kx[m])
-        kz[m] += lean * wk[m] * (q_site[1] - kz[m])
-    kmain = sorted(range(n_keys), key=lambda m: -wk[m])[: max(3, topk)]
+    qw, kw = (-0.46, -0.12), (0.50, 0.16)  # Q and K sites (shared sheet coords)
+    mid = ((qw[0] + kw[0]) / 2.0, (qw[1] + kw[1]) / 2.0)
 
-    # ---- stage fields --------------------------------------------------
-    def f_keys(wx, wz):
-        return sum(
-            wk[m] * math.exp(-(((wx - kx[m]) ** 2 + (wz - kz[m]) ** 2) / (2 * sigma_k ** 2)))
-            for m in kmain
-        )
-
-    def f_q(wx, wz):
-        return math.exp(-(((wx - q_site[0]) ** 2 + (wz - q_site[1]) ** 2) / (2 * sigma_q ** 2)))
-
-    def f_qk(wx, wz):
-        # the interference: Q meets K, rings radiate from the resonance point
-        r = math.hypot(wx - q_site[0], wz - q_site[1])
-        ripple = 1.0 + 0.38 * math.cos(11.0 * r)
-        return (2.2 * f_keys(wx, wz) * (0.35 + 0.65 * f_q(wx, wz))) * ripple + 0.22 * f_q(wx, wz)
-
-    sig_a = 0.10 + 0.30 * tau
-
-    def f_attn(wx, wz):
-        # the attention map after softmax: smooth normalized mass at the winners
-        tot = sum(
-            wk[m] * math.exp(-(((wx - kx[m]) ** 2 + (wz - kz[m]) ** 2) / (2 * sig_a ** 2)))
-            for m in kmain
-        )
-        return tot / (max(wk[m] for m in kmain) or 1.0)
-
-    def f_v(wx, wz):
-        return 0.40 * (math.sin(2.2 * wx + 0.4) * math.cos(1.9 * wz) + 0.5 * math.sin(3.0 * wz + 1.1)) + 0.4
-
-    def f_out(wx, wz):
-        return f_v(wx, wz) - 0.9 * f_attn(wx, wz) * f_v(wx, wz) * 0.6 + 0.55 * f_attn(wx, wz)
-
-    # ---- exploded-stack projection --------------------------------------
-    cx = x0 + 0.52 * W
-    SXX, SXZ = 0.30 * W, 0.16 * W
-    SYX, SYZ, SYY = 0.050 * H, -0.058 * H, 0.052 * H
-
-    def proj(wx, wy, wz, cyc):
-        return (cx + wx * SXX + wz * SXZ, cyc + wx * SYX + wz * SYZ + wy * SYY)
-
-    def dep(wx, wy, wz):
-        return -wz + 0.05 * wy
-
-    n_stage = 6
-    cy_top, cy_bot = y1 - 0.115 * H, y0 + 0.135 * H
+    # ---- the diamond iso stack ------------------------------------------
+    cx = x0 + 0.50 * W
+    A, CD, HY = 0.205 * W, 0.050 * H, 0.055 * H
+    n_stage = 5
+    cy_top, cy_bot = y1 - 0.170 * H, y0 + 0.115 * H
     stepy = (cy_top - cy_bot) / (n_stage - 1)
     cyL = [cy_top - k * stepy for k in range(n_stage)]
 
-    def stage_surface(cyc, hfun, hscale, penfn=None, pen=blk):
+    def mk_sheet(cyc, hfun, hscale, penfn=None, pen=blk):
         SX = np.zeros((ns + 1, ns + 1))
         SY = np.zeros((ns + 1, ns + 1))
         DE = np.zeros((ns + 1, ns + 1))
@@ -2643,103 +2594,305 @@ def bauhaus_relevance(
             for j in range(ns + 1):
                 wz = -1 + 2 * j / ns
                 wy = hfun(wx, wz) * hscale
-                p = proj(wx, wy, wz, cyc)
-                SX[i, j], SY[i, j], DE[i, j] = p[0], p[1], dep(wx, wy, wz)
+                SX[i, j] = cx + (wx - wz) * A
+                SY[i, j] = cyc + wy * HY - (wx + wz) * CD
+                DE[i, j] = (wx + wz) + 0.12 * wy
                 if penfn is not None:
                     PV[i, j] = penfn(wx, wz)
         scene.surface(SX, SY, DE, pens=PV)
 
-    def stage_label(k, text):
-        p = proj(-1.28, 0, -0.4, cyL[k])
-        out.extend(_stroke_text(str(k + 1), p[0], p[1], 2.6, color=blk, f=feed))
-        out.extend(_stroke_text(_spaced(text), p[0] + 6.0, p[1], 1.6, color=blk, f=feed))
+    def at(cyc, wx, wz, wy=0.0, hs=0.0):
+        return (cx + (wx - wz) * A, cyc + wy * hs * HY - (wx + wz) * CD)
 
-    # ---- 1 THE CANVAS: flat grid, Q arrives red (left), K arrives blue (top)
-    gc = 14
-    for i in range(gc + 1):
-        wx = -1 + 2 * i / gc
-        scene.poly([proj(wx, 0, -1 + 2 * j / gc, cyL[0]) for j in range(gc + 1)], pen=blk)
-    for j in range(gc + 1):
-        wz = -1 + 2 * j / gc
-        scene.poly([proj(-1 + 2 * i / gc, 0, wz, cyL[0]) for i in range(gc + 1)], pen=blk)
-    for t in range(3):
-        e = proj(-1.02, 0, -0.5 + 0.4 * t, cyL[0])
-        s2 = proj(-1.30, 0, -0.5 + 0.4 * t, cyL[0])
-        scene.poly([s2, e], pen=red)
-        scene.poly([(e[0] - 2.4, e[1] + 1.4), e, (e[0] - 2.4, e[1] - 1.4)], pen=red)
-        e = proj(-0.5 + 0.4 * t, 0, 1.02, cyL[0])
-        s2 = proj(-0.5 + 0.4 * t, 0, 1.30, cyL[0])
-        scene.poly([s2, e], pen=blue)
-        scene.poly([(e[0] - 2.4, e[1] + 1.4), e, (e[0] - 2.4, e[1] - 1.4)], pen=blue)
-    stage_label(0, "THE CANVAS   Q AND K ARRIVE")
+    def g2(wx, wz, c, sig):
+        return math.exp(-(((wx - c[0]) ** 2 + (wz - c[1]) ** 2) / (2 * sig * sig)))
 
-    # ---- 2 THE INTERFERENCE: Q and K landscapes meet, rings radiate
-    crest2 = 0.55
+    # ---- fields ----------------------------------------------------------
+    def s1(wx, wz):  # two wells in a flat sheet
+        return -0.95 * g2(wx, wz, qw, 0.17) - 0.95 * g2(wx, wz, kw, 0.17)
 
+    def s2(wx, wz):  # similarity landscape
+        return (
+            1.05 * g2(wx, wz, mid, 0.20)
+            + 0.62 * g2(wx, wz, qw, 0.16)
+            + 0.62 * k_amp * g2(wx, wz, kw, 0.16)
+            + 0.10 * rng.fbm(wx * 2.0 + 3.7, wz * 2.0 + 8.1)
+        )
+
+    def s_attn(wx, wz):  # sharpened winner
+        return math.exp((s2(wx, wz) - 1.0) / max(0.15, tau * 0.55))
+
+    def s4(wx, wz):  # V: rolling content terrain
+        return (
+            0.40 * (math.sin(2.3 * wx + 0.5) * math.cos(1.8 * wz) + 0.5 * math.sin(2.8 * wz + 1.2))
+            + 0.42 * rng.fbm(wx * 1.7 + 5.5, wz * 1.7 + 2.2)
+            + 0.30
+        )
+
+    def s5(wx, wz):  # attended output: V pulled up where attention mass sits
+        return 0.35 * s4(wx, wz) + 1.05 * s_attn(wx, wz) * (0.4 + 0.6 * s4(wx, wz))
+
+    # ---- halo labels (stage numbers left, formulas right, sub-notes) ------
+    Lx = x0 + 0.020 * W
+    Rx = x1 - 0.235 * W
+    scene.halo_labels(
+        [
+            ("1", Lx, cyL[0] + 0.035 * H, 2.6, blk),
+            (_spaced("QUERY + KEY SPACES"), Lx + 6, cyL[0] + 0.035 * H, 1.7, blk),
+            (_spaced("Q QUERIES"), cx - 0.33 * W, cyL[0] + 0.065 * H, 1.7, red),
+            (_spaced("K KEYS"), cx + 0.21 * W, cyL[0] + 0.065 * H, 1.7, red),
+            ("2", Lx, cyL[1] + 0.035 * H, 2.6, blk),
+            (_spaced("DOT PRODUCT"), Lx + 6, cyL[1] + 0.035 * H, 1.7, blk),
+            (_spaced("Q . K T"), Rx, cyL[1] + 0.045 * H, 1.8, blk),
+            (_spaced("SIMILARITY"), Rx, cyL[1] - 0.030 * H, 1.4, blk),
+            (_spaced("LANDSCAPE"), Rx, cyL[1] - 0.048 * H, 1.4, blk),
+            ("3", Lx, cyL[2] + 0.030 * H, 2.6, blk),
+            (_spaced("SOFTMAX"), Lx + 6, cyL[2] + 0.030 * H, 1.7, blk),
+            (_spaced("SOFTMAX QK T"), Rx, cyL[2] + 0.040 * H, 1.8, blk),
+            (_spaced("NORMALIZED"), Rx, cyL[2] + 0.020 * H, 1.4, blk),
+            (_spaced("ATTENTION WEIGHTS"), Rx, cyL[2] + 0.002 * H, 1.4, blk),
+            ("4", Lx, cyL[3] + 0.030 * H, 2.6, blk),
+            (_spaced("VALUES V"), Lx + 6, cyL[3] + 0.030 * H, 1.7, blk),
+            (_spaced("V VALUES"), Rx, cyL[3] + 0.040 * H, 1.8, red),
+            (_spaced("CONTENT TO"), Rx, cyL[3] - 0.030 * H, 1.4, blk),
+            (_spaced("BE MIXED"), Rx, cyL[3] - 0.048 * H, 1.4, blk),
+            ("5", Lx, cyL[4] + 0.030 * H, 2.6, blk),
+            (_spaced("OUTPUT"), Lx + 6, cyL[4] + 0.030 * H, 1.7, blk),
+            (_spaced("SOFTMAX QK T V"), Rx, cyL[4] + 0.040 * H, 1.8, blk),
+            (_spaced("ATTENDED OUTPUT"), Rx, cyL[4] + 0.020 * H, 1.4, green),
+            (_spaced("TOKENS"), cx + 0.26 * W, cyL[0] + 0.028 * H, 1.3, blk),
+            (_spaced("DIMENSIONS"), cx + 0.27 * W, cyL[0] - 0.020 * H, 1.3, blk),
+        ]
+    )
+
+    # ---- stage 1: shared sheet with the two wells
+    def pen1(wx, wz):
+        return red if (g2(wx, wz, qw, 0.17) > 0.30 or g2(wx, wz, kw, 0.17) > 0.30) else blk
+
+    mk_sheet(cyL[0], s1, 0.9, penfn=pen1)
+
+    # red swoop arrows: wells → the similarity peaks
+    def swoop(p0, p1, bend, pen):
+        mx, my = (p0[0] + p1[0]) / 2 + bend, (p0[1] + p1[1]) / 2
+        pts = []
+        for t in range(21):
+            u = t / 20.0
+            x = (1 - u) ** 2 * p0[0] + 2 * (1 - u) * u * mx + u * u * p1[0]
+            y = (1 - u) ** 2 * p0[1] + 2 * (1 - u) * u * my + u * u * p1[1]
+            pts.append((x, y))
+        scene.poly(pts, pen=pen)
+        ux, uy = pts[-1][0] - pts[-2][0], pts[-1][1] - pts[-2][1]
+        L = math.hypot(ux, uy) or 1.0
+        ux, uy = ux / L, uy / L
+        nxv, nyv = -uy, ux
+        b = pts[-1]
+        scene.poly([(b[0] - (ux + nxv * 0.5) * 2.6, b[1] - (uy + nyv * 0.5) * 2.6), b,
+                    (b[0] - (ux - nxv * 0.5) * 2.6, b[1] - (uy - nyv * 0.5) * 2.6)], pen=pen)
+
+    swoop(at(cyL[0], *qw), at(cyL[1], qw[0] * 0.7, qw[1] * 0.7), -9.0, red)
+    swoop(at(cyL[0], *kw), at(cyL[1], kw[0] * 0.7, kw[1] * 0.7), 9.0, red)
+
+    # ---- stage 2: similarity landscape (red side peaks, black centre)
     def pen2(wx, wz):
-        if f_q(wx, wz) > 0.55 and f_keys(wx, wz) < 0.10:
-            return red
-        if f_keys(wx, wz) > 0.16:
-            return blue
-        return blk
+        side = max(g2(wx, wz, qw, 0.16), k_amp * g2(wx, wz, kw, 0.16))
+        return red if side > 0.42 and g2(wx, wz, mid, 0.20) < 0.55 else blk
 
-    stage_surface(cyL[1], f_qk, 0.55, penfn=pen2)
-    stage_label(1, "THE INTERFERENCE   Q MEETS K")
+    mk_sheet(cyL[1], s2, 0.85, penfn=pen2)
 
-    # ---- 3 SOFTMAX: contour rings of the sharpened mass
-    gN = 72
+    # ---- stage 3: softmax rings tightening to the winner
+    gN = 64
     xs = [-1 + 2 * i / gN for i in range(gN + 1)]
     zs = [-1 + 2 * j / gN for j in range(gN + 1)]
-    P = [[f_attn(xs[i], zs[j]) for i in range(gN + 1)] for j in range(gN + 1)]
-    for lv in range(1, 7):
-        iso = lv / 7.0
+    P = [[s_attn(xs[i], zs[j]) for i in range(gN + 1)] for j in range(gN + 1)]
+    pmax = max(max(row) for row in P) or 1.0
+    for lv in range(1, 10):
+        iso = (lv / 10.0) ** 1.6 * pmax
         for ch in _chain_segments(_marching_squares(P, xs, zs, iso)):
             if len(ch) < 5:
                 continue
-            pts = [proj(wx, 0, wz, cyL[2]) for (wx, wz) in ch]
-            if len(pts) >= 2:
-                scene.poly(pts, pen=blk)
-    stage_label(2, "SOFTMAX")
+            pts = [at(cyL[2], wx, wz) for (wx, wz) in ch]
+            scene.poly(pts, pen=blk)
+    # sheet border diamond
+    br = [at(cyL[2], -1, -1), at(cyL[2], 1, -1), at(cyL[2], 1, 1), at(cyL[2], -1, 1), at(cyL[2], -1, -1)]
+    scene.poly(br, pen=blk)
 
-    # ---- 4 THE ATTENTION MAP after softmax (green)
-    stage_surface(cyL[3], f_attn, 0.85, pen=green)
-    stage_label(3, "THE ATTENTION MAP")
+    # blue dashed arrows: weights falling onto V
+    for wxa in (-0.5, -0.15, 0.2, 0.55):
+        p0 = at(cyL[2], wxa, 0.1)
+        p1 = at(cyL[3], wxa, 0.1)
+        n = 8
+        for q in range(0, n, 2):
+            a = (p0[0], p0[1] + (p1[1] - p0[1]) * q / n)
+            b = (p0[0], p0[1] + (p1[1] - p0[1]) * (q + 1) / n)
+            scene.poly([a, b], pen=blue)
+        scene.poly([(p1[0] - 1.4, p1[1] + 2.6), p1, (p1[0] + 1.4, p1[1] + 2.6)], pen=blue)
 
-    # ---- 5 THE VALUE LANDSCAPE
-    stage_surface(cyL[4], f_v, 0.55, pen=blk)
-    stage_label(4, "THE VALUE LANDSCAPE")
+    # ---- stage 4: VALUES — full red rolling terrain
+    mk_sheet(cyL[3], s4, 0.75, pen=red)
 
-    # ---- 6 OUTPUT: V reshaped by attention (green where the mass sits) + z
-    def pen6(wx, wz):
-        return green if f_attn(wx, wz) > 0.45 else blk
+    # ---- stage 5: OUTPUT — green attended terrain
+    mk_sheet(cyL[4], s5, 0.80, pen=green)
 
-    stage_surface(cyL[5], f_out, 0.55, penfn=pen6)
-    stage_label(5, "OUTPUT")
-    # the z vector: the output row as a tiny bar glyph, bottom left
-    zbx, zby = x0 + 0.05 * W, y0 + 0.055 * H
-    sw = sorted(w, reverse=True)[:14]
-    mw = max(sw) or 1.0
-    for i, val in enumerate(sw):
-        out += _poly([(zbx + i * 2.0, zby), (zbx + i * 2.0, zby + 10.0 * val / mw)], color=green, f=feed)
-    out += _stroke_text(_spaced("Z"), zbx, zby - 4.5, 1.8, color=blk, f=feed)
+    # dashed anchor droplines through the whole stack (Q site and K site)
+    for site in (qw, kw):
+        for k in range(n_stage - 1):
+            p0 = at(cyL[k], *site)
+            p1 = at(cyL[k + 1], *site)
+            n = 9
+            for q in range(0, n, 2):
+                a = (p0[0], p0[1] + (p1[1] - p0[1]) * q / n)
+                b = (p0[0], p0[1] + (p1[1] - p0[1]) * (q + 1) / n)
+                scene.poly([a, b], pen=blk)
 
-    # ---- droplines tying the resonance point through the stack
-    for k in range(n_stage - 1):
-        p0 = proj(q_site[0], 0, q_site[1], cyL[k])
-        p1 = proj(q_site[0], 0, q_site[1], cyL[k + 1])
-        seg = []
-        NSEG = 7
-        for t in range(NSEG + 1):
-            seg.append((p0[0] + (p1[0] - p0[0]) * t / NSEG, p0[1] + (p1[1] - p0[1]) * t / NSEG))
-        for a in range(0, NSEG, 2):
-            scene.poly([seg[a], seg[a + 1]], pen=blk)
-
-    # ---- furniture
-    xL = x0 + 0.02 * W
-    out += type_block(["ATTENTION"], xL, y1 - 6.0, height=3.6, pen=blk, underline=False, f=feed)
-    out += _stroke_text(_spaced("AS TOPOGRAPHY"), xL, y1 - 15.0, 3.0, color=blk, f=feed)
-    out += _stroke_text(_spaced("QUERIES SHAPE CONTENT THROUGH CONTEXT"), xL, y1 - 21.0, 1.6, color=blk, f=feed)
-    out += swatch_bar(xL, y1 - 27.0, [blue, red, green, blk], size=2.4, f=feed)
+    # ---- title
+    out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.13 * W, y1 - 0.035 * H, 3.0, color=blk, f=feed)
+    out += _stroke_text(_spaced("QUERIES SHAPE CONTENT THROUGH CONTEXT"), x0 + 0.17 * W, y1 - 0.062 * H, 1.6, color=blk, f=feed)
     out += scale_footer(bounds, text="A = SOFTMAX(QK T)  Z = AV", pen=blk, height=2.4, f=feed)
     return scene.render()
 
+
+
+
+# ---------------------------------------------------------------------------
+# LSTM — GATED MEMORY DYNAMICS (gate mandala flavor: cell-state hub, four gate
+# discs, log-spiral bundles; sibling of bauhaus_memory's figure-8)
+# ---------------------------------------------------------------------------
+
+
+def lstm_gates(
+    rng: SeededRNG,
+    bounds: Bounds,
+    colors: int = 3,
+    bundle: int = 14,
+    orbits: int = 3,
+    sep: float = 1.6,
+    feed: int = 2200,
+) -> List[GCodeCommand]:
+    """GATED MEMORY DYNAMICS — the LSTM as a gate mandala: the CELL STATE hub
+    with four gate discs (FORGET, INPUT, CANDIDATE, OUTPUT), each holding a
+    0→1 slider; LOGARITHMIC-SPIRAL bundles stream between hub and gates
+    (memory flowing through gates), crowd-controlled natively by the engine so
+    bundles tighten at the rims without knotting. Dashed orbits + time axes.
+    Black + crimson; sibling flavor of the figure-8 ``bauhaus_memory``."""
+    x0, y0, x1, y1 = bounds
+    W, H = x1 - x0, y1 - y0
+    accent, black = _pen(PINK, colors), _pen(BLACK, colors)
+    scene = Scene3D(rng, bounds, feed=feed, fit="rescue", tip=0.5)
+    out = scene.out
+
+    cx, cy = x0 + 0.50 * W, y0 + 0.545 * H
+    r_cell = 0.085 * W
+    r_gate = 0.075 * W
+    D = 0.335 * W  # hub→gate distance
+    gates = [
+        ("FORGET GATE", math.radians(133), 0.15),
+        ("INPUT GATE", math.radians(42), 0.85),
+        ("CANDIDATE", math.radians(215), 0.75),
+        ("OUTPUT GATE", math.radians(300), 0.9),
+    ]
+
+    # labels first: halos carve through bundles and orbits
+    labels = [
+        (_spaced("CELL STATE"), cx - 0.088 * W, cy + 2.2, 1.9, black),
+        (_spaced("MEMORY IN TIME"), cx - 0.082 * W, cy - 5.4, 1.4, black),
+        (_spaced("C T-1"), x0 + 0.035 * W, cy + 2.4, 1.8, black),
+        (_spaced("C T"), x1 - 0.075 * W, cy + 2.4, 1.8, black),
+        (_spaced("TIME"), cx + 3.0, y1 - 0.045 * H, 1.8, black),
+        (_spaced("H T   OUTPUT"), cx + 3.0, y0 + 0.075 * H, 1.8, black),
+    ]
+    for name, ang, _v in gates:
+        gx, gy = cx + D * math.cos(ang), cy + D * math.sin(ang)
+        labels.append((_spaced(name), gx - 0.066 * W, gy + 3.4, 1.5, black))
+    scene.halo_labels(labels)
+
+    # dashed orbit circles + scattered nodes
+    for e in range(orbits):
+        orad = D * (0.72 + 0.34 * e) + rng.uniform(-3, 3)
+        seg = []
+        for k in range(301):
+            a = 2 * math.pi * k / 300
+            px, py = cx + orad * math.cos(a), cy + orad * math.sin(a)
+            if not (x0 + 3 < px < x1 - 3 and y0 + 3 < py < y1 - 3):
+                if len(seg) >= 2:
+                    scene.poly(seg, pen=black)
+                seg = []
+                continue
+            if k % 8 < 4:
+                seg.append((px, py))
+            elif len(seg) >= 2:
+                scene.poly(seg, pen=black)
+                seg = []
+            else:
+                seg = []
+        if len(seg) >= 2:
+            scene.poly(seg, pen=black)
+    for _ in range(10):
+        a = rng.uniform(0, 2 * math.pi)
+        orad = D * rng.uniform(0.7, 1.05)
+        px, py = cx + orad * math.cos(a), cy + orad * math.sin(a)
+        if x0 + 4 < px < x1 - 4 and y0 + 4 < py < y1 - 4:
+            out += circle(px, py, rng.uniform(0.8, 1.5), pen=black, f=feed)
+
+    # LOG-SPIRAL bundles hub↔gate (the memory flow), engine crowd control
+    family = []
+    for gi, (_name, ang, _v) in enumerate(gates):
+        for k in range(bundle):
+            t = k / max(1, bundle - 1)
+            sweep = (1.1 + 2.0 * t) * (1 if k % 2 == 0 else -1)
+            r0 = r_cell * (1.02 + 0.06 * rng.random())
+            r1 = D - r_gate * (1.0 + 0.25 * t)
+            b = math.log(max(1e-6, r1 / r0)) / sweep
+            th0 = ang - sweep
+            pts = []
+            NPT = 64
+            for q in range(NPT + 1):
+                u = q / NPT
+                th = th0 + sweep * u
+                r = r0 * math.exp(b * sweep * u)
+                pts.append((cx + r * math.cos(th), cy + r * math.sin(th)))
+            pen = accent if k % 4 == 0 else black
+            family.append([(px, py, 0.0, pen) for (px, py) in pts])
+    scene.lines(family, sep_mm=sep, warmup=2, min_kept=10)
+
+    # axes: c_{t-1} -> c_t horizontal, TIME up, h_t down from output side
+    scene.poly([(x0 + 0.10 * W, cy), (x1 - 0.10 * W, cy)], pen=black)
+    scene.poly([(x1 - 0.10 * W - 3, cy + 1.6), (x1 - 0.10 * W, cy), (x1 - 0.10 * W - 3, cy - 1.6)], pen=black)
+    scene.poly([(cx, y0 + 0.06 * H), (cx, y1 - 0.05 * H)], pen=black)
+    scene.poly([(cx - 1.6, y1 - 0.05 * H - 3), (cx, y1 - 0.05 * H), (cx + 1.6, y1 - 0.05 * H - 3)], pen=black)
+    scene.poly([(cx - 1.6, y0 + 0.06 * H + 3), (cx, y0 + 0.06 * H), (cx + 1.6, y0 + 0.06 * H + 3)], pen=black)
+
+    # the hub disc + plus mark
+    out += circle(cx, cy, r_cell, pen=black, f=feed)
+    out += circle(cx, cy, r_cell + 1.6, pen=black, f=feed)
+    out += _poly([(cx - 2.2, cy - 9.0), (cx + 2.2, cy - 9.0)], color=black, f=feed)
+    out += _poly([(cx, cy - 9.0 - 2.2), (cx, cy - 9.0 + 2.2)], color=black, f=feed)
+
+    # gate discs: double circle + 0—1 slider with a red dot at the gate value
+    for _name, ang, val in gates:
+        gx, gy = cx + D * math.cos(ang), cy + D * math.sin(ang)
+        out += circle(gx, gy, r_gate, pen=black, f=feed)
+        out += circle(gx, gy, r_gate + 1.5, pen=black, f=feed)
+        sx0, sx1 = gx - r_gate * 0.55, gx + r_gate * 0.55
+        sy = gy - r_gate * 0.34
+        scene.poly([(sx0, sy), (sx1, sy)], pen=black)
+        for q in range(4):
+            qx = sx0 + (sx1 - sx0) * q / 3
+            out += circle(qx, sy + 1.8, 1.1, pen=black, f=feed)
+        dotx = sx0 + (sx1 - sx0) * val
+        out += fill_disc(dotx, sy + 1.8, 1.1, spacing=0.4, pen=accent, f=feed)
+        out += _stroke_text("0", sx0 - 1.0, sy - 4.6, 1.3, color=black, f=feed)
+        out += _stroke_text("1", sx1 - 0.5, sy - 4.6, 1.3, color=black, f=feed)
+
+    # title + margin micro-texts
+    out += type_block(["LSTM"], x0 + 0.38 * W, y0 + 0.045 * H, height=4.6, pen=black, underline=False, f=feed)
+    out += _stroke_text(_spaced("GATED MEMORY DYNAMICS"), x0 + 0.27 * W, y0 + 0.018 * H, 2.0, color=black, f=feed)
+    micro = [
+        (("SEQUENCES", "CREATE", "MEMORY"), x0 + 0.03 * W, y1 - 0.045 * H),
+        (("PAST", "PRESENT", "FUTURE"), x1 - 0.16 * W, y1 - 0.045 * H),
+        (("RECURSION", "CREATES", "PERSISTENCE"), x0 + 0.03 * W, y0 + 0.16 * H),
+        (("A SMALL", "MECHANISM", "A LONG MEMORY"), x1 - 0.19 * W, y0 + 0.16 * H),
+    ]
+    for lines_, mx, my in micro:
+        for li, txt in enumerate(lines_):
+            out += _stroke_text(_spaced(txt), mx, my - li * 3.4, 1.3, color=black, f=feed)
+    return scene.render()
