@@ -41,6 +41,14 @@ class GCodeVisualizer:
         self.draw_color = viz.drawing_color
         self.travel_color = viz.travel_color
         self.line_width = viz.line_width
+        # native paper tone: "cream" = the house warm sheet, else any mpl color
+        pc = getattr(viz, "paper_color", "white")
+        self.paper_color = "#f4efe4" if pc == "cream" else pc
+
+    def _apply_paper(self, fig, ax) -> None:
+        if self.paper_color and self.paper_color != "white":
+            fig.patch.set_facecolor(self.paper_color)
+            ax.set_facecolor(self.paper_color)
 
     def preview(
         self,
@@ -190,6 +198,7 @@ class GCodeVisualizer:
         x0, y0, x1, y1 = bounds
         lines, _ = self._trace(program)
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
+        self._apply_paper(fig, ax)
         ax.set_xlim(x0, x1)
         ax.set_ylim(y0, y1)
         ax.set_aspect("equal")
@@ -226,7 +235,7 @@ class GCodeVisualizer:
             )
         ax.set_title(f"Region {getattr(region, 'name', '') or ''}")
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=self.dpi, bbox_inches="tight")
+        fig.savefig(buf, format="png", dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         png_bytes = buf.getvalue()
         if out_path:
@@ -283,6 +292,7 @@ class GCodeVisualizer:
 
     def _render(self, lines, stats, output_path: str):
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
+        self._apply_paper(fig, ax)
 
         # Paper outline
         paper_w = self.config.paper.x_extent if self.config else 210
@@ -410,7 +420,7 @@ class GCodeVisualizer:
 
         ax.set_title("PromptPlot Preview")
         ax.legend(loc="upper right", fontsize="small")
-        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight")
+        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
 
     # Fallback color cycle for pen indices when the palette entry is not a
@@ -467,6 +477,7 @@ class GCodeVisualizer:
     def _render_color_layers(self, lines, stats, output_path: str, palette: List[str]):
         """Render a multi-color program with one color per pen layer + legend."""
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
+        self._apply_paper(fig, ax)
         paper_w = self.config.paper.x_extent if self.config else 210
         paper_h = self.config.paper.y_extent if self.config else 297
         margin = 10
@@ -542,7 +553,7 @@ class GCodeVisualizer:
         )
         ax.set_title("PromptPlot Preview — color layers")
         ax.legend(loc="upper right", fontsize="small", title="pen")
-        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight")
+        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
 
     def _build_regions(self, plan: Optional[Any]) -> List[Dict[str, Any]]:
@@ -659,6 +670,7 @@ class GCodeVisualizer:
 
     def _setup_axes(self):
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
+        self._apply_paper(fig, ax)
         paper_w = self.config.paper.x_extent if self.config else 210
         paper_h = self.config.paper.y_extent if self.config else 297
         margin = 10
@@ -701,7 +713,7 @@ class GCodeVisualizer:
                 color=color,
             )
         ax.set_title("PromptPlot Region Overlay")
-        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight")
+        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
 
     def _render_density_heatmap(self, lines, analysis: Dict[str, Any], output_path: str):
@@ -727,5 +739,5 @@ class GCodeVisualizer:
                 )
             )
         ax.set_title("PromptPlot Density Heatmap")
-        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight")
+        fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)

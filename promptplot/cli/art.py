@@ -49,8 +49,7 @@ def _parse_params(pairs):
     "--paper",
     "paper_size",
     default="a5",
-    type=click.Choice(["a3", "a4", "a5", "a6"], case_sensitive=False),
-    help="Paper/canvas size",
+    help="Paper/canvas size: a3/a4/a5/a6 or a custom WxH (e.g. 17x24 cm, 170x240 mm)",
 )
 @click.option(
     "--orientation",
@@ -75,6 +74,74 @@ def _parse_params(pairs):
     help="Seeded glitch bands that tear sideways (with --anaglyph)",
 )
 @click.option(
+    "--echo",
+    default=0,
+    type=int,
+    help="Redraw the whole piece N times with per-copy drift + hand wobble (posca echo)",
+)
+@click.option(
+    "--echo-wobble",
+    "echo_wobble",
+    default=0.9,
+    type=float,
+    help="Hand-wobble amplitude in mm (with --echo)",
+)
+@click.option(
+    "--dash-rain",
+    "dash_rain_on",
+    is_flag=True,
+    help="Fill the negative space with vertical dash rain (near halo pen 1, far pen 2)",
+)
+@click.option(
+    "--dash-rain-near",
+    "dash_rain_near",
+    default=10.0,
+    type=float,
+    help="Halo width in mm for the near-pen dash band (with --dash-rain)",
+)
+@click.option(
+    "--glitch-slice",
+    "glitch_slice_on",
+    is_flag=True,
+    help="Rick-style horizontal tear bands + chromatic outline copies + speed-dashes",
+)
+@click.option(
+    "--glitch-slice-bands",
+    "glitch_slice_bands",
+    default=7,
+    type=int,
+    help="Number of horizontal tear bands (with --glitch-slice)",
+)
+@click.option(
+    "--void",
+    "void_r",
+    default=0.0,
+    type=float,
+    help="Focal void: clear an R-mm disc of blank paper at the densest convergence "
+    "point; strokes stop on the rim, --void-keep heroes pass through (0 = off)",
+)
+@click.option(
+    "--void-keep",
+    "void_keep",
+    default=1,
+    type=int,
+    help="How many hero strokes thread the void (with --void)",
+)
+@click.option(
+    "--occlude",
+    "occlude_gap",
+    default=0.0,
+    type=float,
+    help="Cut N-mm gaps where lower pens cross higher pens (layered posca look; 0 = off)",
+)
+@click.option(
+    "--occlude-mode",
+    "occlude_mode",
+    default="priority",
+    type=click.Choice(["priority", "weave"]),
+    help="Crossing rule: priority = fixed z-order; weave = alternate over/under",
+)
+@click.option(
     "--max-ink",
     "max_ink",
     default=0,
@@ -87,6 +154,29 @@ def _parse_params(pairs):
     default=1.2,
     type=float,
     help="Ink-cell size in mm for --max-ink (bigger = more aggressive thinning)",
+)
+@click.option(
+    "--min-gap",
+    "min_gap",
+    default=None,
+    type=float,
+    help="Minimum line separation mm (line-crowding guardrail: thins any lines "
+    "closer than this so they can't merge into a black patch). Default = pen tip "
+    "width (safety floor); set larger for visible breathing room; 0 disables",
+)
+@click.option(
+    "--pen-tip",
+    "pen_tip",
+    default=None,
+    type=float,
+    help="Pen tip width mm (drives the default line-crowding/overlap guardrails; "
+    "default from config.pen.tip_width; 0 disables)",
+)
+@click.option(
+    "--paper-color",
+    "paper_color",
+    default=None,
+    help="Preview background: white (default), cream (the house warm sheet), or any color",
 )
 @click.option("--simulate", is_flag=True, help="Simulated plotter (no hardware)")
 @click.option("--preview", "save_preview", is_flag=True, help="Save a color-coded preview PNG")
@@ -108,8 +198,21 @@ def art(
     anaglyph,
     anaglyph_offset,
     glitch_bands,
+    echo,
+    echo_wobble,
+    dash_rain_on,
+    dash_rain_near,
+    glitch_slice_on,
+    glitch_slice_bands,
+    void_r,
+    void_keep,
+    occlude_gap,
+    occlude_mode,
     max_ink,
     max_ink_cell,
+    min_gap,
+    pen_tip,
+    paper_color,
     simulate,
     save_preview,
     save,
@@ -167,6 +270,8 @@ def art(
             )
         config.color.pause_for_swap = not simulate
 
+    if paper_color:
+        config.visualization.paper_color = paper_color
     bounds = config.paper.get_drawable_area()
     param_dict = _parse_params(params)
 
@@ -214,6 +319,97 @@ def art(
             + (f", {glitch_bands} glitch bands" if glitch_bands else "")
         )
 
+    if echo > 0:
+        from ..generative import SeededRNG, echo_layers
+
+        copies = max(2, echo)
+        raw = echo_layers(
+            raw,
+            SeededRNG(seed_val + 104729),  # derived, still fully seed-reproducible
+            copies=copies,
+            wobble=echo_wobble,
+            bounds=bounds,
+        )
+        colors = copies
+        config.color.enabled = True
+        if not names:
+            base_echo = ["deepskyblue", "hotpink", "gold", "black", "crimson", "royalblue"]
+            config.color.palette = (
+                base_echo[:copies]
+                if copies <= len(base_echo)
+                else base_echo + [f"pen{i}" for i in range(copies - len(base_echo))]
+            )
+        config.color.pause_for_swap = not simulate
+        console.print(
+            f"[bold blue]echo[/bold blue]      → {copies} wobble copies, ±{echo_wobble}mm"
+        )
+
+    if dash_rain_on:
+        from ..generative import SeededRNG, dash_rain
+
+        before = len(raw)
+        raw = dash_rain(
+            raw,
+            SeededRNG(seed_val + 15485863),  # derived, still fully seed-reproducible
+            bounds,
+            near=dash_rain_near,
+        )
+        if colors < 3:
+            colors = 3
+            config.color.enabled = True
+            if not names:
+                config.color.palette = ["black", "crimson", "royalblue"]
+            config.color.pause_for_swap = not simulate
+        console.print(
+            f"[bold blue]dash-rain[/bold blue] → {(len(raw) - before) // 4} dashes, "
+            f"near band {dash_rain_near}mm"
+        )
+
+    if glitch_slice_on:
+        from ..generative import SeededRNG, glitch_slice
+
+        gcopies = colors if colors > 1 else 2
+        raw = glitch_slice(
+            raw,
+            SeededRNG(seed_val + 32452843),  # derived, still fully seed-reproducible
+            bounds,
+            bands=glitch_slice_bands,
+            copies=gcopies,
+        )
+        colors = gcopies
+        config.color.enabled = True
+        if not names:
+            base_gl = ["royalblue", "red", "black", "gold"]
+            config.color.palette = (
+                base_gl[:gcopies]
+                if gcopies <= len(base_gl)
+                else base_gl + [f"pen{i}" for i in range(gcopies - len(base_gl))]
+            )
+        config.color.pause_for_swap = not simulate
+        console.print(
+            f"[bold blue]glitch-slice[/bold blue] → {gcopies} copies, {glitch_slice_bands} bands"
+        )
+
+    if void_r > 0:
+        from ..generative import focal_void
+
+        before = len(raw)
+        raw = focal_void(raw, r=void_r, keep=void_keep)
+        console.print(
+            f"[bold blue]void[/bold blue]      → {void_r}mm clearing at the densest knot, "
+            f"{void_keep} hero(es) through ({before}→{len(raw)} cmds)"
+        )
+
+    if occlude_gap > 0:
+        from ..generative import occlude_crossings
+
+        before = len(raw)
+        raw = occlude_crossings(raw, gap=occlude_gap, mode=occlude_mode)
+        console.print(
+            f"[bold blue]occlude[/bold blue]   → {occlude_gap}mm {occlude_mode} gaps at crossings "
+            f"({before}→{len(raw)} cmds)"
+        )
+
     if max_ink > 0:
         from ..generative import limit_ink_density
 
@@ -222,6 +418,24 @@ def art(
         console.print(
             f"[bold blue]max-ink[/bold blue]   → ≤{max_ink} passes/mm² ({before}→{len(raw)} cmds)"
         )
+    else:
+        # line-crowding guardrail (ON by default): no two lines closer than the
+        # separation floor, so crowded/converging strokes can't merge into a
+        # black patch (attractor loops, dense mesh) or tear the paper. The floor
+        # defaults to ~0.9× the pen tip so legitimate fills at tip-spacing pass
+        # untouched; --min-gap raises it for visible breathing room.
+        tip = pen_tip if pen_tip is not None else getattr(config.pen, "tip_width", 0.0)
+        gap = min_gap if min_gap is not None else (tip * 0.9 if tip else 0.0)
+        if gap and gap > 0:
+            from ..generative import enforce_line_spacing
+
+            before = len(raw)
+            raw = enforce_line_spacing(raw, min_dist=gap)
+            if len(raw) != before:
+                console.print(
+                    f"[bold blue]min-gap[/bold blue]   → ≥{gap:.2f}mm line separation "
+                    f"({before}→{len(raw)} cmds)"
+                )
 
     program = merge_chunks([raw], config)
     program.metadata.update(

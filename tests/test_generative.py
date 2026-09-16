@@ -435,3 +435,318 @@ def test_shim_reexports_are_identities():
     assert bauhaus.type_block is kit.type_block
     assert bauhaus._zbuf_terrain is engine3d._zbuf_terrain
     assert physics_shim.gw150914 is pieces_physics.gw150914
+
+
+def test_turning_weave_single_pass_ink():
+    """Lane registry: no two drawn legs may ever be coincident (stacked ink)."""
+    from collections import Counter
+
+    for seed in (5, 8, 123):
+        cmds = run_generator("turning_weave", BOUNDS, seed, colors=4)
+        segs = Counter()
+        prev = None
+        for c in cmds:
+            if c.command == "G1" and prev is not None:
+                key = tuple(
+                    sorted(
+                        [
+                            (round(prev[0], 2), round(prev[1], 2)),
+                            (round(c.x, 2), round(c.y, 2)),
+                        ]
+                    )
+                )
+                segs[key] += 1
+            prev = (c.x, c.y) if c.x is not None else (None if c.command == "M5" else prev)
+        dups = [k for k, v in segs.items() if v > 1]
+        assert not dups, f"seed {seed}: coincident legs {dups[:3]}"
+
+
+def test_echo_layers_deterministic_and_penned():
+    from promptplot.generative import SeededRNG, echo_layers
+
+    base = run_generator("harmonograph", BOUNDS, 7)
+    a = echo_layers(base, SeededRNG(1), copies=3, bounds=BOUNDS)
+    b = echo_layers(base, SeededRNG(1), copies=3, bounds=BOUNDS)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b]
+    pens = {c.color for c in a if c.command == "M3"}
+    assert pens == {0, 1, 2}
+    for c in a:
+        if c.x is not None:
+            assert BOUNDS[0] <= c.x <= BOUNDS[2] and BOUNDS[1] <= c.y <= BOUNDS[3]
+
+
+def test_dash_rain_avoids_ink_and_is_deterministic():
+    import math as _m
+
+    from promptplot.generative import SeededRNG, dash_rain
+
+    base = run_generator("superformula_bloom", BOUNDS, 3)
+    a = dash_rain(base, SeededRNG(2), BOUNDS, clearance=2.0)
+    b = dash_rain(base, SeededRNG(2), BOUNDS, clearance=2.0)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b]
+    dashes = a[len(base):]
+    assert dashes, "dash_rain added no dashes"
+    # every dash endpoint keeps clearance from every base ink vertex
+    ink = [
+        (c.x, c.y) for c in base if c.command == "G1" and c.x is not None
+    ]
+    step = max(1, len(ink) // 400)
+    ink = ink[::step]
+    for c in dashes:
+        if c.command == "G1" and c.x is not None:
+            dmin = min(_m.hypot(c.x - px, c.y - py) for px, py in ink)
+            assert dmin >= 0.9, f"dash at ({c.x},{c.y}) only {dmin:.2f}mm from ink"
+
+
+def test_occlude_crossings_deterministic_and_cuts():
+    from promptplot.generative import SeededRNG, echo_layers, occlude_crossings
+
+    # occlusion only cuts where DIFFERENT pens cross → run after echo (multi-pen)
+    base = run_generator("harmonograph", BOUNDS, 3)
+    multi = echo_layers(base, SeededRNG(5), copies=3, bounds=BOUNDS)
+    a = occlude_crossings(multi, gap=1.2)
+    b = occlude_crossings(multi, gap=1.2)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b]
+    n_m3_multi = sum(1 for c in multi if c.command == "M3")
+    n_m3_out = sum(1 for c in a if c.command == "M3")
+    assert n_m3_out > n_m3_multi  # cuts split polylines → more strokes
+
+    # same-pen-only input must be left untouched (nothing is "on top")
+    same = occlude_crossings(base, gap=1.2)
+    assert sum(1 for c in same if c.command == "M3") == sum(
+        1 for c in base if c.command == "M3"
+    )
+
+
+def test_glitch_slice_deterministic_and_penned():
+    from promptplot.generative import SeededRNG, glitch_slice
+
+    base = run_generator("harmonograph", BOUNDS, 3)
+    a = glitch_slice(base, SeededRNG(1), BOUNDS, copies=2)
+    b = glitch_slice(base, SeededRNG(1), BOUNDS, copies=2)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b]
+    pens = {c.color for c in a if c.command == "M3"}
+    assert pens == {0, 1}
+    for c in a:
+        if c.x is not None:
+            assert BOUNDS[0] <= c.x <= BOUNDS[2]
+
+
+def test_color_layers_never_drag_from_park():
+    """GUARDRAIL: every color layer must position the pen (a travel coordinate)
+    BEFORE its first M3, so streaming a layer alone can't drag from home."""
+    from promptplot.config import PromptPlotConfig
+    from promptplot.orchestrate import merge_chunks, split_color_layers, _first_drawn_point
+
+    cfg = PromptPlotConfig()
+    cfg.color.enabled = True
+    cfg.color.palette = ["cyan", "magenta", "black"]
+    raw = run_generator("bauhaus_gradient", BOUNDS, 19, colors=3)
+    program = merge_chunks([raw], cfg)  # runs reorder_by_color
+    layers = split_color_layers(program)
+    assert len(layers) >= 2, "need a multi-color program to test the guardrail"
+
+    # concatenating layers must reproduce the program exactly (no lost commands)
+    flat = [c for _, cmds in layers for c in cmds]
+    assert [c.to_gcode() for c in flat] == [c.to_gcode() for c in program.commands]
+
+    for color, cmds in layers:
+        # the first M3 must be preceded by a positioning coordinate in-layer
+        idx_m3 = next((i for i, c in enumerate(cmds) if c.command == "M3"), None)
+        if idx_m3 is None:
+            continue
+        assert _first_drawn_point(cmds) is not None, (
+            f"color {color}: first stroke has no pen-up travel — would drag from park"
+        )
+        # and that positioning coordinate must appear before the first M3
+        assert any(
+            c.x is not None for c in cmds[:idx_m3]
+        ), f"color {color}: M3 fires before any travel"
+
+
+def test_stream_chunk_enforces_pen_state():
+    """GUARDRAIL: stream_chunk lifts before a travel and lowers before a draw,
+    even if the g-code violates the pen convention."""
+    import asyncio
+    from promptplot.models import GCodeCommand
+    from promptplot.orchestrate import stream_chunk
+
+    class _Rec:
+        def __init__(self):
+            self.sent = []
+        async def send_command(self, g):
+            self.sent.append(g)
+            return True
+
+    # deliberately broken order: draw with pen never lowered, then travel while down
+    bad = [
+        GCodeCommand(command="G1", x=10, y=10, f=500),   # draw with pen UP → must inject M3
+        GCodeCommand(command="G0", x=50, y=50),          # travel with pen DOWN → must inject M5
+        GCodeCommand(command="G1", x=60, y=60, f=500),   # draw again → inject M3
+    ]
+    rec = _Rec()
+    asyncio.run(stream_chunk(bad, rec, verbose=False))
+    seq = [g.split()[0] for g in rec.sent if g and g != "COMPLETE"]
+    # first draw must be preceded by M3; the travel by M5
+    assert seq[0] == "M3", seq
+    assert "M5" in seq, seq
+    i_travel = seq.index("G0")
+    assert seq[i_travel - 1] in ("M5", "G4"), seq  # lifted (with optional settle) before travel
+
+    # a correct chunk should NOT get spurious pen commands
+    good = [
+        GCodeCommand(command="M3", s=1000),
+        GCodeCommand(command="G1", x=10, y=10, f=500),
+        GCodeCommand(command="M5"),
+        GCodeCommand(command="G0", x=50, y=50),
+    ]
+    rec2 = _Rec()
+    asyncio.run(stream_chunk(good, rec2, verbose=False))
+    assert [g.split()[0] for g in rec2.sent] == ["M3", "G1", "M5", "G0"], rec2.sent
+
+
+def test_overlap_guardrail_thins_saturating_attractor():
+    """The tip-width overlap guardrail (limit_ink_density max_passes=1) must
+    deterministically thin a loop-saturating attractor and never grow it."""
+    from promptplot.generative import limit_ink_density
+
+    raw = run_generator("strange_attractor", BOUNDS, 3)
+    a = limit_ink_density(raw, max_passes=1, cell=2.0)
+    b = limit_ink_density(raw, max_passes=1, cell=2.0)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b], "not deterministic"
+    assert 0 < len(a) < len(raw), "guardrail should reduce a saturating piece"
+
+
+def test_enforce_line_spacing_prevents_crowding():
+    """The line-crowding guardrail must be deterministic and actually enforce
+    the minimum separation between non-consecutive drawn points (no black patch)."""
+    import math as _m
+    from promptplot.generative import enforce_line_spacing
+
+    raw = run_generator("strange_attractor", BOUNDS, 3)
+    md = 0.6
+    a = enforce_line_spacing(raw, min_dist=md, lookback_mm=3.0, short_exempt=0.0)
+    b = enforce_line_spacing(raw, min_dist=md, lookback_mm=3.0, short_exempt=0.0)
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b], "not deterministic"
+
+    # collect drawn points in order; a cell may not hold two points that are far
+    # apart in draw order yet within min_dist (that would be a crowding violation)
+    cell = md
+    grid = {}
+    idx = 0
+    lookback = max(2, int(3.0 / 0.5))
+    violations = 0
+    for c in a:
+        if c.command == "G1" and c.x is not None:
+            ci, cj = int(c.x / cell), int(c.y / cell)
+            for x in (ci - 1, ci, ci + 1):
+                for y in (cj - 1, cj, cj + 1):
+                    for px, py, pidx in grid.get((x, y), ()):
+                        if idx - pidx > lookback and (px - c.x) ** 2 + (py - c.y) ** 2 < (md * md) * 0.8:
+                            violations += 1
+            grid.setdefault((ci, cj), []).append((c.x, c.y, idx))
+            idx += 1
+    # allow a tiny tolerance for resampling/rounding at run boundaries
+    assert violations < idx * 0.02, f"{violations} crowding violations of {idx} points"
+
+
+def test_geometry_clip_exact_and_inside():
+    """Geometry engine: exact clip at line/circle, and the fully-inside case
+    (regression for the HalfPlane interval-clamp bug that dropped inside runs)."""
+    from promptplot.generative.geometry import Circle, Band, Rect, clip, offset
+
+    line = [(-10.0, 0.0), (10.0, 0.0)]
+    # exact stop on the circle radius
+    out = clip(line, Circle(0, 0, 5), keep="outside")
+    assert [[(round(x, 3), round(y, 3)) for x, y in r] for r in out] == [
+        [(-10.0, 0.0), (-5.0, 0.0)],
+        [(5.0, 0.0), (10.0, 0.0)],
+    ]
+    # union of bar-band and circle
+    u = clip(line, Band("x", -3, 3) | Circle(0, 0, 5), keep="outside")
+    assert len(u) == 2
+    # REGRESSION: a segment fully inside a Rect must be kept whole (not dropped)
+    inside = clip([(-8.0, 0.0), (8.0, 0.0)], Rect(-20, -20, 20, 20), keep="inside")
+    assert inside == [[(-8.0, 0.0), (8.0, 0.0)]]
+    # offset moves perpendicular
+    assert offset([(0, 0), (10, 0)], 1.0) == [(0.0, 1.0), (10.0, 1.0)]
+
+
+def test_occlude_weave_mode_cuts_both_pens():
+    """Weave mode: deterministic, and the cuts land on MULTIPLE pens
+    (sometimes one line yields, sometimes the other) — never same-pen cuts."""
+    from collections import Counter
+
+    from promptplot.generative import SeededRNG, echo_layers, occlude_crossings
+
+    base = run_generator("harmonograph", BOUNDS, 3)
+    multi = echo_layers(base, SeededRNG(5), copies=3, bounds=BOUNDS)
+    a = occlude_crossings(multi, gap=1.2, mode="weave")
+    b = occlude_crossings(multi, gap=1.2, mode="weave")
+    assert [c.to_gcode() for c in a] == [c.to_gcode() for c in b]
+
+    before = Counter(c.color for c in multi if c.command == "M3")
+    after = Counter(c.color for c in a if c.command == "M3")
+    grew = [p for p in before if after.get(p, 0) > before[p]]
+    assert len(grew) >= 2, f"weave should cut >=2 pens, got {grew}"
+
+
+def test_focal_void_clears_knot_keeps_heroes():
+    """Engine artistic policy: focal_void clears the convergence disc, strokes
+    stop on the rim, `keep` heroes pass through. Synthetic star: N lines
+    through one centre."""
+    import math as _m
+
+    from promptplot.generative import focal_void
+    from promptplot.models import GCodeCommand
+
+    cx, cy, R = 70.0, 100.0, 40.0
+    star = []
+    for k in range(8):
+        a = _m.pi * k / 8
+        x0_, y0_ = cx - R * _m.cos(a), cy - R * _m.sin(a)
+        x1_, y1_ = cx + R * _m.cos(a), cy + R * _m.sin(a)
+        star.append(GCodeCommand(command="G0", x=x0_, y=y0_))
+        star.append(GCodeCommand(command="M3", s=1000, color=k % 3))
+        star.append(GCodeCommand(command="G1", x=x1_, y=y1_, f=1500, color=k % 3))
+        star.append(GCodeCommand(command="M5"))
+
+    a1 = focal_void(star, r=10.0, cx=cx, cy=cy, keep=2)
+    a2 = focal_void(star, r=10.0, cx=cx, cy=cy, keep=2)
+    assert [c.to_gcode() for c in a1] == [c.to_gcode() for c in a2]
+
+    # count strokes whose sampled path enters the void
+    def entering(cmds):
+        n, cur, pos = 0, None, None
+        for c in cmds:
+            if c.command == "M3":
+                cur = [pos] if pos else []
+            elif c.command == "M5" and cur is not None:
+                hit = False
+                for p0, p1 in zip(cur, cur[1:]):
+                    for t in range(21):
+                        x = p0[0] + (p1[0] - p0[0]) * t / 20
+                        y = p0[1] + (p1[1] - p0[1]) * t / 20
+                        if _m.hypot(x - cx, y - cy) < 10.0 - 0.3:
+                            hit = True
+                n += 1 if hit else 0
+                cur = None
+            elif cur is not None and c.command == "G1" and c.x is not None:
+                cur.append((c.x, c.y))
+            if c.x is not None:
+                pos = (c.x, c.y)
+        return n
+
+    assert entering(star) == 8
+    assert entering(a1) == 2, "exactly the 2 heroes may cross the void"
+
+
+def test_enforce_line_spacing_never_eats_glyphs():
+    """Short strokes (stroke-font letters) are exempt from thinning — text must
+    survive the guardrail verbatim (regression: broken letters on the MLP)."""
+    from promptplot.generative import enforce_line_spacing
+    from promptplot.generative.generators import _stroke_text
+
+    text = _stroke_text("NONLINEAR TRANSFORMATION", 20.0, 100.0, 2.0, color=0, f=1500)
+    kept = enforce_line_spacing(text, min_dist=0.45)
+    assert [c.to_gcode() for c in kept] == [c.to_gcode() for c in text]

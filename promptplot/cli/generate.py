@@ -138,57 +138,6 @@ def generate(
 
 @cli.command()
 @click.argument("filepath")
-@click.option("--port", default=None, help="Serial port")
-@click.option("--baud", default=115200, help="Baud rate")
-@click.option("--simulate", is_flag=True, help="Simulation mode")
-@click.option("--brush", is_flag=True, help="Enable brush/ink mode")
-@click.option("--preview-only", is_flag=True, help="Preview without plotting")
-@click.option("--output", "-o", default=None, help="Preview output path")
-@click.pass_context
-def plot(ctx, filepath, port, baud, simulate, brush, preview_only, output):
-    """Plot a GCode file to the plotter."""
-    config = ctx.obj["config"]
-
-    if port:
-        config.serial.port = port
-    if baud:
-        config.serial.baud_rate = baud
-    if brush:
-        config.brush.enabled = True
-
-    logger.cli_header("3.0.0")
-
-    async def _run():
-        from ..pipeline import FilePipeline
-        from ..plotter import SimulatedPlotter, SerialPlotter
-
-        pipeline = FilePipeline(config)
-
-        plotter = None
-        if not preview_only:
-            if simulate:
-                plotter = SimulatedPlotter()
-            else:
-                plotter = SerialPlotter(
-                    port=config.serial.port,
-                    baud_rate=config.serial.baud_rate,
-                    timeout=config.serial.timeout,
-                )
-
-        processed, success, errors = await pipeline.process_file(
-            filepath,
-            plotter=plotter,
-            preview_only=preview_only,
-            output_path=output,
-        )
-        if not preview_only:
-            logger.execution_summary(success + errors, success, errors, 0.0)
-
-    asyncio.run(_run())
-
-
-@cli.command()
-@click.argument("filepath")
 @click.pass_context
 def score(ctx, filepath):
     """Score a GCode file for quality metrics."""

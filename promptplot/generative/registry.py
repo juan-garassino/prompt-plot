@@ -70,6 +70,7 @@ GENERATOR_REGISTRY = {
     "bauhaus_relevance": _ml.bauhaus_relevance,
     "bauhaus_relevance_v1": _ml.bauhaus_relevance_v1,
     "bauhaus_memory": _ml.bauhaus_memory,
+    "lstm_gates": _ml.lstm_gates,
     "bauhaus_memory_v1": _ml.bauhaus_memory_v1,
     "bauhaus_locality": _ml.bauhaus_locality,
     "bauhaus_locality_v1": _ml.bauhaus_locality_v1,

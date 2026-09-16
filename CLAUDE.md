@@ -121,9 +121,9 @@ strange_attractor (11 systems), domain_warp, contour_field, superformula_bloom, 
 scribble_halftone (shape-aware), comic_panels, line_halftone, scribble_portrait, sparkle_grid,
 iso_city, rounded_circuits, lissajous_swarm, black_hole,
 pe_carpet, attention_arcs, residual_river — 37 total;
-plus effects applicable to any generator: `--anaglyph`/`--glitch` red-cyan offset, and `--max-ink N` ink-density cap — no spot gets more than N pen passes),
+plus effects applicable to any generator: `--anaglyph`/`--glitch`, `--echo N`, `--dash-rain`, `--occlude MM`, `--glitch-slice`, and `--max-ink N` / default tip-width overlap guardrail — see "Effects"),
 **SVG + DXF import** (split by stroke color / DXF layer → color layers),
-selectable paper size (A3/A4/A5/A6 via `--paper`),
+selectable paper size (A3/A4/A5/A6 or custom `WxH` via `--paper`), native paper tones for previews (`--paper-color cream|white|<any>`, `VisualizationConfig.paper_color`),
 quality scoring with letter grades (A–F), drawing memory for few-shot learning,
 multi-pass generation, diagnostic retry, style transfer, brush/paint mode,
 first-class pen state tracking (PenState), validated phase transitions
@@ -135,6 +135,7 @@ Main commands:
 - `promptplot draw "prompt" --simulate` (batch) / `--live` (real-time) / `--colors N` (multi-color) / `--paper a4`.
 - `promptplot art <generator> --seed N --colors K --simulate --preview` (seeded generative, no LLM).
 - `promptplot import file.svg|file.dxf --simulate --preview` (vector file → color layers).
+- `promptplot plot frame --paper a4:landscape --margin 15` (MANDATORY pen-up paper-edge+margin trace, 3s hold on first edge) · `promptplot plot layer file.gcode 1 [--strokes S:E] [--dry-run]` (guardrailed per-colour streaming with batches, 60s acks, park (0,0)) · `promptplot plot file.gcode` (legacy full-file plot).
 
 New flags on `draw`: `--plan` (LLM plans composition first), `--resume` (resume interrupted drawing),
 `--orchestrate --regions N` (supervisor-worker fan-out), `--colors N` (LLM assigns colors, plotter pauses
@@ -200,7 +201,9 @@ orbits, plus marks, swatch bars, crosshair rules, spaced-caps `type_block`/`scal
 from the trained checkpoint), `bauhaus_gradient`
 (WATERSHED — gradient descent as a basin of attraction: the whole plane raining downhill via
 exact RK4 on an analytic 2-Gaussian loss into two sinks, the separatrix left as blank paper,
-one blue heavy-ball-momentum channel overshooting the deep sink and ringing back; APPROVED),
+one blue heavy-ball-momentum channel overshooting the deep sink and ringing back; APPROVED;
+params `fill_spacing` (sink-disc spiral pitch — set > pen tip, e.g. 3mm for a 2mm POSCA), `sink_scale`
+(enlarge the sinks so a coarse spiral still fills them), `min_sep` (streamline separation)),
 `bauhaus_resonance` (harmonograph),
 `bauhaus_loom` (FORWARD PASS — the perceptron rethought as an Anni-Albers weaving: a real
 weight matrix woven warp/weft, over/under by sign, float by magnitude; APPROVED),
@@ -221,7 +224,24 @@ A sub-series of "abstract neural representations for penplotters" (fine-line, bl
 cream, +blue/green where a piece needs it): `bauhaus_locality` (CNN — stacked feature-map
 terrains, pixels→meaning), `bauhaus_memory` (LSTM — precessing figure-8 helix connecting
 INPUT·LATENT·OUTPUT), `bauhaus_relevance` (TRANSFORMER — ATTENTION AS TOPOGRAPHY: QKᵀ cones →
-softmax contours → V green → O), `bauhaus_manifold` (MLP — a folded petal-saddle). These share
+softmax contours → V green → O), `bauhaus_manifold` (MLP — a folded petal-saddle; 3 pens: surface
+mesh + INPUT/OUTPUT planes on slot 0 (fine 0.1 pen), red fold-ridges/flow on slot 1, the rest black
+on slot 2; text labels use a **halo** — the mesh/streamlines/dots skip a box around each label so it
+stays legible over the busy surface — and a final uniform fit-transform scales the whole composition
+into the drawable area, so it is paper-size-agnostic. **Adaptive-density policies** (the anti-crowding
+engine decisions, all structural): polar LOD — radials thin toward the pole in halving levels and the
+finest level exists only on the open outer band; per-sample screen-space thinning in BOTH grid
+directions with a 2× coarser floor on the far (lowest-depth) half; streamlines keep `stream_sep` mm
+separation at generation and PAUSE-AND-RESUME through congested stretches instead of dying; red
+streamlines cross-register against red fold-ridges so same-color lines never shadow; `mesh_weave>0`
+optionally alternates ring/radial leadership in checkerboard patches). ALL of these are now SHORT DECLARATIONS on the Scene3D engine (see `engine/`) — the piece
+builds fields/labels/pens, the engine renders with native anti-crowding. Current line-up:
+`bauhaus_relevance` = the isometric DIAMOND STACK (QUERY+KEY wells → DOT PRODUCT similarity →
+SOFTMAX rings → red VALUES terrain → green OUTPUT peak, dashed Q/K droplines);
+`bauhaus_memory` = the precessing FIGURE-8 (REMEMBER/FORGET lobes, engine pause-resume keeps the
+waist and rims clean); `lstm_gates` = the gate-mandala sibling (CELL STATE hub, four gate discs
+with 0→1 sliders, log-spiral bundles); `bauhaus_locality` = CNN terrains with sparse-dash
+receptive-field rails. These share
 a from-scratch **3D engine**: `_zbuf_terrain(out, SX, SY, DEP, feed, PENV=, pen=)` rasterizes
 surface quads into a numpy z-buffer for **true hidden-line occlusion** and draws only visible
 mesh (near ridges hide far → solid surfaces); build `SX/SY/DEP` via an isometric `proj`+`dep`
@@ -249,7 +269,7 @@ adding a generator + registering it updates `art --list` automatically — mirro
 Generators: `tiled_field` (dense directional-tile grid), `ripple_field` (concentric ripples → noise
 peaks), `flow_field` (evenly-spaced non-overlapping streamlines, Jobard–Lefebvre), `maze`, `truchet`,
 `wave_bands`, `stipple`, `waves_with_circles`, `crosshatch_weave` (±45° woven plaid, black-dominant),
-`turning_weave` (grid-aligned diagonal L-paths that enter an edge, turn at lattice nodes, exit another edge),
+`turning_weave` (grid-aligned diagonal L-paths that enter an edge, turn at lattice nodes, exit another edge; single-pass ink — a lane registry gives each lattice hop tiered offset lanes so shared diagonals become tight parallel bundles instead of stacked/overdrawn lines; `lane_gap` sets the offset),
 `wave_gradient` (rows of waves, calm at top → tall spiky peaks at bottom),
 `interference_field` (scanlines displaced by interfering circular ripples from N seeded 'drops' — ripple-tank/moiré; frequency varies within each wave),
 `frequency_lens` (rows of sine with circular 'lenses' where the local frequency drops — phase-integrated so waves stay continuous across the edge),
@@ -278,9 +298,17 @@ Picture generators accept ANY photo: `--param channels=cmyk` splits a color imag
 `rounded_circuits` is ONE closed self-crossing belt with concentric constant-offset lines and big round turns. `iso_city` defaults to terraced plateau masses (fill/void space) with window details, cover-fit immersion (`zoom`, `height`, `lod`).
 The `--anaglyph` glitch defaults to 4 pens (cyan/red/yellow/black); `--max-ink N --max-ink-cell MM` caps pen passes per spot on any generator.
 `strange_attractor` systems (formCollapse catalog; divergent variants replaced with classical dynamics): lorenz, rossler, halvorsen, aizawa, rabinovich_fabrikant, chen, newton_leipnik, burke_shaw, finance, three_scroll, qi.
-Effects (`generative/effects.py`): `--anaglyph [--anaglyph-offset MM] [--glitch N]` duplicates ANY generator into offset red/cyan pen layers with seeded glitch bands.
+Effects (`generative/effects.py`, all seeded, apply to ANY generator): `anaglyph_layers` (`--anaglyph [--anaglyph-offset MM] [--glitch N]` red/cyan offset), `echo_layers` (`--echo N [--echo-wobble MM]` — redraw the whole piece N times, one pen each, per-copy drift + hand wobble: the POSCA misregistered-multiples look), `dash_rain` (`--dash-rain [--dash-rain-near MM]` — vertical dashes fill negative space, near-halo pen vs far pen, never touching the ink), `occlude_crossings` (`--occlude MM` — cut a gap where a lower pen crosses a higher pen, faking marker opacity; only cuts between DIFFERENT pens, so run it after echo/glitch), `glitch_slice` (`--glitch-slice [--glitch-slice-bands N]` — Rick-style horizontal tear bands + chromatic outline copies + speed-dashes), and `limit_ink_density` (`--max-ink N --max-ink-cell MM`).
+Overlap guardrail (ON by default in `art`): with no `--max-ink`, the pipeline applies `limit_ink_density(max_passes=1, cell=config.pen.tip_width)` so no spot is inked twice within the pen tip — protects paper and stops attractor/harmonograph loop saturation. Override the tip with `--pen-tip MM` (0 disables).
+Custom paper: `--paper WxH` on `art`/`draw`/`import` (`17x24` read as cm → 170×240 mm, `170x240` as mm) in addition to a3/a4/a5/a6; `PaperConfig.from_size` parses both.
 Paper safety: `harmonograph`/`strange_attractor` have an `overdraw` cap (default 6 hits per 0.8mm cell) so converging lines can't chew through the paper.
 `art --port …` streams Leo-ready: heartbeat off + mandatory pen-up limits trace before inking.
+
+### Streaming guardrails (safety, in `orchestrate.py`, all regression-tested)
+Three defenses make single-layer / per-pen streaming safe through ANY path — never hand-roll around them:
+- `split_color_layers` keeps each colour layer's pen-up positioning travel attached to it, so streaming one layer alone can't drop the pen at home and drag to the first stroke.
+- `stream_pen_layers` lifts + rapids to each layer's first drawn point (`_first_drawn_point`) before drawing.
+- `stream_chunk(enforce_pen_state=True)` tracks pen state and injects the missing `M5`/`M3` (+settle dwell) so a `G0` travel is never inked and a `G1` draw never floats. **The pen convention is load-bearing: `G0`=travel(pen up), `G1`=draw(pen down); never emit `G1` for a pen-up move.**
 
 ## File import (SVG/DXF)
 `promptplot import file.svg|file.dxf --group-by color|layer|auto --paper a4 --simulate --preview`.
@@ -302,7 +330,7 @@ All source lives in `promptplot/`. Three formerly-monolithic modules are now **s
 - `llm/` — `base.py` (LLMProvider ABC, errors), `providers.py` (7 providers + `create_llm_provider`/`get_llm_provider`), `prompts.py` (all `build_*_prompt`, `classify_creative_mode`, presets, few-shot, palette color block).
 - `workflow/` — `events.py`, `_shared.py` (helpers + `diagnose_failure` + console/logger), `batch.py`, `supervisor.py`, `streaming.py`, `livedraw.py`.
 - `cli/` — `_group.py` (the `cli` click group + `main` + `_get_config`/`_print_score`), `draw.py`, `generate.py`, `art.py`, `import_cmd.py`, `manage.py` (config/plotter/interactive/ui/library). `__main__.py` enables `python -m promptplot`.
-- `generative/` — `rng.py` (`SeededRNG`: seeded Random + numpy + value/fbm noise), `generators.py` (30+ parametric generators), `registry.py` (`GENERATOR_REGISTRY` + signature-introspected schemas + `run_generator`), **`engine3d.py`** (the from-scratch 3D pen-plotter engine: `_zbuf_terrain` numpy z-buffer hidden-line renderer + `_fit_out`), **`kit.py`** (the 2D design kit: fills, type, furniture, clipping — one import site incl. generators low-level helpers), **`pieces/{ml,abstract,physics}.py`** (the science compositions by domain; `bauhaus.py` + `physics.py` are compat shims re-exporting every historical name — the framework is style-NEUTRAL, style is chosen at the lamina level; new pieces get subject-based names, `bauhaus_*` is legacy). See "Generative art".
+- `generative/` — `rng.py` (`SeededRNG`: seeded Random + numpy + value/fbm noise), `generators.py` (30+ parametric generators), `registry.py` (`GENERATOR_REGISTRY` + signature-introspected schemas + `run_generator`), **`engine/`** (THE composition engine — `scene3d.py`: `Scene3D` builder with native default-ON anti-crowding — z-buffer hidden-line `surface()` w/ `ScreenThin` (depth-aware both-family floors, weave) + `PolarLOD` (spider-web polar meshing, ridge registration), `Occupancy` + `lines(mode="pause_resume")` crowd control, `halo_labels`, `poly/emit`, `fit="fill"|"rescue"|"none"`, `prime_scale`; plus `geometry.py` (moved), `kit.py` (moved), `policies.py` (occlude_crossings, enforce_line_spacing, focal_void, limit_ink_density), `looks.py` (anaglyph, echo, dash_rain, glitch_slice); old paths `engine3d.py`/`kit.py`/`geometry.py`/`effects.py` are compat shims, single def-sites in `engine/`; pieces are SHORT declarations on Scene3D — never hand-roll z-buffers/thinning in a piece), **`engine3d.py`** (compat wrapper: `_zbuf_terrain` = Scene3D exact mode + `_fit_out`), **`geometry.py`** (exact 2D diagram ops, FreeCAD-vocabulary: composable `Region`s — `Circle`/`HalfPlane`/`Band`/`Rect` with `|`/`&`/`~` — plus `clip(poly, region, keep='outside'|'inside')`, `trim_to`, `offset`; segment↔boundary intersections are closed-form so clipped curves stop exactly ON lines/circles, no sample-snap stagger — use this instead of hand-rolled `hidden=` conditionals; adoption roadmap for more CAD ops in `studio/engine/CAD_RESEARCH.md`), **`kit.py`** (the 2D design kit: fills, type, furniture, clipping — one import site incl. generators low-level helpers), **`pieces/{ml,abstract,physics}.py`** (the science compositions by domain; `bauhaus.py` + `physics.py` are compat shims re-exporting every historical name — the framework is style-NEUTRAL, style is chosen at the lamina level; new pieces get subject-based names, `bauhaus_*` is legacy). See "Generative art".
 - `lamina/` — **the finished-sheet layer.** `styles.py` (6 `StylePreset`s from STYLES.md: bauhaus, swiss, deco, pop, radial_viz, science_poster; semantic-pen → physical-pen mapping), `layout.py` (`reserve_bands`, `split_panels`, gutter rules, number chips), `plate.py` (`Panel`, `PlateSpec` + JSON round-trip, `compose_plate(spec, config) -> (GCodeProgram, pen_plan)`). CLI: `promptplot plate cnn:7 lstm:7 mlp:7 --style science_poster --paper a3` (single- or multi-panel; `--preview/--save/--simulate/--port` with the mandatory limits trace).
 - `studio/` (package) — **the native design layer.** `briefs.py` (parses `studio/<domain>/*.md` briefs: title—tagline, Essence/Status, sections), `prompts.py` (designer/critic/synth templates inlining the STYLES.md canon + DESIGN_RUBRIC.md), `loop.py` (`run_design_loop`: designer → render → vision-critic → synth on any of the 7 LLM providers; `params` mode renders existing pieces, `code` mode writes candidate piece source under `studio/<slug>/rounds/` — never inside the package). CLI: `promptplot studio list | brief <slug> | design <slug> --style --mode --rounds --provider`. **New pieces should go through this loop** — it consistently outperforms one-shot design.
 - `importers/` — `svg_import.py`, `dxf_import.py`, `layers.py` (fit-to-paper + color/layer grouping), `__init__.py` (`import_file`, `parse_file`). See "File import".

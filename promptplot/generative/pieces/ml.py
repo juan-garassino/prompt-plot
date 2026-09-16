@@ -13,6 +13,7 @@ from typing import List, Optional, Tuple
 
 from ...models import GCodeCommand
 from ..rng import SeededRNG
+from ..engine import Occupancy, PolarLOD, Scene3D, ScreenThin  # noqa: F401
 from ..engine3d import _fit_out, _zbuf_terrain  # noqa: F401
 from ..kit import (  # noqa: F401
     Bounds,
@@ -393,6 +394,11 @@ def bauhaus_gradient(
     shallow_depth: float = 0.55,
     settle_eps: float = 0.006,
     momentum: float = 0.9,
+    fill_spacing: float = 0.5,
+    sink_scale: float = 1.0,
+    sink_spacing: float = 0.0,
+    joint_gap: float = 2.4,
+    braid_passes: int = 3,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
     """WATERSHED — gradient descent as a BASIN OF ATTRACTION. The whole
@@ -453,7 +459,7 @@ def bauhaus_gradient(
     ssink = (sum(p[0] for p in sc) / len(sc), sum(p[1] for p in sc) / len(sc)) if sc else (sux, svy)
     gpx, spx = (u2px(gsink[0]), v2py(gsink[1])), (u2px(ssink[0]), v2py(ssink[1]))
     rscale = max(0.6, min(1.0, min(fw, fh) / 160))
-    deep_r, shallow_r = 13.0 * rscale, 5.0 * rscale
+    deep_r, shallow_r = 13.0 * rscale * sink_scale, 5.0 * rscale * sink_scale
 
     # evenly-spaced streamlines (Jobard–Lefebvre, seed-based)
     cell = max(min_sep, 0.5)
@@ -540,13 +546,34 @@ def bauhaus_gradient(
             if d > best_d:
                 best_d, hero_idx = d, i
 
-    # draw the field: black plateau, destination-hued last stretch
+    # draw the field: black plateau, destination-hued last stretch.
+    # NO OVERLAP joint: black ends joint_gap/2 BEFORE the cut and the colored
+    # tail starts joint_gap/2 AFTER it, so round acrylic pen caps butt cleanly
+    # instead of overpainting each other (feedback from the plotted 17×24).
+    def _split_gap(pts, ncut, gap):
+        acc = 0.0
+        b_end = ncut
+        while b_end > 1 and acc < gap / 2.0:
+            acc += math.hypot(
+                pts[b_end][0] - pts[b_end - 1][0], pts[b_end][1] - pts[b_end - 1][1]
+            )
+            b_end -= 1
+        acc = 0.0
+        t_start = ncut
+        while t_start < len(pts) - 1 and acc < gap / 2.0:
+            acc += math.hypot(
+                pts[t_start + 1][0] - pts[t_start][0], pts[t_start + 1][1] - pts[t_start][1]
+            )
+            t_start += 1
+        return b_end, t_start
+
     for i, (pts, skey, _st) in enumerate(streams):
         if i == hero_idx:
             continue
         ncut = max(1, int(len(pts) * 0.85))
-        out += _poly(pts[: ncut + 1], color=black, f=feed)
-        tail = pts[ncut:]
+        b_end, t_start = _split_gap(pts, ncut, joint_gap)
+        out += _poly(pts[: b_end + 1], color=black, f=feed)
+        tail = pts[t_start:]
         if len(tail) >= 2:
             out += _poly(tail, color=(blue if skey == "b" else pink), f=feed)
 
@@ -585,36 +612,59 @@ def bauhaus_gradient(
             if left and near < 0.02 and math.hypot(vel[0], vel[1]) < 0.006:
                 break
         smax = max(spd) or 1.0
-        out += _poly(path, color=blue, f=feed)  # center pass always
-        for d in (-0.38, 0.38):  # outer passes only on the fast opening reach
-            seg = []
-            for i, p in enumerate(path):
-                if spd[i] > 0.4 * smax:
-                    seg.append(p)
-                elif len(seg) >= 2:
-                    out += _poly(offset_poly(seg, d), color=blue, f=feed)
-                    seg = []
-                else:
-                    seg = []
-            if len(seg) >= 2:
-                out += _poly(offset_poly(seg, d), color=blue, f=feed)
+        # the descent line gets its OWN pen (distinct from the sink circles)
+        # when a 5th pen is available; falls back to the basin hue otherwise
+        braid_pen = _pen(4, colors) if colors >= 5 else blue
+        out += _poly(path, color=braid_pen, f=feed)  # center pass always
+        if braid_passes >= 3:
+            # companion passes fake thickness for FINE pens only — at 2mm tips
+            # they sit inside the tip width and just fight the crowding
+            # guardrail (render with braid_passes=1 for acrylics)
+            for d in (-0.38, 0.38):  # outer passes only on the fast opening reach
+                seg = []
+                for i, p in enumerate(path):
+                    if spd[i] > 0.4 * smax:
+                        seg.append(p)
+                    elif len(seg) >= 2:
+                        out += _poly(offset_poly(seg, d), color=braid_pen, f=feed)
+                        seg = []
+                    else:
+                        seg = []
+                if len(seg) >= 2:
+                    out += _poly(offset_poly(seg, d), color=braid_pen, f=feed)
 
-    # the sinks: hierarchy at 3m
-    out += circle(gpx[0], gpx[1], deep_r + 2.5, pen=black, f=feed)  # one seating ring = a well
-    out += fill_disc(gpx[0], gpx[1], deep_r, spacing=0.5, pen=blue, f=feed)
-    out += fill_disc(spx[0], spx[1], shallow_r, spacing=0.5, pen=pink, f=feed)
+    # the sinks: hierarchy at 3m — CONCENTRIC rings (clean at 2mm tips), not
+    # spirals; ``sink_spacing`` tightens the ring pitch independently of the
+    # streamline separation (0 → same as fill_spacing)
+    ring_pitch = sink_spacing if sink_spacing > 0 else fill_spacing
+
+    def _concentric(cx_, cy_, r_max_, pen_):
+        rr = ring_pitch
+        cmds: List[GCodeCommand] = []
+        while rr <= r_max_ + 1e-9:
+            cmds += circle(cx_, cy_, rr, pen=pen_, f=feed)
+            rr += ring_pitch
+        return cmds
+
+    # both sinks ringed by DOTTED circles in their own hue (feedback ④: blue dots
+    # around the deep basin, mirroring the pink dots around the shallow one)
+    out += dotted_circle(gpx[0], gpx[1], deep_r + 2.5, pen=blue, bounds=bounds, f=feed)
+    out += _concentric(gpx[0], gpx[1], deep_r, blue)
+    out += _concentric(spx[0], spx[1], shallow_r, pink)
     out += dotted_circle(spx[0], spx[1], shallow_r + 4, pen=pink, bounds=bounds, f=feed)
 
-    # furniture on a shared left axis
+    # furniture on a shared left axis — type on its own LEGEND pen (mount 0.5/0.1
+    # while the drawing runs 2mm acrylics); falls back to black when colors < 4
+    legend = _pen(3, colors) if colors >= 4 else black
     xT = x0 + 0.02 * W
-    out += type_block(["WATER", "SHED"], xT, y1 - 6.0, height=3.2, pen=black, f=feed)
+    out += type_block(["WATER", "SHED"], xT, y1 - 6.0, height=3.2, pen=legend, f=feed)
     out += _stroke_text(
-        _spaced("EVERY START FINDS THE VALLEY"), xT, y1 - 20.0, 2.0, color=black, f=feed
+        _spaced("EVERY START FINDS THE VALLEY"), xT, y1 - 20.0, 2.0, color=legend, f=feed
     )
     out += swatch_bar(x1 - 9.0, y1 - 4.0, [black, blue, pink], size=2.6, f=feed)
     sad = (u2px((gsink[0] + ssink[0]) / 2), v2py((gsink[1] + ssink[1]) / 2))
     out += plus_mark(sad[0], sad[1], s=1.4, pen=black, f=feed)
-    out += scale_footer(bounds, text="DTH = -GRAD L . DT", pen=black, height=2.4, f=feed)
+    out += scale_footer(bounds, text="DTH = -GRAD L . DT", pen=legend, height=2.4, f=feed)
     return out
 
 
@@ -1829,42 +1879,50 @@ def bauhaus_manifold(
     rng: SeededRNG,
     bounds: Bounds,
     colors: int = 3,
-    nu: int = 34,
-    nv: int = 84,
+    nu: int = 44,
+    nv: int = 168,
     petals: int = 3,
     fold: float = 1.05,
     twist: float = 1.2,
     nstream: int = 52,
+    stream_sep: float = 2.2,
+    mesh_weave: float = 0.0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """NONLINEAR TRANSFORMATION — an MLP rendered by a from-scratch 3D pen-plotter
-    engine. A parametric petal-saddle (the nonlinear activation FOLDING space so
-    far-apart points meet) is projected isometrically and hidden-line removed via
-    a z-buffer, so near folds occlude far ones and it reads as a solid form.
-    Streamlines funnel from the INPUT plane through the fold to the OUTPUT plane.
-    All output is lines. Black surface, red fold-ridges + flow accents."""
+    """NONLINEAR TRANSFORMATION — an MLP as a folded petal-saddle, now a SHORT
+    declaration on the Scene3D engine: the surface renders with native polar
+    LOD (spider-web pole), depth-aware screen thinning in both families and
+    optional mesh weave; streamlines flow INPUT→OUTPUT with pause-resume crowd
+    control, cross-registered against the red fold-ridges; labels reserve
+    halos; the whole composition fill-fits the page. 3 pens: surface+planes
+    on the fine slot 0, red ridges/flow on 1, the rest black on 2."""
     import numpy as np
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
-    accent, black = _pen(PINK, colors), _pen(BLACK, colors)  # PINK slot → crimson
-    out: List[GCodeCommand] = []
+    surface_pen = _pen(BLUE, colors)
+    accent = _pen(PINK, colors)
+    black = _pen(BLACK, colors)
+    scene = Scene3D(
+        rng, bounds, feed=feed, tip=0.5, px=(240, 320), pad=4.0, fit="fill", fit_pad=4.0
+    )
+    out = scene.out
 
     # ---- 3D world → isometric screen -------------------------------------
     cx0, cy0 = x0 + 0.50 * W, y0 + 0.50 * H
-    a, cd, bwy = 0.29 * W, 0.070 * H, 0.195 * H  # lower camera: taller wy, shallower iso
-    Hy = 1.30  # plane height (INPUT +Hy top, OUTPUT −Hy bottom)
+    a, cd, bwy = 0.29 * W, 0.070 * H, 0.195 * H
+    Hy = 1.30
 
     def proj(wx, wy, wz):
         return (cx0 + (wx - wz) * a, cy0 + wy * bwy - (wx + wz) * cd)
 
     def depth(wx, wy, wz):
-        return (wx + wz) + 0.12 * wy  # larger = nearer (front)
+        return (wx + wz) + 0.12 * wy
 
     def surf(r, th):
         return fold * ((r ** 1.1) * math.cos(petals * th) + 0.20 * (r ** 2) * math.cos(2 * petals * th))
 
-    # ---- surface vertex grid --------------------------------------------
+    # ---- surface grid ------------------------------------------------------
     SX = np.zeros((nu + 1, nv + 1))
     SY = np.zeros((nu + 1, nv + 1))
     DEP = np.zeros((nu + 1, nv + 1))
@@ -1877,136 +1935,86 @@ def bauhaus_manifold(
             sx, sy = proj(wx, wy, wz)
             SX[i, j], SY[i, j], DEP[i, j] = sx, sy, depth(wx, wy, wz)
 
-    # ---- z-buffer (hidden-line): rasterize the surface quads -------------
-    PXW, PXH = 240, 320
-    pad = 4.0
-    sxmin, sxmax = float(SX.min()) - pad, float(SX.max()) + pad
-    symin, symax = float(SY.min()) - pad, float(SY.max()) + pad
-    zbuf = np.full((PXH, PXW), -1e18)
-    PX = (SX - sxmin) / (sxmax - sxmin) * (PXW - 1)
-    PY = (SY - symin) / (symax - symin) * (PXH - 1)
-    dspan = float(DEP.max() - DEP.min()) or 1.0
-    bias = 0.02 * dspan
+    scene.prime_scale(SX, SY)
+    occ = scene.occupancy(stream_sep)
 
-    def fill_tri(p0, p1, p2, d0, d1, d2):
-        minx = int(max(0, math.floor(min(p0[0], p1[0], p2[0]))))
-        maxx = int(min(PXW - 1, math.ceil(max(p0[0], p1[0], p2[0]))))
-        miny = int(max(0, math.floor(min(p0[1], p1[1], p2[1]))))
-        maxy = int(min(PXH - 1, math.ceil(max(p0[1], p1[1], p2[1]))))
-        if maxx < minx or maxy < miny:
-            return
-        den = (p1[1] - p2[1]) * (p0[0] - p2[0]) + (p2[0] - p1[0]) * (p0[1] - p2[1])
-        if abs(den) < 1e-9:
-            return
-        X, Y = np.meshgrid(np.arange(minx, maxx + 1), np.arange(miny, maxy + 1))
-        aa = ((p1[1] - p2[1]) * (X - p2[0]) + (p2[0] - p1[0]) * (Y - p2[1])) / den
-        bb = ((p2[1] - p0[1]) * (X - p2[0]) + (p0[0] - p2[0]) * (Y - p2[1])) / den
-        cc = 1 - aa - bb
-        inside = (aa >= -1e-4) & (bb >= -1e-4) & (cc >= -1e-4)
-        d = aa * d0 + bb * d1 + cc * d2
-        sub = zbuf[miny : maxy + 1, minx : maxx + 1]
-        m = inside & (d > sub)
-        sub[m] = d[m]
+    # ---- text labels reserve halos up front --------------------------------
+    xT = x0 + 0.02 * W
+    wmax = _text_width(_spaced("LINEAR TRANSFORM"), 1.7)
+    rx = min(x1 - 0.205 * W, x1 - wmax - 2.0)
+    ci = proj(0.0, Hy, 0.0)
+    co = proj(0.0, -Hy, 0.0)
+    scene.halo_labels(
+        [
+            (_spaced("MLP"), xT, y1 - 8.0, 3.6, black),
+            (_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, black),
+            (_spaced("INPUT SPACE"), ci[0] - 0.10 * W, ci[1] + 14.0, 2.3, black),
+            (_spaced("OUTPUT SPACE"), co[0] - 0.10 * W, co[1] - 8.0, 2.3, black),
+            (_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, black),
+            (_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, accent),
+            (_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, accent),
+            (_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, black),
+        ]
+    )
 
-    for i in range(nu):
-        for j in range(nv):
-            p00 = (PX[i, j], PY[i, j])
-            p10 = (PX[i + 1, j], PY[i + 1, j])
-            p11 = (PX[i + 1, j + 1], PY[i + 1, j + 1])
-            p01 = (PX[i, j + 1], PY[i, j + 1])
-            fill_tri(p00, p10, p11, DEP[i, j], DEP[i + 1, j], DEP[i + 1, j + 1])
-            fill_tri(p00, p11, p01, DEP[i, j], DEP[i + 1, j + 1], DEP[i, j + 1])
+    # ---- the fold, one declaration ------------------------------------------
+    ridge_every = max(1, nv // petals)
+    lod = PolarLOD(
+        ridge_every=ridge_every,
+        ridge_half=nv // (2 * petals),
+        ridge_register=occ,
+    )
+    PENS = np.full((nu + 1, nv + 1), surface_pen if surface_pen is not None else 0)
+    for j in range(nv + 1):
+        if lod.is_ridge(j):
+            PENS[:, j] = accent if accent is not None else 0
+    thin = ScreenThin(gap_mm=0.8, far_mult=2.0, weave=mesh_weave)
+    scene.surface(SX, SY, DEP, pens=PENS, lod=lod, thin=thin)
 
-    def visible(sx, sy, dep):
-        px = int((sx - sxmin) / (sxmax - sxmin) * (PXW - 1))
-        py = int((sy - symin) / (symax - symin) * (PXH - 1))
-        if px < 0 or px >= PXW or py < 0 or py >= PXH:
-            return True  # off-surface → nothing to occlude
-        return dep >= zbuf[py, px] - bias
-
-    def emit_visible(samples):
-        # samples: list of (sx, sy, dep, pen); draw only visible runs
-        run, runpen = [], None
-        for sx, sy, dep, pen in samples:
-            if visible(sx, sy, dep):
-                if runpen is None or pen == runpen:
-                    run.append((sx, sy))
-                    runpen = pen
-                else:
-                    if len(run) >= 2:
-                        out.extend(_poly(run, color=runpen, f=feed))
-                    run, runpen = [(sx, sy)], pen
-            else:
-                if len(run) >= 2:
-                    out.extend(_poly(run, color=runpen, f=feed))
-                run, runpen = [], None
-        if len(run) >= 2:
-            out.extend(_poly(run, color=runpen, f=feed))
-
-    # ---- draw the visible surface mesh (the fold, hidden-line removed) ----
-    ridge = {0, nv // (2 * petals)}  # crease columns → red fold-ridges
-    for j in range(nv + 1):  # radial lines
-        red = (j % (nv // petals)) < 1 or ((j - nv // (2 * petals)) % (nv // petals)) < 1
-        emit_visible([(SX[i, j], SY[i, j], DEP[i, j], accent if red else black) for i in range(nu + 1)])
-    for i in range(2, nu + 1):  # rings (skip the tiny center rings)
-        emit_visible([(SX[i, j], SY[i, j], DEP[i, j], black) for j in range(nv + 1)])
-
-    # ---- streamlines: INPUT plane → through the fold → OUTPUT plane -------
+    # ---- streamlines: INPUT plane → fold → OUTPUT plane (engine crowd control)
+    streams = []
     for s_i in range(nstream):
         th0 = 2 * math.pi * s_i / nstream
         r0 = 0.6 + 0.4 * rng.random()
-        samples = []
         pen = accent if s_i % 4 == 0 else black
+        line = []
         STEPS = 74
         for k in range(STEPS + 1):
-            s = k / STEPS
-            wy_lin = Hy - 2 * Hy * s
-            rr = r0 * (0.42 + 0.58 * abs(2 * s - 1))  # funnel to a ring, not a point
-            th = th0 + twist * s
-            blend = math.exp(-((s - 0.5) / 0.22) ** 2)
+            sfr = k / STEPS
+            wy_lin = Hy - 2 * Hy * sfr
+            rr = r0 * (0.42 + 0.58 * abs(2 * sfr - 1))
+            th = th0 + twist * sfr
+            blend = math.exp(-((sfr - 0.5) / 0.22) ** 2)
             wy = wy_lin * (1 - blend) + surf(min(1.0, rr), th) * blend
             wx, wz = rr * math.cos(th), rr * math.sin(th)
             sx, sy = proj(wx, wy, wz)
-            samples.append((sx, sy, depth(wx, wy, wz), pen))
-        emit_visible(samples)
+            line.append((sx, sy, depth(wx, wy, wz), pen))
+        streams.append(line)
+    scene.lines(streams, occupancy=occ, warmup=6, min_kept=6)
 
-    # ---- INPUT / OUTPUT planes: dot lattice + frame + droplines ----------
-    def plane(wy, label, above):
+    # ---- INPUT / OUTPUT planes: dot lattice + frame -------------------------
+    def plane(wy):
         g = 11
         for ia in range(g):
             for ib in range(g):
                 gu, gv = -1.15 + 2.3 * ia / (g - 1), -1.15 + 2.3 * ib / (g - 1)
                 sx, sy = proj(gu, wy, gv)
-                out.extend(_dot(sx, sy, 0.45, color=black, f=feed))
+                if scene._blocked(sx, sy):
+                    continue
+                out.extend(_dot(sx, sy, 0.45, color=surface_pen, f=feed))
         corners = [(-1.15, -1.15), (1.15, -1.15), (1.15, 1.15), (-1.15, 1.15), (-1.15, -1.15)]
-        out.extend(_poly([proj(gu, wy, gv) for gu, gv in corners], color=black, f=feed))
-        c = proj(0, wy, 0)
-        ly = c[1] + (14 if above else -8)
-        out.extend(_stroke_text(_spaced(label), c[0] - 0.10 * W, ly, 2.3, color=black, f=feed))
+        scene.poly([proj(gu, wy, gv) for gu, gv in corners], pen=surface_pen)
 
-    plane(Hy, "INPUT SPACE", True)
-    plane(-Hy, "OUTPUT SPACE", False)
-    for dl in range(10):  # a few vertical droplines through the ambient volume
+    plane(Hy)
+    plane(-Hy)
+    for dl in range(10):  # dashed droplines through the ambient volume
         gu = -1.0 + 2.0 * rng.random()
         gv = -1.0 + 2.0 * rng.random()
-        seg = []
-        for k in range(0, 21, 2):
-            wy = Hy - 2 * Hy * k / 20
-            p = proj(gu, wy, gv)
-            seg.append(p)
+        seg = [proj(gu, Hy - 2 * Hy * k / 20, gv) for k in range(0, 21, 2)]
         for k in range(0, len(seg) - 1, 2):
-            out += _poly([seg[k], seg[k + 1]], color=black, f=feed)
+            scene.poly([seg[k], seg[k + 1]], pen=black)
 
-    # ---- furniture -------------------------------------------------------
-    xT = x0 + 0.02 * W
-    out += type_block(["MLP"], xT, y1 - 6.0, height=3.6, pen=black, underline=False, f=feed)
-    out += _stroke_text(_spaced("NONLINEAR TRANSFORMATION"), xT, y1 - 15.0, 2.0, color=black, f=feed)
-    rx = x1 - 0.20 * W
-    out += _stroke_text(_spaced("LINEAR TRANSFORM"), rx, cy0 + 0.30 * H, 1.7, color=black, f=feed)
-    out += _stroke_text(_spaced("NONLINEAR"), rx, cy0 + 0.02 * H, 1.7, color=accent, f=feed)
-    out += _stroke_text(_spaced("ACTIVATION"), rx, cy0 - 0.03 * H, 1.7, color=accent, f=feed)
-    out += _stroke_text(_spaced("LINEAR TRANSFORM"), rx, cy0 - 0.30 * H, 1.7, color=black, f=feed)
-    return out
+    return scene.render()
 
 
 
@@ -2020,205 +2028,119 @@ def bauhaus_memory(
     rng: SeededRNG,
     bounds: Bounds,
     colors: int = 3,
-    turns: int = 13,
-    k_spiral: float = 1.15,
-    lobe: float = 0.58,
-    gate_strengths: Tuple[float, float, float] = (0.90, 0.55, 0.85),
-    jitter: float = 0.05,
+    loops: int = 40,
+    half: int = 130,
+    precess: float = 0.5,
+    grow: float = 1.0,
+    sep: float = 2.0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """MEMORY IN TIME — an LSTM as a DESCENDING CELL-STATE HELIX: a 3D spiral
-    staircase of recurrence (one turn = one time step) rendered with hidden-line
-    occlusion, so near turns hide far turns and time reads as real depth. Each
-    turn lands somewhere new (log-spiral radius + seeded per-turn transform),
-    and three GATES warp the coil sideways as flow attractors (FORGET pinches,
-    INPUT/OUTPUT bulge) — gates warp, they do not annotate. Black = carried cell
-    state; crimson = the gates + the one traced 'now' step."""
-    import numpy as np
-
+    """MEMORY IN TIME — an LSTM as a figure-8 of PRECESSING loops (REMEMBER c_t
+    above, FORGET c_{t-1} below, meeting at the carried-state waist), each
+    iteration landing slightly rotated. Crowd control is ENGINE-NATIVE: the loop
+    family renders through Scene3D.lines(pause_resume), so the waist and the
+    bunched lobe rims self-limit to the paper's capacity instead of piling into
+    ink. Labels reserve halos; gate leaders and the INPUT→LATENT→OUTPUT axis
+    stay structural. Black + red."""
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     accent, black = _pen(PINK, colors), _pen(BLACK, colors)
-    out: List[GCodeCommand] = []
+    scene = Scene3D(rng, bounds, feed=feed, fit="rescue", tip=0.5)
+    out = scene.out
 
-    cx0, cy0 = x0 + 0.42 * W, y0 + 0.50 * H
-    a, bwy, cd = 0.26 * W, 0.235 * H, 0.055 * H
+    cx, cyw = x0 + 0.48 * W, y0 + 0.50 * H
+    ru, rl, wx = 0.135 * H, 0.175 * H, 1.55  # top REMEMBER lobe, bigger FORGET lobe
 
-    def proj(wx, wy, wz):
-        return (cx0 + (wx - wz) * a, cy0 + wy * bwy - (wx + wz) * cd)
+    def rot(px, py, ph):
+        c, s2 = math.cos(ph), math.sin(ph)
+        return (px * c - py * s2, px * s2 + py * c)
 
-    def depth(wx, wy, wz):
-        return (wx + wz) + 0.12 * wy
+    # labels FIRST so their halos carve through loops, orbits and stars
+    scene.halo_labels(
+        [
+            (_spaced("OUTPUT"), cx + 6, cyw + 1.98 * ru + 9.8, 2.3, black),
+            (_spaced("INPUT"), cx + 6, cyw - 1.98 * rl - 12.2, 2.3, black),
+            (_spaced("LATENT"), cx + 6, cyw - 1.2, 2.2, accent),
+            (_spaced("REMEMBER"), cx - 13, cyw + ru * 0.95, 2.2, black),
+            (_spaced("C T"), cx - 4, cyw + ru * 0.95 - 5.2, 1.9, black),
+            (_spaced("FORGET"), cx - 11, cyw - rl * 0.98, 2.2, black),
+            (_spaced("C T-1"), cx - 6, cyw - rl * 0.98 - 5.2, 1.9, black),
+        ]
+    )
 
-    N = turns
-    Hy = 1.35
-    R0, R_MIN, A_MAX = 0.95, 0.16, 0.42
-    gy = (0.85 * Hy, 0.0, -0.85 * Hy)  # FORGET(low/near-input), INPUT(waist), OUTPUT(high)
-    gsig = (0.30, 0.18, 0.30)
-    gsign = (-1.0, 1.0, 1.0)  # forget contracts, input/output bulge
-
-    def gate_warp(wy):
-        return sum(
-            gsign[g] * gate_strengths[g] * A_MAX * math.exp(-((wy - gy[g]) / gsig[g]) ** 2)
-            for g in range(3)
-        )
-
-    # per-turn seeded transformation (different path each iteration)
-    tj = [1.0 + jitter * rng.gauss(0, 1) for _ in range(N + 1)]
-
-    def coil_pt(t):
-        phi = 2 * math.pi * N * t
-        wy = Hy - 2 * Hy * t
-        R = max(R0 * math.exp(-k_spiral * t), R_MIN)
-        jr = tj[min(N, int(t * N))]
-        rad = R * (1 - lobe * math.cos(phi)) * jr
-        wx = rad * math.cos(phi) + gate_warp(wy)
-        wz = rad * math.sin(phi)
-        return wx, wy, wz
-
-    M = N * 170
-    world = [coil_pt(i / M) for i in range(M + 1)]
-    scr = [proj(*p) for p in world]
-    dps = [depth(*p) for p in world]
-
-    # inline z-buffer: sweep a thin ribbon (+/-0.5mm screen normal) to occlude
-    PXW, PXH = 240, 360
-    sxs = [s[0] for s in scr]
-    sys = [s[1] for s in scr]
-    sxmin, sxmax = min(sxs) - 3, max(sxs) + 3
-    symin, symax = min(sys) - 3, max(sys) + 3
-    zb = np.full((PXH, PXW), -1e18)
-
-    def topx(sx, sy):
-        return ((sx - sxmin) / (sxmax - sxmin) * (PXW - 1), (sy - symin) / (symax - symin) * (PXH - 1))
-
-    def rails(i):
-        j0, j1 = max(0, i - 1), min(M, i + 1)
-        tx, ty = scr[j1][0] - scr[j0][0], scr[j1][1] - scr[j0][1]
-        L = math.hypot(tx, ty) or 1.0
-        nx, ny = -ty / L * 0.5, tx / L * 0.5
-        return (scr[i][0] + nx, scr[i][1] + ny), (scr[i][0] - nx, scr[i][1] - ny)
-
-    def fill_tri(p0, p1, p2, d):
-        pp = [topx(*p0), topx(*p1), topx(*p2)]
-        minx = int(max(0, math.floor(min(q[0] for q in pp))))
-        maxx = int(min(PXW - 1, math.ceil(max(q[0] for q in pp))))
-        miny = int(max(0, math.floor(min(q[1] for q in pp))))
-        maxy = int(min(PXH - 1, math.ceil(max(q[1] for q in pp))))
-        if maxx < minx or maxy < miny:
-            return
-        (x0p, y0p), (x1p, y1p), (x2p, y2p) = pp
-        den = (y1p - y2p) * (x0p - x2p) + (x2p - x1p) * (y0p - y2p)
-        if abs(den) < 1e-9:
-            return
-        X, Y = np.meshgrid(np.arange(minx, maxx + 1), np.arange(miny, maxy + 1))
-        aa = ((y1p - y2p) * (X - x2p) + (x2p - x1p) * (Y - y2p)) / den
-        bb = ((y2p - y0p) * (X - x2p) + (x0p - x2p) * (Y - y2p)) / den
-        cc = 1 - aa - bb
-        ins = (aa >= -1e-3) & (bb >= -1e-3) & (cc >= -1e-3)
-        sub = zb[miny : maxy + 1, minx : maxx + 1]
-        m = ins & (d > sub)
-        sub[m] = d
-
-    ra = [rails(i) for i in range(M + 1)]
-    for i in range(M):
-        (a0, b0), (a1, b1) = ra[i], ra[i + 1]
-        d = max(dps[i], dps[i + 1])
-        fill_tri(a0, b0, b1, d)
-        fill_tri(a0, b1, a1, d)
-
-    dmax = max(dps)
-    dmin = min(dps)
-    dmid = 0.5 * (dmax + dmin)
-    bias = 0.02 * (dmax - dmin or 1.0)
-
-    def vis(i):
-        px, py = topx(*scr[i])
-        ix, iy = int(px), int(py)
-        if ix < 0 or ix >= PXW or iy < 0 or iy >= PXH:
-            return True
-        return dps[i] >= zb[iy, ix] - bias
-
-    # emit visible coil runs (near turns double-pass for weight)
-    run = []
-    for i in range(M + 1):
-        if vis(i):
-            run.append((scr[i], dps[i]))
-        elif len(run) >= 2:
-            pts = [p for p, _ in run]
-            out += _poly(pts, color=black, f=feed)
-            if run[len(run) // 2][1] > dmid:
-                out += _poly(pts, color=black, f=feed)
-            run = []
-        else:
-            run = []
-    if len(run) >= 2:
-        pts = [p for p, _ in run]
-        out += _poly(pts, color=black, f=feed)
-
-    # faint background: orbit-ghosts + starfield (top-right void)
-    for e in range(2):
-        ea, eb = (0.30 + 0.06 * e) * W, (0.34 + 0.05 * e) * H
+    # faint background orbits (dashed) + a light starfield
+    for e in range(3):
+        ea, eb = (0.34 + 0.05 * e) * W, (0.40 + 0.05 * e) * H
+        erot = rng.uniform(-0.3, 0.3)
         seg = []
-        for kk in range(181):
-            ang = 2 * math.pi * kk / 180
-            pt = (cx0 + ea * 0.5 * math.cos(ang), cy0 + eb * 0.5 * math.sin(ang))
-            if kk % 7 < 3:
-                seg.append(pt)
+        for k in range(241):
+            a = 2 * math.pi * k / 240
+            ox, oy = rot(ea * 0.5 * math.cos(a), eb * 0.5 * math.sin(a), erot)
+            if k % 6 < 3:
+                seg.append((cx + ox, cyw + oy))
             elif len(seg) >= 2:
-                out += _poly(seg, color=black, f=feed)
+                scene.poly(seg, pen=black)
                 seg = []
             else:
                 seg = []
-    for _ in range(14):
-        out += _dot(rng.uniform(x0 + 0.55 * W, x1 - 4), rng.uniform(y0 + 0.55 * H, y1 - 4), rng.uniform(0.3, 0.8), color=black, f=feed)
+        if len(seg) >= 2:
+            scene.poly(seg, pen=black)
+    for _ in range(26):
+        sxp, syp = rng.uniform(x0 + 4, x1 - 4), rng.uniform(y0 + 4, y1 - 4)
+        out += _dot(sxp, syp, rng.uniform(0.3, 0.9), color=black, f=feed)
 
-    # carried-state axis: full-height, UN-TAPERED (tightening = foreshortening, not decay)
-    at, ab = proj(0, -Hy, 0), proj(0, Hy, 0)
-    out += _poly([ab, at], color=black, f=feed)
-    out += _poly([(at[0] - 1.6, at[1] + 4), at, (at[0] + 1.6, at[1] + 4)], color=black, f=feed)
+    # the precessing figure-8 family — ENGINE crowd control (outermost first so
+    # the big envelope loops own their rims; inner iterations pause through
+    # saturated stretches and resume where space opens)
+    family = []
+    for i in range(loops):
+        t = i / (loops - 1)
+        sc = (0.26 + 0.74 * t) * (grow ** i)
+        ph = precess * t
+        jr = 1.0 + 0.04 * rng.gauss(0, 1)
+        pts = []
+        for k in range(half + 1):  # upper lobe — REMEMBER
+            a = 2 * math.pi * k / half
+            ox, oy = rot(wx * ru * sc * jr * math.sin(a), ru * sc * (1 - math.cos(a)), ph)
+            pts.append((cx + ox, cyw + oy))
+        for k in range(half + 1):  # lower lobe — FORGET (bigger)
+            a = 2 * math.pi * k / half
+            ox, oy = rot(wx * rl * sc * jr * math.sin(a), -rl * sc * (1 - math.cos(a)), ph)
+            pts.append((cx + ox, cyw + oy))
+        pen = accent if (i % 3 == 0 or i >= loops - 2) else black
+        family.append([(px, py, 0.0, pen) for (px, py) in pts])
+    scene.lines(reversed(family), sep_mm=sep, warmup=0, min_kept=12)
 
-    # gates: red warp glyphs (dot + equipotential arcs + a streamline merging into the coil)
-    for g in range(3):
-        gp = proj(0.0, gy[g], 0.0)
-        # nearest coil point at this height → the deflected turn
-        best_i = min(range(M + 1), key=lambda i: abs(world[i][1] - gy[g]) + 0.001 * abs(world[i][2]))
-        cp = scr[best_i]
-        strength = gate_strengths[g]
-        gx = gp[0] + (18 if gsign[g] > 0 else -18)
-        out += _dot(gx, gp[1], 1.4 + strength, color=accent, f=feed)
-        for r in range(2 + int(strength * 2)):
-            rr = 3.0 + r * 2.2
-            arc = [(gx + rr * math.cos(math.radians(th)), gp[1] + rr * math.sin(math.radians(th))) for th in range(-70, 71, 12)]
-            out += _poly(arc, color=accent, f=feed)
-        out += _poly([(gx, gp[1]), (0.5 * (gx + cp[0]), 0.5 * (gp[1] + cp[1])), cp], color=accent, f=feed)
+    # the central axis: INPUT → LATENT → OUTPUT
+    top_node, bot_node = cyw + 1.98 * ru, cyw - 1.98 * rl
+    aT, aB = top_node + 11, bot_node - 11
+    scene.poly([(cx, aB), (cx, aT)], pen=black)
+    scene.poly([(cx - 1.6, aT - 4), (cx, aT), (cx + 1.6, aT - 4)], pen=black)
+    scene.poly([(cx - 1.6, aB + 4), (cx, aB), (cx + 1.6, aB + 4)], pen=black)
+    out += fill_disc(cx, top_node, 1.9, spacing=0.5, pen=black, f=feed)
+    out += fill_disc(cx, bot_node, 1.9, spacing=0.5, pen=black, f=feed)
+    out += circle(cx, cyw, 2.6, pen=accent, f=feed)  # LATENT — the carried state
 
-    # the 'now' turn — one outermost early turn traced in red, offset outward
-    t_now = 0.06
-    nowpts = []
-    for k in range(171):
-        wx, wy, wz = coil_pt(t_now + k / 170 / N)
-        s = proj(wx, wy, wz)
-        nowpts.append((s[0] + 0.8, s[1]))
-    out += _poly(nowpts, color=accent, f=feed)
-    out += _poly(nowpts, color=accent, f=feed)
+    # gate leaders (dot on an outer loop → dashed leader → label)
+    def leader(px, py, lx, ly, l1, l2):
+        out.extend(_dot(px, py, 1.4, color=black, f=feed))
+        n = 7
+        for s2 in range(0, n, 2):
+            a = (px + (lx - px) * s2 / n, py + (ly - py) * s2 / n)
+            b = (px + (lx - px) * (s2 + 1) / n, py + (ly - py) * (s2 + 1) / n)
+            scene.poly([a, b], pen=black)
+        out.extend(_stroke_text(_spaced(l1), lx - 0.14 * W, ly + 2.2, 2.0, color=black, f=feed))
+        out.extend(_stroke_text(_spaced(l2), lx - 0.14 * W, ly - 2.4, 1.8, color=black, f=feed))
 
-    # three axis nodes (LATENT drawn last, on top)
-    out += fill_disc(ab[0], ab[1], 2.0, spacing=0.5, pen=black, f=feed)
-    out += fill_disc(at[0], at[1], 2.0, spacing=0.5, pen=black, f=feed)
-    lat = proj(0, 0, 0)
-    out += circle(lat[0], lat[1], 2.6, pen=accent, f=feed)
-    out += _stroke_text(_spaced("INPUT"), ab[0] + 5, ab[1] - 1, 2.0, color=black, f=feed)
-    out += _stroke_text(_spaced("LATENT"), lat[0] + 5, lat[1] - 1, 2.0, color=accent, f=feed)
-    out += _stroke_text(_spaced("OUTPUT"), at[0] + 5, at[1] - 1, 2.0, color=black, f=feed)
+    og = rot(-wx * ru, ru, precess * 0.5)
+    ig = rot(wx * ru, ru * 0.4, precess * 0.5)
+    fg = rot(-wx * rl, -rl, precess * 0.5)
+    leader(cx + og[0], cyw + og[1], x0 + 0.14 * W, cyw + 0.22 * H, "OUTPUT GATE", "O T")
+    leader(cx + ig[0], cyw + ig[1], x1 - 0.05 * W, cyw + 0.02 * H, "INPUT GATE", "I T")
+    leader(cx + fg[0], cyw + fg[1], x0 + 0.13 * W, cyw - 0.18 * H, "FORGET GATE", "F T")
 
-    # furniture (flush-left margin)
-    xT = x0 + 0.03 * W
-    out += type_block(["LSTM"], xT, y1 - 6.0, height=3.4, pen=black, underline=False, f=feed)
-    out += _stroke_text(_spaced("MEMORY IN TIME"), xT, y1 - 15.0, 2.0, color=black, f=feed)
-    out += swatch_bar(xT, y0 + 26.0, [black, accent], size=2.6, f=feed)
-    out += scale_footer(bounds, text="M 1:80", pen=black, height=2.4, f=feed)
-    return _fit_out(out, bounds)
+    out += _stroke_text(_spaced("LSTM   MEMORY IN TIME"), x0 + 0.03 * W, y0 + 8.0, 2.0, color=black, f=feed)
+    return scene.render()
 
 
 
@@ -2248,7 +2170,10 @@ def bauhaus_locality(
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     accent, black = _pen(PINK, colors), _pen(BLACK, colors)
-    out: List[GCodeCommand] = []
+    # Scene3D renders the terrains with native anti-crowding; `out` aliases the
+    # scene buffer so every append keeps its historical draw order.
+    scene = Scene3D(rng, bounds, feed=feed, px=(230, 180), fit="rescue")
+    out = scene.out
 
     LW, DX, DY = 0.50 * W, 0.24 * W, 0.065 * H
     gap, STAGGER_X = 0.150 * H, 0.045 * W
@@ -2301,7 +2226,7 @@ def bauhaus_locality(
                 SX[iu, jv], SY[iu, jv], DEP[iu, jv] = p[0], p[1], dep(i, v, z)
                 if top and math.hypot(u - pun, v - pvn) < 0.16:
                     PENV[iu, jv] = accent if accent is not None else 0
-        _zbuf_terrain(out, SX, SY, DEP, feed=feed, PENV=PENV, PXW=230, PXH=180)
+        scene.surface(SX, SY, DEP, pens=PENV)
 
     # top-layer object contours (faint black, skip the crimson cap)
     top = layers - 1
@@ -2331,6 +2256,33 @@ def bauhaus_locality(
     def surf_z(i, u, v):
         return float(Zs[i][int(min(nx, max(0, round(u * nx))))][int(min(ny, max(0, round(v * ny))))])
 
+    def _dashed(pts, dash=1.8, gap=3.6, pen=None):
+        """Sparse dashes along a polyline (arc-length walk) — a whisper, not a wire."""
+        cmds: List[GCodeCommand] = []
+        on, acc = True, 0.0
+        cur = [pts[0]]
+        for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
+            seg = math.hypot(xb - xa, yb - ya)
+            t = 0.0
+            while t < seg:
+                limit = (dash if on else gap) - acc
+                step = min(limit, seg - t)
+                t += step
+                acc += step
+                px, py = xa + (xb - xa) * t / seg, ya + (yb - ya) * t / seg
+                if acc >= (dash if on else gap) - 1e-9:
+                    if on:
+                        cur.append((px, py))
+                        if len(cur) >= 2:
+                            cmds += _poly(cur, color=pen, f=feed)
+                    cur = [(px, py)]
+                    on, acc = not on, 0.0
+                elif on:
+                    cur.append((px, py))
+        if on and len(cur) >= 2:
+            cmds += _poly(cur, color=pen, f=feed)
+        return cmds
+
     corner_paths = [[], [], [], []]
     for i in range(layers):
         hw = 0.045 + 0.052 * i
@@ -2340,8 +2292,10 @@ def bauhaus_locality(
         for k, (cu, cv) in enumerate(cs):
             corner_paths[k].append(proj(i, cu, cv, surf_z(i, cu, cv)))
         out += _dot(*proj(i, uc, vc, surf_z(i, uc, vc)), 1.1, color=accent, f=feed)
+    # receptive-field rails as sparse dashes — present but quiet (plot feedback:
+    # the solid red wires dominated the terrains)
     for path in corner_paths:
-        out += _poly(path, color=accent, f=feed)
+        out += _dashed(path, pen=accent)
 
     # left abstraction/resolution axis (one honest rule, not a schematic)
     ax = x0 + 0.05 * W
@@ -2361,7 +2315,7 @@ def bauhaus_locality(
     out += type_block(["CNN"], xT, y1 - 6.0, height=4.2, pen=black, underline=False, f=feed)
     out += _stroke_text(_spaced("FROM PIXELS TO MEANING"), xT, y1 - 16.0, 2.4, color=black, f=feed)
     out += scale_footer(bounds, text="M 1:80", pen=black, height=2.4, f=feed)
-    return _fit_out(out, bounds)
+    return scene.render()
 
 
 
@@ -2390,159 +2344,345 @@ def bauhaus_relevance(
     block: int = 0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """ATTENTION AS TOPOGRAPHY — one query's attention as a gravitational BASIN
-    carved into a field of key-hills. The most-resonant query bends the key field:
-    high-weight keys lean/stretch into the sink, softmax rings ride the pit wall
-    (green), and a value→output ribbon plunges through the basin and rises out the
-    far side (content reshaped by the gravity of context). Blue = the captured
-    attention mass, red = key crests, green = probability + value flow."""
+    """ATTENTION AS TOPOGRAPHY — the mechanism as a tight ISOMETRIC diamond
+    stack: 1 QUERY + KEY SPACES (one shared sheet, Q and K as two red wells) ·
+    2 DOT PRODUCT (the similarity landscape: black central peak flanked by red
+    Q/K peaks, red swoop arrows falling in) · 3 SOFTMAX (contour rings
+    tightening to the winner) · 4 VALUES (a full red rolling terrain) ·
+    5 OUTPUT (green attended terrain, one dominant contextualized peak).
+    Dashed anchor droplines tie the Q and K sites through every stage. Driven
+    by a real attention row (checkpoint/GPT-2 via ``weights``)."""
     import numpy as np
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
     blue, red, green, blk = 0, 1, 2, 3
-    out: List[GCodeCommand] = []
+    scene = Scene3D(rng, bounds, feed=feed, px=(230, 210), fit="rescue")
+    out = scene.out
+    ns = max(26, nu // 2)
 
-    # 1. real attention (single source of truth)
-    S = np.asarray(_attention_matrix(rng, tokens, head, temp=tau, causal=False, weights=weights, block=block, return_scores=True), dtype=float)
+    # real attention row → relative Q/K energy
+    S = np.asarray(
+        _attention_matrix(rng, tokens, head, temp=tau, causal=False, weights=weights, block=block, return_scores=True),
+        dtype=float,
+    )
     S = (S - S.min()) / (S.max() - S.min() + 1e-9)
     qi = int(np.argmax(S.max(axis=1)))
-    sim = S[qi]
-    w = np.exp(sim / tau)
+    w = np.exp(S[qi] / tau)
     w = w / w.sum()
+    k_amp = 0.75 + 0.5 * float(max(w))  # K side scaled by the winning weight
 
-    # 2. key field — scattered hills; high-weight keys placed near basin site
-    order = list(np.argsort(-w))
-    kx = [rng.uniform(-0.85, 0.85) for _ in range(n_keys)]
-    kz = [rng.uniform(-0.85, 0.85) for _ in range(n_keys)]
-    q_site = (0.35 + rng.uniform(-0.05, 0.05), -0.15 + rng.uniform(-0.05, 0.05))
-    slots = sorted(range(n_keys), key=lambda m: math.hypot(kx[m] - q_site[0], kz[m] - q_site[1]))
-    wk = [0.02] * n_keys
-    amp = [0.55 + 0.45 * rng.random() for _ in range(n_keys)]
-    for rank, tok in enumerate(order[:n_keys]):
-        m = slots[rank]
-        wk[m] = float(w[tok])
-    # lean high-weight keys toward the sink
-    for m in range(n_keys):
-        kx[m] += lean * wk[m] * (q_site[0] - kx[m])
-        kz[m] += lean * wk[m] * (q_site[1] - kz[m])
+    qw, kw = (-0.46, -0.12), (0.50, 0.16)  # Q and K sites (shared sheet coords)
+    mid = ((qw[0] + kw[0]) / 2.0, (qw[1] + kw[1]) / 2.0)
 
-    sigma_b = 0.22
+    # ---- the diamond iso stack ------------------------------------------
+    cx = x0 + 0.50 * W
+    A, CD, HY = 0.205 * W, 0.050 * H, 0.055 * H
+    n_stage = 5
+    cy_top, cy_bot = y1 - 0.170 * H, y0 + 0.115 * H
+    stepy = (cy_top - cy_bot) / (n_stage - 1)
+    cyL = [cy_top - k * stepy for k in range(n_stage)]
 
-    def Bfield(wx, wz):
-        return math.exp(-(((wx - q_site[0]) ** 2 + (wz - q_site[1]) ** 2) / (2 * sigma_b ** 2)))
+    def mk_sheet(cyc, hfun, hscale, penfn=None, pen=blk, cxE=None, scale=1.0):
+        AA, CDD, HYY = A * scale, CD * scale, HY * scale
+        cxx = cx if cxE is None else cxE
+        SX = np.zeros((ns + 1, ns + 1))
+        SY = np.zeros((ns + 1, ns + 1))
+        DE = np.zeros((ns + 1, ns + 1))
+        PV = np.full((ns + 1, ns + 1), pen)
+        for i in range(ns + 1):
+            wx = -1 + 2 * i / ns
+            for j in range(ns + 1):
+                wz = -1 + 2 * j / ns
+                wy = hfun(wx, wz) * hscale
+                SX[i, j] = cxx + (wx - wz) * AA
+                SY[i, j] = cyc + wy * HYY - (wx + wz) * CDD
+                DE[i, j] = (wx + wz) + 0.12 * wy
+                if penfn is not None:
+                    PV[i, j] = penfn(wx, wz)
+        scene.surface(SX, SY, DE, pens=PV)
 
-    def Kfield(wx, wz):
-        tot = 0.0
-        for m in range(n_keys):
-            # sigma_k is a std-dev in world units: crisp separate hills, not one
-            # fused range (2·σ² in the denominator — the σ-not-squared bug made
-            # every hill blur into a mountain massif).
-            tot += amp[m] * math.exp(-(((wx - kx[m]) ** 2 + (wz - kz[m]) ** 2) / (2 * sigma_k ** 2)))
-        # carve the crater clean: suppress key mass inside the basin footprint
-        core = math.hypot(wx - q_site[0], wz - q_site[1])
-        if core < 0.30:
-            tot *= 0.10 + 0.90 * (core / 0.30)
-        return tot
+    def at(cyc, wx, wz, wy=0.0, hs=0.0):
+        return (cx + (wx - wz) * A, cyc + wy * hs * HY - (wx + wz) * CD)
 
-    def Zf(wx, wz):
-        return Kfield(wx, wz) - basin_depth * Bfield(wx, wz)
+    def g2(wx, wz, c, sig):
+        return math.exp(-(((wx - c[0]) ** 2 + (wz - c[1]) ** 2) / (2 * sig * sig)))
 
-    # 4. project + z-buffer
-    cx, cy = x0 + 0.52 * W, y0 + 0.50 * H
-    a, cd, bwy = 0.29 * W, 0.070 * H, 0.20 * H
-    hs = 0.9
+    # ---- fields ----------------------------------------------------------
+    def s1(wx, wz):  # two wells in a flat sheet
+        return -0.95 * g2(wx, wz, qw, 0.17) - 0.95 * g2(wx, wz, kw, 0.17)
 
-    def proj(wx, wy, wz):
-        return (cx + (wx - wz) * a, cy + wy * bwy - (wx + wz) * cd)
+    def s2(wx, wz):  # similarity landscape
+        return (
+            1.05 * g2(wx, wz, mid, 0.20)
+            + 0.62 * g2(wx, wz, qw, 0.16)
+            + 0.62 * k_amp * g2(wx, wz, kw, 0.16)
+            + 0.10 * rng.fbm(wx * 2.0 + 3.7, wz * 2.0 + 8.1)
+        )
 
-    def dep(wx, wy, wz):
-        return (wx + wz) + 0.12 * wy
+    def s_attn(wx, wz):  # sharpened winner
+        return math.exp((s2(wx, wz) - 1.0) / max(0.15, tau * 0.55))
 
-    SX = np.zeros((nu + 1, nv + 1))
-    SY = np.zeros((nu + 1, nv + 1))
-    DEP = np.zeros((nu + 1, nv + 1))
-    Zg = np.zeros((nu + 1, nv + 1))
-    Bg = np.zeros((nu + 1, nv + 1))
-    for i in range(nu + 1):
-        wx = -1 + 2 * i / nu
-        for j in range(nv + 1):
-            wz = -1 + 2 * j / nv
-            z = Zf(wx, wz)
-            Zg[i, j] = z
-            Bg[i, j] = Bfield(wx, wz)
-            p = proj(wx, z * hs, wz)
-            SX[i, j], SY[i, j], DEP[i, j] = p[0], p[1], dep(wx, z * hs, wz)
-    # pen law: BLACK = structure (dominant); RED = only the highest key crests;
-    # BLUE = only the basin bowl (the captured attention mass, scarce + loud).
-    crest = float(np.percentile(Zg, 93))  # red = only the truly top crests (scarce + loud)
-    PV = np.full((nu + 1, nv + 1), blk)
-    PV[(Zg > crest) & (Bg < 0.30)] = red
-    PV[Bg > 0.42] = blue
-    if float((PV == blue).mean()) > 0.15:
-        PV[(PV == blue) & (Bg < 0.55)] = blk
-    _zbuf_terrain(out, SX, SY, DEP, feed=feed, PENV=PV, PXW=230, PXH=310)
+    def s4(wx, wz):  # V: rolling content terrain
+        return (
+            0.40 * (math.sin(2.3 * wx + 0.5) * math.cos(1.8 * wz) + 0.5 * math.sin(2.8 * wz + 1.2))
+            + 0.42 * rng.fbm(wx * 1.7 + 5.5, wz * 1.7 + 2.2)
+            + 0.30
+        )
 
-    # 6. softmax rings on the basin wall (green, inside the footprint)
-    gN = 90
+    def s5(wx, wz):  # attended output: V pulled up where attention mass sits
+        return 0.35 * s4(wx, wz) + 1.05 * s_attn(wx, wz) * (0.4 + 0.6 * s4(wx, wz))
+
+    # lateral V-branch geometry (used by labels + sheets + projection lines)
+    v_scale = 0.55
+    vX = cx + 0.335 * W
+    vY = (cyL[2] + cyL[4]) / 2.0 + 0.02 * H
+
+    # ---- halo labels (stage numbers left, formulas right, sub-notes) ------
+    Lx = x0 + 0.020 * W
+    Rx = x1 - 0.235 * W
+    scene.halo_labels(
+        [
+            ("1", Lx, cyL[0] + 0.035 * H, 2.6, blk),
+            (_spaced("QUERY + KEY SPACES"), Lx + 6, cyL[0] + 0.035 * H, 1.7, blk),
+            (_spaced("Q QUERIES"), cx - 0.33 * W, cyL[0] + 0.065 * H, 1.7, red),
+            (_spaced("K KEYS"), cx + 0.21 * W, cyL[0] + 0.065 * H, 1.7, red),
+            ("2", Lx, cyL[1] + 0.035 * H, 2.6, blk),
+            (_spaced("DOT PRODUCT"), Lx + 6, cyL[1] + 0.035 * H, 1.7, blk),
+            (_spaced("Q . K T"), Rx, cyL[1] + 0.045 * H, 1.8, blk),
+            (_spaced("SIMILARITY"), Rx, cyL[1] - 0.030 * H, 1.4, blk),
+            (_spaced("LANDSCAPE"), Rx, cyL[1] - 0.048 * H, 1.4, blk),
+            ("3", Lx, cyL[2] + 0.030 * H, 2.6, blk),
+            (_spaced("SOFTMAX"), Lx + 6, cyL[2] + 0.030 * H, 1.7, blk),
+            (_spaced("SOFTMAX QK T"), Rx, cyL[2] + 0.040 * H, 1.8, blk),
+            (_spaced("NORMALIZED"), Rx, cyL[2] + 0.020 * H, 1.4, blk),
+            (_spaced("ATTENTION WEIGHTS"), Rx, cyL[2] + 0.002 * H, 1.4, blk),
+            ("4", vX - 0.11 * W, vY + 0.085 * H, 2.6, blk),
+            (_spaced("VALUES V"), vX - 0.095 * W, vY + 0.085 * H, 1.7, blk),
+            (_spaced("V VALUES"), vX + 0.02 * W, vY + 0.070 * H, 1.8, red),
+            (_spaced("CONTENT TO"), vX + 0.03 * W, vY - 0.070 * H, 1.4, blk),
+            (_spaced("BE MIXED"), vX + 0.03 * W, vY - 0.088 * H, 1.4, blk),
+            ("5", Lx, cyL[4] + 0.030 * H, 2.6, blk),
+            (_spaced("OUTPUT"), Lx + 6, cyL[4] + 0.030 * H, 1.7, blk),
+            (_spaced("SOFTMAX QK T V"), Rx, cyL[4] + 0.040 * H, 1.8, blk),
+            (_spaced("ATTENDED OUTPUT"), Rx, cyL[4] + 0.020 * H, 1.4, green),
+            (_spaced("TOKENS"), cx + 0.26 * W, cyL[0] + 0.028 * H, 1.3, blk),
+            (_spaced("DIMENSIONS"), cx + 0.27 * W, cyL[0] - 0.020 * H, 1.3, blk),
+        ]
+    )
+
+    # ---- stage 1: shared sheet with the two wells
+    def pen1(wx, wz):
+        return red if (g2(wx, wz, qw, 0.17) > 0.30 or g2(wx, wz, kw, 0.17) > 0.30) else blk
+
+    mk_sheet(cyL[0], s1, 0.9, penfn=pen1)
+
+    # ---- stage 2: similarity landscape (red side peaks, black centre)
+    def pen2(wx, wz):
+        side = max(g2(wx, wz, qw, 0.16), k_amp * g2(wx, wz, kw, 0.16))
+        return red if side > 0.42 and g2(wx, wz, mid, 0.20) < 0.55 else blk
+
+    mk_sheet(cyL[1], s2, 0.85, penfn=pen2)
+
+    # ---- stage 3: softmax rings tightening to the winner
+    gN = 64
     xs = [-1 + 2 * i / gN for i in range(gN + 1)]
-    ys = [-1 + 2 * j / gN for j in range(gN + 1)]
-    sigma_p = 0.10 + 0.30 * tau
-    P = [[math.exp(-(((xs[i] - q_site[0]) ** 2 + (ys[j] - q_site[1]) ** 2) / (2 * sigma_p ** 2))) for i in range(gN + 1)] for j in range(gN + 1)]
-    for lv in range(1, 7):
-        iso = lv / 7.0
-        for ch in _chain_segments(_marching_squares(P, xs, ys, iso)):
+    zs = [-1 + 2 * j / gN for j in range(gN + 1)]
+    P = [[s_attn(xs[i], zs[j]) for i in range(gN + 1)] for j in range(gN + 1)]
+    pmax = max(max(row) for row in P) or 1.0
+    for lv in range(1, 10):
+        iso = (lv / 10.0) ** 1.6 * pmax
+        for ch in _chain_segments(_marching_squares(P, xs, zs, iso)):
             if len(ch) < 5:
                 continue
-            pts = [proj(wx, Zf(wx, wz) * hs, wz) for (wx, wz) in ch if Bfield(wx, wz) > 0.20]
-            if len(pts) >= 2:
-                out += _poly(pts, color=green, f=feed)
+            pts = [at(cyL[2], wx, wz) for (wx, wz) in ch]
+            scene.poly(pts, pen=blk)
+    # sheet border diamond
+    br = [at(cyL[2], -1, -1), at(cyL[2], 1, -1), at(cyL[2], 1, 1), at(cyL[2], -1, 1), at(cyL[2], -1, -1)]
+    scene.poly(br, pen=blk)
 
-    # 7. value→output ribbon — gradient descent into the basin, rising out
-    def gradZ(wx, wz):
-        e = 0.01
-        return ((Zf(wx + e, wz) - Zf(wx - e, wz)) / (2 * e), (Zf(wx, wz + e) - Zf(wx, wz - e)) / (2 * e))
+    # ---- VALUES enters PERPENDICULAR to the column (multi-axis explosion):
+    # a smaller red sheet displaced along the lateral axonometric direction,
+    # tied into OUTPUT by dotted projection lines along that axis
+    mk_sheet(vY, s4, 0.75, pen=red, cxE=vX, scale=v_scale)
 
-    px, pz = -0.9, q_site[1] + 0.05
-    path = []
-    for _ in range(220):
-        path.append((px, pz))
-        gx, gz = gradZ(px, pz)
-        if px < q_site[0] - 0.02:  # descend toward basin from the left
-            px += 0.012
-            pz += -0.02 * gz
-        else:  # climb out the far side
-            px += 0.012
-            pz += 0.01 * gz
-        if px > 0.95:
-            break
-    rib = [proj(wx, (Zf(wx, wz) + 0.03) * hs, wz) for (wx, wz) in path]
-    rib, _ = _catmull_subdivide(rib)
-    out += _poly(rib, color=green, f=feed)
-    # emphasise the plunge (inside basin) with a second pass
-    inb = [proj(wx, (Zf(wx, wz) + 0.03) * hs, wz) for (wx, wz) in path if Bfield(wx, wz) > 0.3]
-    if len(inb) >= 2:
-        out += _poly(inb, color=green, f=feed)
+    # ---- OUTPUT — green attended terrain (bottom of the column)
+    mk_sheet(cyL[4], s5, 0.80, pen=green)
 
-    # 8. query arrival ticks (scarce red) on the flat-left approach
-    for t in range(3):
-        e = proj(-0.95 + 0.05 * t, 0.02 * hs, q_site[1] + 0.05)
-        out += _poly([(e[0] - 3, e[1]), (e[0] + 3, e[1])], color=red, f=feed)
-        out += _poly([(e[0], e[1] - 3), (e[0], e[1] + 3)], color=red, f=feed)
+    def _at_sheet(cxx, cyc, wx, wz, scale=1.0):
+        return (cxx + (wx - wz) * A * scale, cyc - (wx + wz) * CD * scale)
 
-    # 9. softmax sparkline (lower-left quiet zone) — confirms Σw=1
-    sw = sorted(w, reverse=True)[:16]
-    bx, by = x0 + 0.04 * W, y0 + 0.08 * H
-    mw = max(sw) or 1.0
-    for i, val in enumerate(sw):
-        out += _poly([(bx + i * 2.2, by), (bx + i * 2.2, by + 16 * val / mw)], color=blk, f=feed)
+    # STRICT AXONOMETRY: thin dotted PROJECTION LINES tie the stack together —
+    # the four diamond corners run top sheet → bottom sheet, plus the Q and K
+    # anchor sites; every element stays in registration (no arrows).
+    def projection_line(p0, p1, pen):
+        L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        n = max(6, int(L / 3.4))
+        for q in range(0, n, 2):
+            a = (p0[0] + (p1[0] - p0[0]) * q / n, p0[1] + (p1[1] - p0[1]) * q / n)
+            b = (p0[0] + (p1[0] - p0[0]) * (q + 0.55) / n, p0[1] + (p1[1] - p0[1]) * (q + 0.55) / n)
+            scene.poly([a, b], pen=pen)
 
-    # 10. furniture (left type axis; no numbered stages)
-    xL = x0 + 0.02 * W
-    out += type_block(["ATTENTION"], xL, y1 - 6.0, height=3.6, pen=blk, underline=False, f=feed)
-    out += _stroke_text(_spaced("AS TOPOGRAPHY"), xL, y1 - 15.0, 3.0, color=blk, f=feed)
-    out += _stroke_text(_spaced("ONE QUERY BENDS THE FIELD OF KEYS"), xL, y1 - 21.0, 1.6, color=blk, f=feed)
-    out += swatch_bar(xL, y1 - 27.0, [blue, red, green, blk], size=2.4, f=feed)
-    out += scale_footer(bounds, text="A = SOFTMAX(QK T)", pen=blk, height=2.4, f=feed)
-    return _fit_out(out, bounds)
+    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
+        projection_line(at(cyL[0], *corner), at(cyL[n_stage - 1], *corner), blk)
+    for site in (qw, kw):
+        projection_line(at(cyL[0], *site), at(cyL[n_stage - 1], *site), blk)
+    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
+        projection_line(
+            _at_sheet(vX, vY, *corner, scale=v_scale),
+            _at_sheet(cx, cyL[4], *corner),
+            red,
+        )
 
+    # ---- title
+    out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.13 * W, y1 - 0.035 * H, 3.0, color=blk, f=feed)
+    out += _stroke_text(_spaced("QUERIES SHAPE CONTENT THROUGH CONTEXT"), x0 + 0.17 * W, y1 - 0.062 * H, 1.6, color=blk, f=feed)
+    out += scale_footer(bounds, text="A = SOFTMAX(QK T)  Z = AV", pen=blk, height=2.4, f=feed)
+    return scene.render()
+
+
+
+
+# ---------------------------------------------------------------------------
+# LSTM — GATED MEMORY DYNAMICS (gate mandala flavor: cell-state hub, four gate
+# discs, log-spiral bundles; sibling of bauhaus_memory's figure-8)
+# ---------------------------------------------------------------------------
+
+
+def lstm_gates(
+    rng: SeededRNG,
+    bounds: Bounds,
+    colors: int = 3,
+    bundle: int = 14,
+    orbits: int = 3,
+    sep: float = 1.6,
+    feed: int = 2200,
+) -> List[GCodeCommand]:
+    """GATED MEMORY DYNAMICS — the LSTM as a gate mandala: the CELL STATE hub
+    with four gate discs (FORGET, INPUT, CANDIDATE, OUTPUT), each holding a
+    0→1 slider; LOGARITHMIC-SPIRAL bundles stream between hub and gates
+    (memory flowing through gates), crowd-controlled natively by the engine so
+    bundles tighten at the rims without knotting. Dashed orbits + time axes.
+    Black + crimson; sibling flavor of the figure-8 ``bauhaus_memory``."""
+    x0, y0, x1, y1 = bounds
+    W, H = x1 - x0, y1 - y0
+    accent, black = _pen(PINK, colors), _pen(BLACK, colors)
+    scene = Scene3D(rng, bounds, feed=feed, fit="rescue", tip=0.5)
+    out = scene.out
+
+    cx, cy = x0 + 0.50 * W, y0 + 0.545 * H
+    r_cell = 0.085 * W
+    r_gate = 0.075 * W
+    D = 0.335 * W  # hub→gate distance
+    gates = [
+        ("FORGET GATE", math.radians(133), 0.15),
+        ("INPUT GATE", math.radians(42), 0.85),
+        ("CANDIDATE", math.radians(215), 0.75),
+        ("OUTPUT GATE", math.radians(300), 0.9),
+    ]
+
+    # labels first: halos carve through bundles and orbits
+    labels = [
+        (_spaced("CELL STATE"), cx - 0.088 * W, cy + 2.2, 1.9, black),
+        (_spaced("MEMORY IN TIME"), cx - 0.082 * W, cy - 5.4, 1.4, black),
+        (_spaced("C T-1"), x0 + 0.035 * W, cy + 2.4, 1.8, black),
+        (_spaced("C T"), x1 - 0.075 * W, cy + 2.4, 1.8, black),
+        (_spaced("TIME"), cx + 3.0, y1 - 0.045 * H, 1.8, black),
+        (_spaced("H T   OUTPUT"), cx + 3.0, y0 + 0.075 * H, 1.8, black),
+    ]
+    for name, ang, _v in gates:
+        gx, gy = cx + D * math.cos(ang), cy + D * math.sin(ang)
+        labels.append((_spaced(name), gx - 0.066 * W, gy + 3.4, 1.5, black))
+    scene.halo_labels(labels)
+
+    # dashed orbit circles + scattered nodes
+    for e in range(orbits):
+        orad = D * (0.72 + 0.34 * e) + rng.uniform(-3, 3)
+        seg = []
+        for k in range(301):
+            a = 2 * math.pi * k / 300
+            px, py = cx + orad * math.cos(a), cy + orad * math.sin(a)
+            if not (x0 + 3 < px < x1 - 3 and y0 + 3 < py < y1 - 3):
+                if len(seg) >= 2:
+                    scene.poly(seg, pen=black)
+                seg = []
+                continue
+            if k % 8 < 4:
+                seg.append((px, py))
+            elif len(seg) >= 2:
+                scene.poly(seg, pen=black)
+                seg = []
+            else:
+                seg = []
+        if len(seg) >= 2:
+            scene.poly(seg, pen=black)
+    for _ in range(10):
+        a = rng.uniform(0, 2 * math.pi)
+        orad = D * rng.uniform(0.7, 1.05)
+        px, py = cx + orad * math.cos(a), cy + orad * math.sin(a)
+        if x0 + 4 < px < x1 - 4 and y0 + 4 < py < y1 - 4:
+            out += circle(px, py, rng.uniform(0.8, 1.5), pen=black, f=feed)
+
+    # LOG-SPIRAL bundles hub↔gate (the memory flow), engine crowd control
+    family = []
+    for gi, (_name, ang, _v) in enumerate(gates):
+        for k in range(bundle):
+            t = k / max(1, bundle - 1)
+            sweep = (1.1 + 2.0 * t) * (1 if k % 2 == 0 else -1)
+            r0 = r_cell * (1.02 + 0.06 * rng.random())
+            r1 = D - r_gate * (1.0 + 0.25 * t)
+            b = math.log(max(1e-6, r1 / r0)) / sweep
+            th0 = ang - sweep
+            pts = []
+            NPT = 64
+            for q in range(NPT + 1):
+                u = q / NPT
+                th = th0 + sweep * u
+                r = r0 * math.exp(b * sweep * u)
+                pts.append((cx + r * math.cos(th), cy + r * math.sin(th)))
+            pen = accent if k % 4 == 0 else black
+            family.append([(px, py, 0.0, pen) for (px, py) in pts])
+    scene.lines(family, sep_mm=sep, warmup=2, min_kept=10)
+
+    # axes: c_{t-1} -> c_t horizontal, TIME up, h_t down from output side
+    scene.poly([(x0 + 0.10 * W, cy), (x1 - 0.10 * W, cy)], pen=black)
+    scene.poly([(x1 - 0.10 * W - 3, cy + 1.6), (x1 - 0.10 * W, cy), (x1 - 0.10 * W - 3, cy - 1.6)], pen=black)
+    scene.poly([(cx, y0 + 0.06 * H), (cx, y1 - 0.05 * H)], pen=black)
+    scene.poly([(cx - 1.6, y1 - 0.05 * H - 3), (cx, y1 - 0.05 * H), (cx + 1.6, y1 - 0.05 * H - 3)], pen=black)
+    scene.poly([(cx - 1.6, y0 + 0.06 * H + 3), (cx, y0 + 0.06 * H), (cx + 1.6, y0 + 0.06 * H + 3)], pen=black)
+
+    # the hub disc + plus mark
+    out += circle(cx, cy, r_cell, pen=black, f=feed)
+    out += circle(cx, cy, r_cell + 1.6, pen=black, f=feed)
+    out += _poly([(cx - 2.2, cy - 9.0), (cx + 2.2, cy - 9.0)], color=black, f=feed)
+    out += _poly([(cx, cy - 9.0 - 2.2), (cx, cy - 9.0 + 2.2)], color=black, f=feed)
+
+    # gate discs: double circle + 0—1 slider with a red dot at the gate value
+    for _name, ang, val in gates:
+        gx, gy = cx + D * math.cos(ang), cy + D * math.sin(ang)
+        out += circle(gx, gy, r_gate, pen=black, f=feed)
+        out += circle(gx, gy, r_gate + 1.5, pen=black, f=feed)
+        sx0, sx1 = gx - r_gate * 0.55, gx + r_gate * 0.55
+        sy = gy - r_gate * 0.34
+        scene.poly([(sx0, sy), (sx1, sy)], pen=black)
+        for q in range(4):
+            qx = sx0 + (sx1 - sx0) * q / 3
+            out += circle(qx, sy + 1.8, 1.1, pen=black, f=feed)
+        dotx = sx0 + (sx1 - sx0) * val
+        out += fill_disc(dotx, sy + 1.8, 1.1, spacing=0.4, pen=accent, f=feed)
+        out += _stroke_text("0", sx0 - 1.0, sy - 4.6, 1.3, color=black, f=feed)
+        out += _stroke_text("1", sx1 - 0.5, sy - 4.6, 1.3, color=black, f=feed)
+
+    # title + margin micro-texts
+    out += type_block(["LSTM"], x0 + 0.38 * W, y0 + 0.045 * H, height=4.6, pen=black, underline=False, f=feed)
+    out += _stroke_text(_spaced("GATED MEMORY DYNAMICS"), x0 + 0.27 * W, y0 + 0.018 * H, 2.0, color=black, f=feed)
+    micro = [
+        (("SEQUENCES", "CREATE", "MEMORY"), x0 + 0.03 * W, y1 - 0.045 * H),
+        (("PAST", "PRESENT", "FUTURE"), x1 - 0.16 * W, y1 - 0.045 * H),
+        (("RECURSION", "CREATES", "PERSISTENCE"), x0 + 0.03 * W, y0 + 0.16 * H),
+        (("A SMALL", "MECHANISM", "A LONG MEMORY"), x1 - 0.19 * W, y0 + 0.16 * H),
+    ]
+    for lines_, mx, my in micro:
+        for li, txt in enumerate(lines_):
+            out += _stroke_text(_spaced(txt), mx, my - li * 3.4, 1.3, color=black, f=feed)
+    return scene.render()

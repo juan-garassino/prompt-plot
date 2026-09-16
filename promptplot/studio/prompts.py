@@ -69,7 +69,7 @@ CODE_MODE_INSTRUCTIONS = """MODE: code. Write a NEW piece as one Python function
 `def {fn_name}(rng, bounds, colors=3, feed=2200) -> list` following the house
 conventions: all randomness via the passed SeededRNG; emit GCodeCommand lists via
 the kit helpers (import from promptplot.generative.bauhaus: _poly, _pen, BLUE/PINK/BLACK,
-fill_disc, circle, type_block, _stroke_text, _spaced, scale_footer, _zbuf_terrain for 3D).
+fill_disc, circle, type_block, _stroke_text, _spaced, scale_footer, _zbuf_terrain for 3D). PREFER the Scene3D engine for anything 3D or line-family heavy: from promptplot.generative.engine import Scene3D, PolarLOD, ScreenThin — scene.surface(SX,SY,DEP, pens=..., lod=..., thin=...), scene.lines(families, mode='pause_resume'), scene.halo_labels([...]), return scene.render(); anti-crowding is native default-on.
 Stay inside `bounds`; deterministic; black+red palette unless the brief says otherwise."""
 
 CODE_PAYLOAD_SCHEMA = '{"function_name": "<name>", "source": "<complete python source>"}'

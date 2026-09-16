@@ -14,8 +14,7 @@ from ._group import cli, console, _get_config
     "--paper",
     "paper_size",
     default="a4",
-    type=click.Choice(["a3", "a4", "a5", "a6"], case_sensitive=False),
-    help="Paper/canvas size",
+    help="Paper/canvas size: a3/a4/a5/a6 or a custom WxH (e.g. 17x24 cm, 170x240 mm)",
 )
 @click.option(
     "--orientation",
