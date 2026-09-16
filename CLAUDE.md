@@ -123,7 +123,7 @@ iso_city, rounded_circuits, lissajous_swarm, black_hole,
 pe_carpet, attention_arcs, residual_river — 37 total;
 plus effects applicable to any generator: `--anaglyph`/`--glitch`, `--echo N`, `--dash-rain`, `--occlude MM`, `--glitch-slice`, and `--max-ink N` / default tip-width overlap guardrail — see "Effects"),
 **SVG + DXF import** (split by stroke color / DXF layer → color layers),
-selectable paper size (A3/A4/A5/A6 or custom `WxH` via `--paper`),
+selectable paper size (A3/A4/A5/A6 or custom `WxH` via `--paper`), native paper tones for previews (`--paper-color cream|white|<any>`, `VisualizationConfig.paper_color`),
 quality scoring with letter grades (A–F), drawing memory for few-shot learning,
 multi-pass generation, diagnostic retry, style transfer, brush/paint mode,
 first-class pen state tracking (PenState), validated phase transitions
