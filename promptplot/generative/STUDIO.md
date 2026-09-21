@@ -4,6 +4,10 @@ Goal: map what is hard to visualize (astrophysics, quantum mechanics, ML) into
 simple, artistic, TRUE pen-plotter pieces. Every piece runs this pipeline; every
 artifact is written to `studio/<piece-slug>/` so rounds are reviewable.
 
+
+**Before reworking any piece, read `studio/<piece-slug>/FEEDBACK.md`.** It carries Juan's verdicts and notes on specific renders, written from the gallery viewer, and is an input to the DESIGNER role exactly as `encoding.md` is. `studio/QUEUE.md` lists what is open.
+
+**Reconstructing a reference image (`studio/<slug>/ref/reference.png`)?** The method is `studio/AUTHORING.md` — an illustrator's reconstruction as an authored `Scene` (`promptplot/scene/`), never a trace. Both seats run it: `promptplot studio design <slug> --mode scene --reference img.png` in-app, or a Claude Code agent writing the Scene JSON by hand. The critic sees reference and render side by side.
 ## Roles
 
 1. **CURATOR (main loop)** — owns the series, writes the one-line brief, chains

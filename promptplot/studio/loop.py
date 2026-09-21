@@ -9,8 +9,15 @@ payload modes:
   written under ``studio/<slug>/rounds/rNN/piece.py`` (never inside the
   package), imported from that file, and rendered. Promoting a winner into
   ``promptplot/generative`` is a separate, human-confirmed step.
+- ``scene`` (authored-reconstruction path): the designer emits a ``Scene`` JSON —
+  named objects back-to-front with covers, materials and marks — and the engine
+  compiles it (``promptplot.scene``). The LLM authors WHAT to draw; the engine
+  decides HOW. This is the seat that reproduces a reference image.
 
-Artifacts per round: ``studio/<slug>/rounds/rNN/{payload.json|piece.py,
+With a reference image (``reference=`` or ``studio/<slug>/ref/reference.png``)
+the designer receives it and the critic judges the render against it.
+
+Artifacts per round: ``studio/<slug>/rounds/rNN/{payload.json|piece.py|scene.json,
 render.png, critique.json}``; the final state lands in
 ``studio/<slug>/final/PROPOSAL.md``.
 """
@@ -95,6 +102,8 @@ def _render_params_payload(payload: Dict[str, Any], config: PromptPlotConfig, ou
 
 def _render_code_payload(payload: Dict[str, Any], config: PromptPlotConfig, round_dir: Path, out_png: Path, seed: int = 7) -> int:
     """Write the designer's piece source under the round dir, import + render it."""
+    import sys
+
     from ..generative.rng import SeededRNG
     from ..visualizer import GCodeVisualizer
 
@@ -104,15 +113,54 @@ def _render_code_payload(payload: Dict[str, Any], config: PromptPlotConfig, roun
         raise ValueError("code payload has empty source")
     piece_py = round_dir / "piece.py"
     piece_py.write_text(source, encoding="utf-8")
-    spec = importlib.util.spec_from_file_location(f"studio_piece_{fn_name}", piece_py)
+    name = f"studio_piece_{fn_name}"
+    spec = importlib.util.spec_from_file_location(name, piece_py)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    # register before exec so @dataclass resolves, and let the piece import a sibling
+    sys.modules[name] = mod
+    sys.path.insert(0, str(round_dir))
+    try:
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    finally:
+        sys.path.pop(0)
     fn = getattr(mod, fn_name)
     bounds = config.paper.get_drawable_area()
     cmds = fn(SeededRNG(seed), bounds, colors=len(config.color.palette) or 3)
     prog = merge_chunks([cmds], config)
     GCodeVisualizer(config).preview(prog, str(out_png))
     return len(prog.commands)
+
+
+def _render_scene_payload(payload: Dict[str, Any], config: PromptPlotConfig, round_dir: Path, out_png: Path) -> int:
+    """Validate the designer's Scene JSON, compile it, write scene.json + pen_plan.json,
+    and preview each pass at its physical width in its declared ink."""
+    from ..scene import Scene, compile_to_program
+    from ..visualizer import GCodeVisualizer
+
+    scene = Scene.model_validate(payload)
+    (round_dir / "scene.json").write_text(scene.model_dump_json(indent=2), encoding="utf-8")
+    prog, pen_plan = compile_to_program(scene, config)
+    (round_dir / "pen_plan.json").write_text(json.dumps(pen_plan, indent=2), encoding="utf-8")
+    passes = [p for p in pen_plan if "pen" in p]
+    widths = {p["pen"]: float(p["width_mm"]) for p in passes}
+    GCodeVisualizer(config).preview(prog, str(out_png), pen_widths=widths)
+    return len(prog.commands)
+
+
+def _find_reference(slug: str, brief: Brief, base: Path, reference: Optional[Path]) -> Optional[Path]:
+    """An explicit path wins; else the on-disk convention studio/<slug>/ref/reference.png."""
+    if reference is not None:
+        p = Path(reference)
+        if not p.exists():
+            raise FileNotFoundError(f"reference image not found: {p}")
+        return p
+    candidates = [base / "ref" / "reference.png"]
+    if brief.path is not None:
+        candidates.append(brief.path.parent.parent / slug / "ref" / "reference.png")
+    for c in candidates:
+        if c.exists():
+            return c
+    return None
 
 
 async def run_design_loop(
@@ -126,7 +174,13 @@ async def run_design_loop(
     brief: Optional[Brief] = None,
     paper: str = "a4",
     orientation: str = "portrait",
+    reference: Optional[Path] = None,
+    seed: int = 7,
+    max_marks: int = 400,
 ) -> LoopResult:
+    """``mode`` is ``params`` | ``code`` | ``scene``. With a ``reference`` image (or
+    one found at ``studio/<slug>/ref/reference.png``) the designer SEES it and the
+    critic judges the render against it."""
     brief = brief or get_brief(slug)
     config = config or PromptPlotConfig()
     config.paper = PaperConfig.from_size(paper, orientation=orientation, margin=15)
@@ -135,15 +189,21 @@ async def run_design_loop(
         config.color.palette = ["dodgerblue", "crimson", "black"]
     base = Path(out_dir) if out_dir is not None else (brief.path.parent / brief.slug if brief.path else Path(slug))
     base.mkdir(parents=True, exist_ok=True)
+    ref = _find_reference(slug, brief, base, reference)
 
     if mode == "params":
         mode_instr = P.PARAMS_MODE_INSTRUCTIONS.format(schemas=_schemas_text())
         payload_schema = P.PARAMS_PAYLOAD_SCHEMA
+    elif mode == "scene":
+        mode_instr = P.SCENE_MODE_INSTRUCTIONS.format(authoring=P.authoring(), max_marks=max_marks)
+        payload_schema = P.SCENE_PAYLOAD_SCHEMA
     else:
         mode_instr = P.CODE_MODE_INSTRUCTIONS.format(fn_name=f"studio_{slug.replace('-', '_')}")
         payload_schema = P.CODE_PAYLOAD_SCHEMA
 
     canon, rub = P.style_canon(style), P.rubric()
+    ref_block = P.REFERENCE_BLOCK if ref is not None else ""
+    critic_block = P.CRITIC_REFERENCE_BLOCK if ref is not None else P.CRITIC_RENDER_ONLY_BLOCK
     feedback = ""
     results: List[RoundResult] = []
 
@@ -152,12 +212,15 @@ async def run_design_loop(
         rdir.mkdir(parents=True, exist_ok=True)
 
         designer_prompt = P.DESIGNER_PROMPT.format(
-            brief=brief.to_context(), style_canon=canon, rubric=rub,
+            brief=brief.to_context(), reference_block=ref_block, style_canon=canon, rubric=rub,
             mode_instructions=mode_instr,
             feedback=(f"FEEDBACK FROM THE PREVIOUS ROUND (address it):\n{feedback}" if feedback else ""),
             payload_schema=payload_schema,
         )
-        reply = await provider.acomplete(designer_prompt)
+        if ref is not None:
+            reply = await provider.acomplete_multimodal(designer_prompt, image_paths=[ref])
+        else:
+            reply = await provider.acomplete(designer_prompt)
         obj = _extract_json(reply)
         if obj is None or "payload" not in obj:
             logger.warning("round %d: designer reply was not valid JSON; skipping round", i + 1)
@@ -172,16 +235,19 @@ async def run_design_loop(
         try:
             if mode == "params":
                 _render_params_payload(payload, config, render_path)
+            elif mode == "scene":
+                _render_scene_payload(payload, config, rdir, render_path)
             else:
-                _render_code_payload(payload, config, rdir, render_path)
+                _render_code_payload(payload, config, rdir, render_path, seed=seed)
         except Exception as e:
             logger.exception("round %d render failed", i + 1)
             results.append(RoundResult(i + 1, concept, payload, None, verdict="fail", instruction=f"render failed: {e}"))
             feedback = f"Your payload failed to render: {e}. Fix it."
             continue
 
-        critic_prompt = P.CRITIC_PROMPT.format(brief=brief.to_context(), rubric=rub)
-        critique_raw = await provider.acomplete_multimodal(critic_prompt, image_paths=[render_path])
+        critic_prompt = P.CRITIC_PROMPT.format(brief=brief.to_context(), reference_block=critic_block, rubric=rub)
+        critic_images = [ref, render_path] if ref is not None else [render_path]
+        critique_raw = await provider.acomplete_multimodal(critic_prompt, image_paths=critic_images)
         critique = _extract_json(critique_raw) or {"verdict": "revise", "one_line": critique_raw[:300]}
         (rdir / "critique.json").write_text(json.dumps(critique, indent=2), encoding="utf-8")
         verdict = str(critique.get("verdict", "revise"))
@@ -200,6 +266,9 @@ async def run_design_loop(
     res = LoopResult(slug=slug, rounds=results, out_dir=base, final_verdict=(results[-1].verdict if results else "fail"))
     best = res.best
     proposal = [f"# STUDIO PROPOSAL — {brief.title} ({slug})", "", f"Style: {style} · Mode: {mode} · Rounds: {len(results)}", ""]
+    if ref is not None:
+        proposal.append(f"Reference: {ref}")
+        proposal.append("")
     for r in results:
         proposal.append(f"## Round {r.index} — {r.verdict or 'n/a'}")
         proposal.append(r.concept or "")

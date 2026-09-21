@@ -2344,24 +2344,26 @@ def bauhaus_relevance(
     block: int = 0,
     feed: int = 2200,
 ) -> List[GCodeCommand]:
-    """ATTENTION AS TOPOGRAPHY — the mechanism as a tight ISOMETRIC diamond
-    stack: 1 QUERY + KEY SPACES (one shared sheet, Q and K as two red wells) ·
-    2 DOT PRODUCT (the similarity landscape: black central peak flanked by red
-    Q/K peaks, red swoop arrows falling in) · 3 SOFTMAX (contour rings
-    tightening to the winner) · 4 VALUES (a full red rolling terrain) ·
-    5 OUTPUT (green attended terrain, one dominant contextualized peak).
-    Dashed anchor droplines tie the Q and K sites through every stage. Driven
-    by a real attention row (checkpoint/GPT-2 via ``weights``)."""
+    """ATTENTION AS TOPOGRAPHY — the mechanism as an EXPLODED axonometric.
+
+    Black is the computation spine, colour is what enters it. Row 1 is three
+    plates in ONE plane: Q LANDSCAPE (red) and K LANDSCAPE (blue) exploded out
+    along two ORTHOGONAL world axes from Q·Kᵀ sitting between them. Row 2 is
+    the softmax. Row 3 puts the ATTENTION MAP on the spine at full size with
+    the V LANDSCAPE (yellow) entering from the same side as K. Row 4 is the
+    output Z, back on the spine in black. Peak sites and heights come from a
+    real attention row (checkpoint/GPT-2 via ``weights``), so the terrain is
+    data, not decoration. Explosion lines run parallel to the axis each plate
+    moved along — dashed, and never an arrowhead."""
     import numpy as np
 
     x0, y0, x1, y1 = bounds
     W, H = x1 - x0, y1 - y0
-    blue, red, green, blk = 0, 1, 2, 3
+    blue, red, yellow, blk = 0, 1, 2, 3
     scene = Scene3D(rng, bounds, feed=feed, px=(230, 210), fit="rescue")
     out = scene.out
-    ns = max(26, nu // 2)
 
-    # real attention row → relative Q/K energy
+    # real attention row → peak heights
     S = np.asarray(
         _attention_matrix(rng, tokens, head, temp=tau, causal=False, weights=weights, block=block, return_scores=True),
         dtype=float,
@@ -2370,152 +2372,173 @@ def bauhaus_relevance(
     qi = int(np.argmax(S.max(axis=1)))
     w = np.exp(S[qi] / tau)
     w = w / w.sum()
-    k_amp = 0.75 + 0.5 * float(max(w))  # K side scaled by the winning weight
 
-    qw, kw = (-0.46, -0.12), (0.50, 0.16)  # Q and K sites (shared sheet coords)
-    mid = ((qw[0] + kw[0]) / 2.0, (qw[1] + kw[1]) / 2.0)
+    # ---- ONE axonometric basis, sized from the PLATE outward --------------
+    # Both constraints are proportional to A, so solve for A directly and the
+    # piece then fits ANY orientation: width needs 2*A*(D+2E), height needs the
+    # exact per-row extents summed below. Landscape binds on height, portrait
+    # binds on width.
+    E = 0.55                     # world footprint half-extent
+    ASPECT = 3.2                 # diamond width : depth
+    EXPLODE = 0.88               # explosion distance, in PLATE WIDTHS (<1 = tucked in)
+    REL = 0.30                   # relief per unit hscale, in A
+    GAPA = 0.10                  # inter-row air, in A
+    HS = (1.70, 0.0, 1.75, 1.65)  # tallest CENTRE hscale per row (softmax is flat)
+    HS_EXPL = 1.45               # hscale of the exploded plates
+    N_MESH = 40
 
-    # ---- the diamond iso stack ------------------------------------------
+    D = 4.0 * E * EXPLODE
+    half_dA, dropA = 2.0 * E / ASPECT, (4.0 * E * EXPLODE) / ASPECT
+    # Exploded plates RISE, so their room is needed ABOVE their row only.
+    above_A = [
+        half_dA + max(h * REL, (dropA + HS_EXPL * REL) if k in (0, 2) else 0.0)
+        for k, h in enumerate(HS)
+    ]
+    below_A = [half_dA] * 4
+    height_A = (
+        above_A[0]
+        + sum(below_A[k] + GAPA + above_A[k + 1] for k in range(3))
+        + below_A[3]
+    )
+    A = min(0.94 * W / (2.0 * (D + 2.0 * E)), 0.80 * H / height_A)
+    # When WIDTH binds (portrait), the height budget is left over — spend it on
+    # air between the rows instead of stranding it as a dead band at the foot.
+    slack = max(0.0, 0.80 * H - height_A * A)
+
+    plate_w = 4.0 * E * A
+    CD = A / ASPECT
+    HY = REL * A / E
+    drop = CD * D
+    half_d = 2.0 * E * CD
+    gap = GAPA * A + slack / 3.0
     cx = x0 + 0.50 * W
-    A, CD, HY = 0.205 * W, 0.050 * H, 0.055 * H
-    n_stage = 5
-    cy_top, cy_bot = y1 - 0.170 * H, y0 + 0.115 * H
-    stepy = (cy_top - cy_bot) / (n_stage - 1)
-    cyL = [cy_top - k * stepy for k in range(n_stage)]
 
-    def mk_sheet(cyc, hfun, hscale, penfn=None, pen=blk, cxE=None, scale=1.0):
-        AA, CDD, HYY = A * scale, CD * scale, HY * scale
-        cxx = cx if cxE is None else cxE
-        SX = np.zeros((ns + 1, ns + 1))
-        SY = np.zeros((ns + 1, ns + 1))
-        DE = np.zeros((ns + 1, ns + 1))
-        PV = np.full((ns + 1, ns + 1), pen)
-        for i in range(ns + 1):
-            wx = -1 + 2 * i / ns
-            for j in range(ns + 1):
-                wz = -1 + 2 * j / ns
-                wy = hfun(wx, wz) * hscale
-                SX[i, j] = cxx + (wx - wz) * AA
-                SY[i, j] = cyc + wy * HYY - (wx + wz) * CDD
+    # Explode along the NEGATIVE axes so the inputs RISE above the plate they
+    # feed — moving +wx/+wz drops down-screen, which would sit Q and K under
+    # their own result.
+    SH_L = (-D, 0.0)  # -wx -> screen LEFT  and UP (Q)
+    SH_R = (0.0, -D)  # -wz -> screen RIGHT and UP (K, and V from the same side)
+
+    above_mm = [a * A for a in above_A]
+    below_mm = [b * A for b in below_A]
+
+    cyR: List[float] = []
+    yy = (y1 - 0.115 * H) - above_mm[0]
+    for k in range(4):
+        cyR.append(yy)
+        if k < 3:
+            yy -= below_mm[k] + gap + above_mm[k + 1]
+
+    def mk_sheet(cyc, hfun, hscale, pen=blk, penfn=None, shift=(0.0, 0.0), n=N_MESH):
+        sx, sz = shift
+        SX = np.zeros((n + 1, n + 1))
+        SY = np.zeros((n + 1, n + 1))
+        DE = np.zeros((n + 1, n + 1))
+        PV = np.full((n + 1, n + 1), pen)
+        for i in range(n + 1):
+            u = -1 + 2 * i / n
+            for j in range(n + 1):
+                v = -1 + 2 * j / n
+                wy = hfun(u, v) * hscale
+                wx, wz = u * E + sx, v * E + sz
+                SX[i, j] = cx + (wx - wz) * A
+                SY[i, j] = cyc + wy * HY * E - (wx + wz) * CD
                 DE[i, j] = (wx + wz) + 0.12 * wy
                 if penfn is not None:
-                    PV[i, j] = penfn(wx, wz)
+                    PV[i, j] = penfn(u, v)
         scene.surface(SX, SY, DE, pens=PV)
 
-    def at(cyc, wx, wz, wy=0.0, hs=0.0):
-        return (cx + (wx - wz) * A, cyc + wy * hs * HY - (wx + wz) * CD)
+    def at(cyc, u, v, shift=(0.0, 0.0)):
+        wx, wz = u * E + shift[0], v * E + shift[1]
+        return (cx + (wx - wz) * A, cyc - (wx + wz) * CD)
 
-    def g2(wx, wz, c, sig):
-        return math.exp(-(((wx - c[0]) ** 2 + (wz - c[1]) ** 2) / (2 * sig * sig)))
+    def g2(u, v, c, sig):
+        return math.exp(-(((u - c[0]) ** 2 + (v - c[1]) ** 2) / (2 * sig * sig)))
 
-    # ---- fields ----------------------------------------------------------
-    def s1(wx, wz):  # two wells in a flat sheet
-        return -0.95 * g2(wx, wz, qw, 0.17) - 0.95 * g2(wx, wz, kw, 0.17)
-
-    def s2(wx, wz):  # similarity landscape
-        return (
-            1.05 * g2(wx, wz, mid, 0.20)
-            + 0.62 * g2(wx, wz, qw, 0.16)
-            + 0.62 * k_amp * g2(wx, wz, kw, 0.16)
-            + 0.10 * rng.fbm(wx * 2.0 + 3.7, wz * 2.0 + 8.1)
-        )
-
-    def s_attn(wx, wz):  # sharpened winner
-        return math.exp((s2(wx, wz) - 1.0) / max(0.15, tau * 0.55))
-
-    def s4(wx, wz):  # V: rolling content terrain
-        return (
-            0.40 * (math.sin(2.3 * wx + 0.5) * math.cos(1.8 * wz) + 0.5 * math.sin(2.8 * wz + 1.2))
-            + 0.42 * rng.fbm(wx * 1.7 + 5.5, wz * 1.7 + 2.2)
-            + 0.30
-        )
-
-    def s5(wx, wz):  # attended output: V pulled up where attention mass sits
-        return 0.35 * s4(wx, wz) + 1.05 * s_attn(wx, wz) * (0.4 + 0.6 * s4(wx, wz))
-
-    # lateral V-branch geometry (used by labels + sheets + projection lines)
-    v_scale = 0.55
-    vX = cx + 0.335 * W
-    vY = (cyL[2] + cyL[4]) / 2.0 + 0.02 * H
-
-    # ---- halo labels (stage numbers left, formulas right, sub-notes) ------
-    Lx = x0 + 0.020 * W
-    Rx = x1 - 0.235 * W
-    scene.halo_labels(
-        [
-            ("1", Lx, cyL[0] + 0.035 * H, 2.6, blk),
-            (_spaced("QUERY + KEY SPACES"), Lx + 6, cyL[0] + 0.035 * H, 1.7, blk),
-            (_spaced("Q QUERIES"), cx - 0.33 * W, cyL[0] + 0.065 * H, 1.7, red),
-            (_spaced("K KEYS"), cx + 0.21 * W, cyL[0] + 0.065 * H, 1.7, red),
-            ("2", Lx, cyL[1] + 0.035 * H, 2.6, blk),
-            (_spaced("DOT PRODUCT"), Lx + 6, cyL[1] + 0.035 * H, 1.7, blk),
-            (_spaced("Q . K T"), Rx, cyL[1] + 0.045 * H, 1.8, blk),
-            (_spaced("SIMILARITY"), Rx, cyL[1] - 0.030 * H, 1.4, blk),
-            (_spaced("LANDSCAPE"), Rx, cyL[1] - 0.048 * H, 1.4, blk),
-            ("3", Lx, cyL[2] + 0.030 * H, 2.6, blk),
-            (_spaced("SOFTMAX"), Lx + 6, cyL[2] + 0.030 * H, 1.7, blk),
-            (_spaced("SOFTMAX QK T"), Rx, cyL[2] + 0.040 * H, 1.8, blk),
-            (_spaced("NORMALIZED"), Rx, cyL[2] + 0.020 * H, 1.4, blk),
-            (_spaced("ATTENTION WEIGHTS"), Rx, cyL[2] + 0.002 * H, 1.4, blk),
-            ("4", vX - 0.11 * W, vY + 0.085 * H, 2.6, blk),
-            (_spaced("VALUES V"), vX - 0.095 * W, vY + 0.085 * H, 1.7, blk),
-            (_spaced("V VALUES"), vX + 0.02 * W, vY + 0.070 * H, 1.8, red),
-            (_spaced("CONTENT TO"), vX + 0.03 * W, vY - 0.070 * H, 1.4, blk),
-            (_spaced("BE MIXED"), vX + 0.03 * W, vY - 0.088 * H, 1.4, blk),
-            ("5", Lx, cyL[4] + 0.030 * H, 2.6, blk),
-            (_spaced("OUTPUT"), Lx + 6, cyL[4] + 0.030 * H, 1.7, blk),
-            (_spaced("SOFTMAX QK T V"), Rx, cyL[4] + 0.040 * H, 1.8, blk),
-            (_spaced("ATTENDED OUTPUT"), Rx, cyL[4] + 0.020 * H, 1.4, green),
-            (_spaced("TOKENS"), cx + 0.26 * W, cyL[0] + 0.028 * H, 1.3, blk),
-            (_spaced("DIMENSIONS"), cx + 0.27 * W, cyL[0] - 0.020 * H, 1.3, blk),
+    # ---- data-driven terrain --------------------------------------------
+    # Peak SITES are a golden-angle spiral (well spread, deterministic); peak
+    # HEIGHTS are the real attention weights, so the landscapes carry data.
+    def _sites(n, r_max=0.80):
+        ga = math.pi * (3.0 - math.sqrt(5.0))
+        return [
+            (r_max * math.sqrt((i + 0.5) / n) * math.cos(i * ga),
+             r_max * math.sqrt((i + 0.5) / n) * math.sin(i * ga))
+            for i in range(n)
         ]
-    )
 
-    # ---- stage 1: shared sheet with the two wells
-    def pen1(wx, wz):
-        return red if (g2(wx, wz, qw, 0.17) > 0.30 or g2(wx, wz, kw, 0.17) > 0.30) else blk
+    nk = int(min(13, len(w)))
+    order = [int(j) for j in np.argsort(w)[::-1][:nk]]
+    sites = _sites(nk)
+    hs = [float(w[j]) for j in order]
+    hmax = max(hs) or 1.0
+    hs = [h / hmax for h in hs]
+    qw = sites[0]                       # the winning key — where this query looks
+    kw = sites[1] if nk > 1 else sites[0]
 
-    mk_sheet(cyL[0], s1, 0.9, penfn=pen1)
+    def _ridge(u, v, o, s=2.1):
+        return 1.0 - abs(rng.fbm(u * s + o, v * s + o * 0.6))
 
-    # ---- stage 2: similarity landscape (red side peaks, black centre)
-    def pen2(wx, wz):
-        side = max(g2(wx, wz, qw, 0.16), k_amp * g2(wx, wz, kw, 0.16))
-        return red if side > 0.42 and g2(wx, wz, mid, 0.20) < 0.55 else blk
+    def _norm(f, n=14):
+        """Rescale a field to [0,1] by sampling it.
 
-    mk_sheet(cyL[1], s2, 0.85, penfn=pen2)
+        Without this, a field's range is a guess and ``hscale`` means nothing:
+        the product term in sQK reaches ~5, s_attn exponentiates it to ~1e4,
+        and one 200-metre spike makes fit="rescue" shrink the whole plate to a
+        dot. Normalised, ``hscale`` IS the relief in HY units.
+        """
+        vals = [f(-1 + 2 * i / n, -1 + 2 * j / n) for i in range(n + 1) for j in range(n + 1)]
+        lo, hi = min(vals), max(vals)
+        span = (hi - lo) or 1.0
+        return lambda u, v: (f(u, v) - lo) / span
 
-    # ---- stage 3: softmax rings tightening to the winner
-    gN = 64
-    xs = [-1 + 2 * i / gN for i in range(gN + 1)]
-    zs = [-1 + 2 * j / gN for j in range(gN + 1)]
-    P = [[s_attn(xs[i], zs[j]) for i in range(gN + 1)] for j in range(gN + 1)]
-    pmax = max(max(row) for row in P) or 1.0
-    for lv in range(1, 10):
-        iso = (lv / 10.0) ** 1.6 * pmax
-        for ch in _chain_segments(_marching_squares(P, xs, zs, iso)):
-            if len(ch) < 5:
-                continue
-            pts = [at(cyL[2], wx, wz) for (wx, wz) in ch]
-            scene.poly(pts, pen=blk)
-    # sheet border diamond
-    br = [at(cyL[2], -1, -1), at(cyL[2], 1, -1), at(cyL[2], 1, 1), at(cyL[2], -1, 1), at(cyL[2], -1, -1)]
-    scene.poly(br, pen=blk)
+    def sQ_raw(u, v):  # ONE query — a single broad massif. Where this query looks.
+        return (
+            1.70 * g2(u, v, qw, 0.54)
+            + 0.34 * g2(u, v, (-qw[0] * 0.55, -qw[1] * 0.55), 0.42)
+            + 0.24 * _ridge(u, v, 1.3, 1.4)
+            + 0.10 * rng.fbm(u * 1.1 + 6.2, v * 1.1 + 2.1)
+        )
 
-    # ---- VALUES enters PERPENDICULAR to the column (multi-axis explosion):
-    # a smaller red sheet displaced along the lateral axonometric direction,
-    # tied into OUTPUT by dotted projection lines along that axis
-    mk_sheet(vY, s4, 0.75, pen=red, cxE=vX, scale=v_scale)
+    def sK_raw(u, v):  # MANY keys — a field of DISCRETE spikes, none dominant.
+        s = 0.0
+        for c, h in zip(sites, hs):
+            s += (0.45 + 0.90 * h) * g2(u, v, c, 0.080 + 0.040 * h)
+        return s + 0.13 * rng.fbm(u * 2.8 + 2.9, v * 2.8 + 8.4)
 
-    # ---- OUTPUT — green attended terrain (bottom of the column)
-    mk_sheet(cyL[4], s5, 0.80, pen=green)
+    sQ, sK = _norm(sQ_raw), _norm(sK_raw)
 
-    def _at_sheet(cxx, cyc, wx, wz, scale=1.0):
-        return (cxx + (wx - wz) * A * scale, cyc - (wx + wz) * CD * scale)
+    def sQK_raw(u, v):  # the merge — tall only where BOTH are tall
+        a, b = sQ(u, v), sK(u, v)
+        return 0.40 * (a + b) + 1.05 * a * b
 
-    # STRICT AXONOMETRY: thin dotted PROJECTION LINES tie the stack together —
-    # the four diamond corners run top sheet → bottom sheet, plus the Q and K
-    # anchor sites; every element stays in registration (no arrows).
-    def projection_line(p0, p1, pen):
+    sQK = _norm(sQK_raw)
+
+    def s_attn(u, v):  # softmax — bounded to (0,1] because sQK is normalised
+        return math.exp((sQK(u, v) - 1.0) / max(0.05, tau * 0.16))
+
+    sA = _norm(s_attn)
+
+    def sV_raw(u, v):  # VALUES — content, unrelated to where attention points
+        s = 0.0
+        for i, c in enumerate(_sites(11, 0.78)):
+            amp = 0.45 + 0.55 * (0.5 + 0.5 * math.sin(2.1 * i + 1.0))
+            s += amp * g2(u, v, c, 0.13 + 0.10 * (0.5 + 0.5 * math.cos(1.7 * i)))
+        return (
+            s
+            + 0.42 * _ridge(u, v, 4.4, 2.2)
+            + 0.22 * _ridge(u, v, 8.8, 4.1)
+            + 0.22 * rng.fbm(u * 1.4 + 5.5, v * 1.4 + 1.7)
+        )
+
+    sV = _norm(sV_raw)
+
+    def sZ_raw(u, v):  # V read through A
+        return 0.42 * sV(u, v) + 1.25 * s_attn(u, v) * (0.35 + 0.65 * sV(u, v))
+
+    sZ = _norm(sZ_raw)
+
+    def dropline(p0, p1, pen):
+        """Dashed registration line — parallel to an axis, never an arrowhead."""
         L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
         n = max(6, int(L / 3.4))
         for q in range(0, n, 2):
@@ -2523,24 +2546,98 @@ def bauhaus_relevance(
             b = (p0[0] + (p1[0] - p0[0]) * (q + 0.55) / n, p0[1] + (p1[1] - p0[1]) * (q + 0.55) / n)
             scene.poly([a, b], pen=pen)
 
-    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
-        projection_line(at(cyL[0], *corner), at(cyL[n_stage - 1], *corner), blk)
-    for site in (qw, kw):
-        projection_line(at(cyL[0], *site), at(cyL[n_stage - 1], *site), blk)
-    for corner in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
-        projection_line(
-            _at_sheet(vX, vY, *corner, scale=v_scale),
-            _at_sheet(cx, cyL[4], *corner),
-            red,
-        )
+    # ---- labels ----------------------------------------------------------
+    Lx = x0 + 0.016 * W
+    qc, kc = at(cyR[0], 0, 0, SH_L), at(cyR[0], 0, 0, SH_R)
+    vc = at(cyR[2], 0, 0, SH_R)
+
+    def label_y(base_y, hscale):
+        """Above the plate's real ceiling — half its depth plus its relief.
+
+        A fixed offset put every caption on top of its own peaks, because
+        relief is hscale*HY*E and that was never in the sum.
+        """
+        return base_y + half_d + hscale * HY * E + 0.020 * H
+    scene.halo_labels(
+        [
+            ("1", Lx, cyR[0] - 0.004 * H, 2.4, blk),
+            (_spaced("QUERY AND KEY"), Lx + 5.0, cyR[0] - 0.004 * H, 1.5, blk),
+            (_spaced("Q LANDSCAPE"), qc[0] - 0.050 * W, label_y(qc[1], 1.45), 1.6, red),
+            (_spaced("K LANDSCAPE"), kc[0] - 0.050 * W, label_y(kc[1], 1.45), 1.6, blue),
+            (_spaced("Q . K T"), cx - 0.032 * W, label_y(cyR[0], 1.70), 1.8, blk),
+            ("2", Lx, cyR[1] - 0.004 * H, 2.4, blk),
+            (_spaced("SOFTMAX"), Lx + 5.0, cyR[1] - 0.004 * H, 1.5, blk),
+            (_spaced("ROWS SUM TO 1"), cx + 2.0 * E * A + 0.012 * W, cyR[1], 1.4, blk),
+            ("3", Lx, cyR[2] - 0.004 * H, 2.4, blk),
+            (_spaced("ATTENTION MAP"), Lx + 5.0, cyR[2] - 0.004 * H, 1.5, blk),
+            (_spaced("ATTENTION MAP A"), cx - 0.046 * W, label_y(cyR[2], 1.75), 1.6, blk),
+            (_spaced("V LANDSCAPE"), vc[0] - 0.048 * W, label_y(vc[1], 1.45), 1.6, yellow),
+            ("4", Lx, cyR[3] - 0.004 * H, 2.4, blk),
+            (_spaced("OUTPUT"), Lx + 5.0, cyR[3] - 0.004 * H, 1.5, blk),
+            (_spaced("Z = A V"), cx - 0.026 * W, cyR[3] - half_d - 0.034 * H, 1.8, blk)  # last row: label sits UNDER,
+        ]
+    )
+
+    # ---- row 1: THREE plates in one plane --------------------------------
+    def pen_qk(u, v):
+        a, b = sQ(u, v), sK(u, v)
+        if max(a, b) < 0.58:
+            return blk
+        return red if a >= b else blue
+
+    mk_sheet(cyR[0], sQ, 1.45, pen=red, shift=SH_L)
+    mk_sheet(cyR[0], sK, 1.45, pen=blue, shift=SH_R)
+    mk_sheet(cyR[0], sQK, 1.70, penfn=pen_qk)
+
+    # ---- row 2: softmax rings on the spine -------------------------------
+    gN = 64
+    us = [-1 + 2 * i / gN for i in range(gN + 1)]
+    vs = [-1 + 2 * j / gN for j in range(gN + 1)]
+    P = [[s_attn(us[i], vs[j]) for i in range(gN + 1)] for j in range(gN + 1)]
+    pmax = max(max(rp) for rp in P) or 1.0
+    for lv in range(1, 10):
+        iso = (lv / 10.0) ** 1.6 * pmax
+        for ch in _chain_segments(_marching_squares(P, us, vs, iso)):
+            if len(ch) >= 5:
+                scene.poly([at(cyR[1], uu, vv) for (uu, vv) in ch], pen=blk)
+    scene.poly([at(cyR[1], *c) for c in ((-1, -1), (1, -1), (1, 1), (-1, 1), (-1, -1))], pen=blk)
+
+    # ---- row 3: A on the spine, V entering from the K side ---------------
+    mk_sheet(cyR[2], sA, 1.75, pen=blk)
+    mk_sheet(cyR[2], sV, 1.45, pen=yellow, shift=SH_R)
+
+    # ---- row 4: the output, carrying all three inputs ---------------------
+    # Z is a blend of V weighted by attention, and attention came from Q and K,
+    # so the output plate is inked in whichever of the three leads at each
+    # token pair — the result visibly remembers where it came from.
+    def pen_z(u, v):
+        q, k, vv = sQ(u, v), sK(u, v), sV(u, v)
+        m = max(q, k, vv)
+        if m < 0.42:
+            return blk
+        return red if m == q else (blue if m == k else yellow)
+
+    mk_sheet(cyR[3], sZ, 1.65, penfn=pen_z)
+
+    # ---- explosion lines: each along its OWN axis -------------------------
+    CORNERS = ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0))
+    for cyc, shift, pen in (
+        (cyR[0], SH_L, red),
+        (cyR[0], SH_R, blue),
+        (cyR[2], SH_R, yellow),
+    ):
+        for c in CORNERS:
+            dropline(at(cyc, *c, shift), at(cyc, *c), pen)
+
+    # ---- registration: pure verticals down the spine ----------------------
+    for c in CORNERS:
+        dropline(at(cyR[0], *c), at(cyR[3], *c), blk)
 
     # ---- title
-    out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.13 * W, y1 - 0.035 * H, 3.0, color=blk, f=feed)
-    out += _stroke_text(_spaced("QUERIES SHAPE CONTENT THROUGH CONTEXT"), x0 + 0.17 * W, y1 - 0.062 * H, 1.6, color=blk, f=feed)
-    out += scale_footer(bounds, text="A = SOFTMAX(QK T)  Z = AV", pen=blk, height=2.4, f=feed)
+    out += _stroke_text(_spaced("ATTENTION AS TOPOGRAPHY"), x0 + 0.10 * W, y1 - 0.028 * H, 2.8, color=blk, f=feed)
+    out += _stroke_text(_spaced("QUERIES SHAPE CONTENT THROUGH CONTEXT"), x0 + 0.13 * W, y1 - 0.052 * H, 1.4, color=blk, f=feed)
+    out += scale_footer(bounds, text="A = SOFTMAX(QK T)   Z = AV", pen=blk, height=2.1, f=feed)
     return scene.render()
-
-
 
 
 # ---------------------------------------------------------------------------
