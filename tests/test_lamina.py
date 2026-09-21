@@ -16,12 +16,19 @@ from promptplot.orchestrate import split_color_layers
 
 
 def test_style_presets_wellformed():
-    assert set(STYLE_PRESETS) == {"bauhaus", "swiss", "deco", "pop", "radial_viz", "science_poster"}
+    assert set(STYLE_PRESETS) == {
+        "bauhaus", "swiss", "deco", "pop", "radial_viz", "science_poster",
+        "cubist_plate",  # authored-scene preset: carries semantic PenRules
+    }
     for name, p in STYLE_PRESETS.items():
         assert p.name == name
         assert len(p.pens) >= 2
         assert p.type_align in ("left", "center")
         assert 0 <= p.accent_pen < len(p.pens)
+        # a preset either has no rules, or rules that resolve for any name/role
+        if p.rules is not None:
+            ink, width = p.rules.resolve("anything at all", "contour")
+            assert ink in p.pens and width is not None
     with pytest.raises(KeyError):
         get_style("memphis")
 

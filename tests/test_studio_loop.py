@@ -84,3 +84,98 @@ async def test_render_failure_feeds_back(tmp_path):
     assert res.rounds[0].verdict == "fail"
     assert "render failed" in res.rounds[0].instruction
     assert res.rounds[1].verdict == "pass"
+
+
+# --- the reconstruction seat: reference image in, Scene JSON out -------------
+
+SCENE = json.dumps(
+    {
+        "concept": "a plate with a square on it",
+        "payload": {
+            "canvas": [100, 100],
+            "paper": "a4",
+            "orientation": "portrait",
+            "inks": {"black": "#111111", "red": "#cb292a"},
+            "widths_mm": [0.1, 0.5],
+            "stages": ["main"],
+            "occlusion": "cover",
+            "title": "PLATE",
+            "objects": [
+                {
+                    "name": "back plate",
+                    "material": "cubist_plane",
+                    "cover": [[0, 0], [100, 0], [100, 100], [0, 100]],
+                    "marks": [
+                        {"role": "contour", "points": [[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]},
+                        {"role": "hatch", "points": [[0, 50], [100, 50]]},
+                    ],
+                },
+                {
+                    "name": "front square",
+                    "material": "cubist_plane",
+                    "cover": [[30, 30], [70, 30], [70, 70], [30, 70]],
+                    "ink": "red",
+                    "width_mm": 0.5,
+                    "marks": [{"role": "contour", "points": [[30, 30], [70, 30], [70, 70], [30, 70], [30, 30]]}],
+                },
+            ],
+        },
+    }
+)
+
+
+async def test_reference_image_reaches_designer_and_critic(tmp_path):
+    ref = tmp_path / "reference.png"
+    ref.write_bytes(b"fakepng")  # the stub never decodes it
+    provider = _StubProvider([DESIGN, CRITIQUE, SYNTH])
+    res = await run_design_loop(
+        "cnn", provider, mode="params", rounds=1, out_dir=tmp_path / "ref", reference=ref
+    )
+    kinds = [k for k, _ in provider.calls]
+    # designer now SEES the reference; critic gets reference + render
+    assert kinds == ["vision", "vision", "text"]
+    assert provider.calls[0][1] == [str(ref)]
+    assert provider.calls[1][1][0] == str(ref)
+    assert provider.calls[1][1][1].endswith("render.png")
+    proposal = (tmp_path / "ref" / "final" / "PROPOSAL.md").read_text()
+    assert "Reference:" in proposal
+    assert res.rounds[0].verdict == "pass"
+
+
+async def test_reference_is_found_by_convention(tmp_path):
+    out = tmp_path / "conv"
+    (out / "ref").mkdir(parents=True)
+    (out / "ref" / "reference.png").write_bytes(b"fakepng")
+    provider = _StubProvider([DESIGN, CRITIQUE, SYNTH])
+    await run_design_loop("cnn", provider, mode="params", rounds=1, out_dir=out)
+    assert [k for k, _ in provider.calls] == ["vision", "vision", "text"]
+
+
+async def test_scene_mode_compiles_and_writes_artifacts(tmp_path):
+    provider = _StubProvider([SCENE, CRITIQUE, SYNTH])
+    res = await run_design_loop(
+        "cnn", provider, mode="scene", rounds=1, out_dir=tmp_path / "scene"
+    )
+    r = res.rounds[0]
+    assert r.verdict == "pass"
+    rdir = tmp_path / "scene" / "rounds" / "r01"
+    assert (rdir / "scene.json").exists()
+    assert (rdir / "pen_plan.json").exists()
+    assert r.render_path is not None and r.render_path.exists()
+    plan = json.loads((rdir / "pen_plan.json").read_text())
+    passes = [p for p in plan if "pen" in p]
+    assert [(p["ink"], p["width_mm"]) for p in passes] == [("black", 0.1), ("red", 0.5)]
+    # the designer prompt in scene mode inlines the playbook
+    designer_prompt = provider.calls[0][1]
+    assert designer_prompt.startswith("You are a DESIGNER")
+
+
+async def test_scene_mode_invalid_scene_feeds_back(tmp_path):
+    bad = json.dumps({"concept": "x", "payload": {"canvas": [10, 10], "objects": [{"name": "o", "ink": "chartreuse"}]}})
+    provider = _StubProvider([bad, SCENE, CRITIQUE, SYNTH])
+    res = await run_design_loop(
+        "cnn", provider, mode="scene", rounds=2, out_dir=tmp_path / "scene2"
+    )
+    assert res.rounds[0].verdict == "fail"
+    assert "render failed" in res.rounds[0].instruction
+    assert res.rounds[1].verdict == "pass"
