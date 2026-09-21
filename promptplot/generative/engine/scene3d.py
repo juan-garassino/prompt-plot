@@ -123,6 +123,9 @@ class Occupancy:
         self._grid.setdefault(self._cell(sx, sy), []).append((sx, sy))
 
 
+_HALO_STEP = 0.8  # mm; resolution at which polylines are cut around label halos
+
+
 class Scene3D:
     HIDE = HIDE
 
@@ -469,8 +472,21 @@ class Scene3D:
         if not halos or not self._boxes:
             self.out.extend(_poly(pts, color=pen, f=feed))
             return self
+        # Densify first: the halo test below is per-vertex, so a SPARSE polyline
+        # (a 4-corner border rhombus, an axis rule) would lose whole edges when a
+        # single vertex lands inside a label box -- the gap must be cut at the
+        # halo boundary, not at the nearest vertex.
+        dense: List[Tuple[float, float]] = []
+        for i, pt in enumerate(pts):
+            if i:
+                a = pts[i - 1]
+                steps = int(math.hypot(pt[0] - a[0], pt[1] - a[1]) / _HALO_STEP)
+                for k in range(1, steps):
+                    t = k / steps
+                    dense.append((a[0] + (pt[0] - a[0]) * t, a[1] + (pt[1] - a[1]) * t))
+            dense.append(pt)
         run: List[Tuple[float, float]] = []
-        for p in pts:
+        for p in dense:
             if self._blocked(p[0], p[1]):
                 if len(run) >= 2:
                     self.out.extend(_poly(run, color=pen, f=feed))
