@@ -1,0 +1,998 @@
+{
+  "studio/attention-dag/rounds/r01/piece.py": {
+    "commands": 17209,
+    "draw_mm": 12109.2,
+    "fn": "attention_dag",
+    "hash": "9a2a01aa7656d84c",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 19833.3
+  },
+  "studio/attention-passes/rounds/r01/piece.py": {
+    "commands": 31737,
+    "draw_mm": 9407.7,
+    "fn": "attention_passes",
+    "hash": "c69edc54a9e34e77",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 49308.7
+  },
+  "studio/attention-passes/rounds/r02/piece.py": {
+    "commands": 34285,
+    "draw_mm": 16275.6,
+    "fn": "attention_passes",
+    "hash": "fec92ae000d27e4c",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 25187.6
+  },
+  "studio/attention-passes/rounds/r03/piece.py": {
+    "commands": 4992,
+    "draw_mm": 11430.8,
+    "fn": "attention_passes",
+    "hash": "b6b8471e1b147b6e",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 9774.6
+  },
+  "studio/attention-weaving/rounds/r01/piece.py": {
+    "commands": 26974,
+    "draw_mm": 12431.3,
+    "fn": "attention_weaving",
+    "hash": "f3834a9d00659c5d",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 24478.9
+  },
+  "studio/attention-weaving/rounds/r02/piece.py": {
+    "commands": 33599,
+    "draw_mm": 18571.6,
+    "fn": "attention_weaving",
+    "hash": "7c285251ebf12821",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 27831.9
+  },
+  "studio/attention-weaving/rounds/r03/piece.py": {
+    "commands": 20452,
+    "draw_mm": 17499.6,
+    "fn": "attention_weaving",
+    "hash": "a416f54b39df3b32",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 20713.2
+  },
+  "studio/cnn-passes/rounds/r01/piece.py": {
+    "commands": 60956,
+    "draw_mm": 23704.9,
+    "fn": "cnn_passes",
+    "hash": "f03c6ad2ecf2c401",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 53042.6
+  },
+  "studio/cnn-passes/rounds/r02/piece.py": {
+    "commands": 40577,
+    "draw_mm": 13083.6,
+    "fn": "cnn_passes",
+    "hash": "b4052aae7438b859",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 20095.6
+  },
+  "studio/cnn-passes/rounds/r03/piece.py": {
+    "commands": 25500,
+    "draw_mm": 15637.9,
+    "fn": "cnn_passes",
+    "hash": "792b0e5017c746bd",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 31020.9
+  },
+  "studio/convolutions/rounds/r01/piece.py": {
+    "commands": 115059,
+    "draw_mm": 18617.0,
+    "fn": "convolutions",
+    "hash": "caa780045f7694bd",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 28093.4
+  },
+  "studio/diffusion-passes/rounds/r01/piece.py": {
+    "commands": 53886,
+    "draw_mm": 12241.4,
+    "fn": "diffusion_passes",
+    "hash": "5807d30020b450b3",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 82470.2
+  },
+  "studio/diffusion-passes/rounds/r02/piece.py": {
+    "commands": 28699,
+    "draw_mm": 5298.7,
+    "fn": "diffusion_passes",
+    "hash": "bc21e46a53afaf9d",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 17080.6
+  },
+  "studio/diffusion-passes/rounds/r03/piece.py": {
+    "commands": 15426,
+    "draw_mm": 5960.5,
+    "fn": "diffusion_passes",
+    "hash": "4d8a8929165c1df2",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 13091.7
+  },
+  "studio/diffusion-topography/rounds/r01/piece.py": {
+    "commands": 59137,
+    "draw_mm": 14194.1,
+    "fn": "diffusion_topography",
+    "hash": "732ffbf23a43d385",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 13310.0
+  },
+  "studio/diffusion/rounds/r01/piece.py": {
+    "commands": 12005,
+    "draw_mm": 13889.5,
+    "fn": "diffusion_transport",
+    "hash": "a097d62570697637",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 23807.6
+  },
+  "studio/double-slit/rounds/r01/piece.py": {
+    "commands": 13057,
+    "draw_mm": 8634.9,
+    "fn": "double_slit_cross_term",
+    "hash": "9ac9f1acce4a9746",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 13216.5
+  },
+  "studio/double-slit/rounds/r02/piece.py": {
+    "commands": 11588,
+    "draw_mm": 4379.5,
+    "fn": "double_slit_counting_frame",
+    "hash": "0ebaf23bf3d9460c",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 6744.3
+  },
+  "studio/double-slit/rounds/r03/piece.py": {
+    "commands": 6792,
+    "draw_mm": 6048.2,
+    "fn": "double_slit_lattice",
+    "hash": "8336b002545bbd0b",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 7464.1
+  },
+  "studio/double-slit/rounds/r04/piece.py": {
+    "commands": 7888,
+    "draw_mm": 20609.2,
+    "fn": "double_slit_vibration",
+    "hash": "c0584adb94cd12d9",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 25038.1
+  },
+  "studio/gan-plate/rounds/r01/piece.py": {
+    "commands": 34766,
+    "draw_mm": 8515.8,
+    "fn": "gan_plate",
+    "hash": "8faf5e79f46cb544",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 34752.1
+  },
+  "studio/gan/rounds/r01/piece.py": {
+    "commands": 11057,
+    "draw_mm": 13566.3,
+    "fn": "minimax_duel",
+    "hash": "6cd2722f3ab8a01d",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 10438.6
+  },
+  "studio/gnn/rounds/r01/piece.py": {
+    "commands": 18008,
+    "draw_mm": 17199.4,
+    "fn": "studio_gnn",
+    "hash": "a21dcc19f1701c6b",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 24535.0
+  },
+  "studio/interference-annotated/rounds/r01/piece.py": {
+    "commands": 43895,
+    "draw_mm": 16573.1,
+    "fn": "attention_interference",
+    "hash": "00419f05ff773889",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 18985.1
+  },
+  "studio/ising/rounds/r01/piece.py": {
+    "commands": 14001,
+    "draw_mm": 12000.0,
+    "fn": "ising_critical",
+    "hash": "d68af762c0fdf72a",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 23419.0
+  },
+  "studio/kandinsky-attention/rounds/r01/piece.py": {
+    "commands": 19073,
+    "draw_mm": 15114.6,
+    "fn": "kandinsky_attention",
+    "hash": "8021e580b644811c",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 15503.4
+  },
+  "studio/kandinsky-attention/rounds/r02/piece.py": {
+    "commands": 19202,
+    "draw_mm": 11573.1,
+    "fn": "kandinsky_attention",
+    "hash": "f8c3c66af8f69943",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 12293.7
+  },
+  "studio/kandinsky-diffusion/rounds/r01/piece.py": {
+    "commands": 32234,
+    "draw_mm": 16818.3,
+    "fn": "kandinsky_diffusion",
+    "hash": "a1cd5ef3214f7a52",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 33214.6
+  },
+  "studio/lstm-spirals/rounds/r01/piece.py": {
+    "commands": 20897,
+    "draw_mm": 12661.5,
+    "fn": "lstm_spirals",
+    "hash": "06853075c5fcac69",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 23066.9
+  },
+  "studio/mass-redistribution/rounds/r01/piece.py": {
+    "commands": 23063,
+    "draw_mm": 18532.0,
+    "fn": "mass_redistribution",
+    "hash": "2134236f09d41839",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 27616.1
+  },
+  "studio/moe/rounds/r01/piece.py": {
+    "commands": 6696,
+    "draw_mm": 3578.4,
+    "fn": "studio_moe",
+    "hash": "d835c35dd8c3ed8c",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 32436.0
+  },
+  "studio/orbital-resonance/rounds/r01/piece.py": {
+    "commands": 22815,
+    "draw_mm": 24619.1,
+    "fn": "orbital_resonance_belt",
+    "hash": "3ddaece63064c26f",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 34672.1
+  },
+  "studio/orbital-resonance/rounds/r02/piece.py": {
+    "commands": 44124,
+    "draw_mm": 31286.3,
+    "fn": "resonance_rank",
+    "hash": "97eb426e7abddf25",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 21311.5
+  },
+  "studio/orbital-resonance/rounds/r03/piece.py": {
+    "commands": 9535,
+    "draw_mm": 17329.6,
+    "fn": "resonance_lattice",
+    "hash": "5b4bc4ec8b882a55",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      2
+    ],
+    "status": "ok",
+    "travel_mm": 18803.7
+  },
+  "studio/orbital-resonance/rounds/r04/piece.py": {
+    "commands": 9738,
+    "draw_mm": 23042.1,
+    "fn": "composition_with_nothing",
+    "hash": "a4b40f20210236ed",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 6806.2
+  },
+  "studio/orrery/rounds/r01/piece.py": {
+    "commands": 17648,
+    "draw_mm": 7683.7,
+    "fn": "orrery_attention",
+    "hash": "8081c1819aa09285",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 14500.2
+  },
+  "studio/reaction-diffusion/rounds/r01/piece.py": {
+    "commands": 20795,
+    "draw_mm": 8827.5,
+    "fn": "studio_reaction_diffusion",
+    "hash": "b82eba585995049d",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 14287.8
+  },
+  "studio/reaction-diffusion/rounds/r02/piece.py": {
+    "commands": 14638,
+    "draw_mm": 8923.8,
+    "fn": "studio_pipe_rank",
+    "hash": "d4ce0e04cf65cc9e",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 11592.2
+  },
+  "studio/reaction-diffusion/rounds/r03/piece.py": {
+    "commands": 12342,
+    "draw_mm": 12820.0,
+    "fn": "studio_ruled",
+    "hash": "fc2ed3da3977ecbc",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1
+    ],
+    "status": "ok",
+    "travel_mm": 11027.7
+  },
+  "studio/reaction-diffusion/rounds/r04/piece.py": {
+    "commands": 18597,
+    "draw_mm": 18710.7,
+    "fn": "studio_bacterio",
+    "hash": "f8ef3de9994f720f",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 17570.8
+  },
+  "studio/resonance-backprop/rounds/r01/piece.py": {
+    "commands": 47069,
+    "draw_mm": 11389.5,
+    "fn": "attention_as_resonance",
+    "hash": "8dda1e85971ceea3",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 24039.5
+  },
+  "studio/resonance-clean/rounds/r01/piece.py": {
+    "commands": 43891,
+    "draw_mm": 9442.5,
+    "fn": "attention_as_resonance",
+    "hash": "1584016a54d6c005",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 20399.0
+  },
+  "studio/resonance-ffn/rounds/r01/piece.py": {
+    "commands": 56073,
+    "draw_mm": 12071.0,
+    "fn": "attention_as_resonance_ffn",
+    "hash": "8c7f02ea64bab516",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 25234.3
+  },
+  "studio/resonance/rounds/r01/piece.py": {
+    "commands": 52046,
+    "draw_mm": 10264.4,
+    "fn": "attention_as_resonance",
+    "hash": "5b075489ee030063",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 24049.1
+  },
+  "studio/ssm-mamba/rounds/r01/piece.py": {
+    "commands": 12448,
+    "draw_mm": 13484.2,
+    "fn": "receding_horizon",
+    "hash": "52b9c2afbe1b1299",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 19845.9
+  },
+  "studio/stable-diffusion/rounds/r01/piece.py": {
+    "commands": 81919,
+    "draw_mm": 18468.0,
+    "fn": "stable_diffusion",
+    "hash": "7b2cfcdd848ac490",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 29056.6
+  },
+  "studio/stable-diffusion/rounds/r03/piece.py": {
+    "commands": 8790,
+    "draw_mm": 9425.9,
+    "fn": "stable_diffusion",
+    "hash": "51bb107999f3211a",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 12320.6
+  },
+  "studio/superposition/rounds/r01/piece.py": {
+    "commands": 57676,
+    "draw_mm": 8699.2,
+    "fn": "superposition",
+    "hash": "2a5abf81caf2c944",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "status": "ok",
+    "travel_mm": 22127.7
+  },
+  "studio/topography-scatter/rounds/r01/piece.py": {
+    "commands": 34186,
+    "draw_mm": 14352.1,
+    "fn": "attention_as_topography",
+    "hash": "33dc42451d4f222b",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 15498.6
+  },
+  "studio/vae/rounds/r01/piece.py": {
+    "commands": 8604,
+    "draw_mm": 8751.6,
+    "fn": "studio_vae",
+    "hash": "9f04b83ee2d4e21e",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 13722.9
+  },
+  "studio/warped-grid/rounds/r01/piece.py": {
+    "commands": 60565,
+    "draw_mm": 14660.8,
+    "fn": "warped_grid",
+    "hash": "e2a5a040077d6bc1",
+    "params": {
+      "colors": 4,
+      "orientation": "portrait",
+      "paper": "a4",
+      "seed": 7
+    },
+    "pens": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "status": "ok",
+    "travel_mm": 20416.5
+  }
+}
