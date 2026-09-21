@@ -41,7 +41,10 @@ The machine reads these one line at a time and moves accordingly.
 
 ## Commands
 - `make dev` — install editable with dev+viz extras (`uv pip install -e ".[dev,viz]"`). Optional extras: `uv pip install -e ".[openai,anthropic,gemini,vision,io]"` (`io` = svgpathtools+ezdxf for full-fidelity SVG/DXF import).
-- `make test` — runs the full suite (~385 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted. One pre-existing failure (`test_refinement.py::test_batch_refinement_prefers_improved_result`, a stub-queue exhaustion) predates the v3.1 work; `make test-ci` deselects it.
+- `make check` — **the gate: `test-ci` + `studio-check`.** Run it before calling
+  anything done. `studio-check` (`scripts/studio_regression.py`) fingerprints the 51
+  studio pieces, which live outside the package and which no test imports.
+- `make test` — runs the full suite (~630 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted. One pre-existing failure (`test_refinement.py::test_batch_refinement_prefers_improved_result`, a stub-queue exhaustion) predates the v3.1 work; `make test-ci` deselects it.
 - Single test: `python3 -m pytest tests/test_primitives.py::test_name -v`. By marker: `-m "not requires_hardware and not requires_llm"` to skip hardware/LLM-gated tests.
 - `make lint` (ruff) / `make format` (black + isort). Line length 100.
 - Run the tool: `python3 -m promptplot ...` or the `promptplot` entry point (`cli:main`).
@@ -53,10 +56,14 @@ The machine reads these one line at a time and moves accordingly.
 - `pp-validate` — checks GCode won't crash or go off the paper before sending
 - `pp-simulate` — shows you what the drawing will look like before running it
 
-### Dev skills (for improving the code)
-- `pp-optimize` — improves the path ordering so the pen lifts less
-- `pp-prompt` — improves the instructions given to the LLM to get better GCode
-- `pp-improve` — autonomous agent that runs the full improvement loop
+### Dev agents (for improving the code — these are **agents**, not skills)
+- `pp-improve` — diagnoses a quality complaint, fixes the cause, runs `make check`
+- `pp-optimize` — toolpath ordering (never reorders across a colour boundary)
+- `pp-prompt` — the drawing-DSL prompts; a missing primitive usually beats more prompt text
+
+All seven pp-* skills/agents were rewritten 2026-09-21: the earlier versions called
+`scripts/{validate,simulate,serial_stream,detect_ports,orchestrate}.py`, none of which
+exist, and `pp-stream` streamed whole files with no frame trace.
 
 ### Controller skills (drive PromptPlot from Claude Code)
 - `pp-orchestrate` — supervisor-worker loop for dense (10k+) drawings: plan
@@ -324,6 +331,132 @@ that flow through the same color-layer pipeline.
 - **Connection SM** — plotter connection lifecycle: DISCONNECTED → CONNECTING → IDLE → STREAMING. Handles ALARM detection and recovery.
 - **Checkpoints** — interrupted drawings save state to `~/.promptplot/checkpoints/`. Resume with `--resume`.
 
+## Gallery and feedback
+
+Every render and GCode this project has made lives in `gallery/` — 63 drawings, 578 files,
+**entirely gitignored** (it is ~400 MB of images). It is a local working archive; Claude Code
+reads the filesystem, so nothing is lost by not tracking it.
+
+```
+gallery/
+  INDEX.md      every subject and file, with per-file plot stats — for curating
+  PRINT.md      everything plottable, cheapest first — for picking a job for Leo
+  viewer.html   the browser: a hero carousel over a filmstrip of that drawing's trials
+  <series>/     neural-networks · physics · generative · attractors · pictures · effects
+  studio/<fam>/ current/  the latest version        trials/  every earlier attempt
+```
+
+Regenerate all three views with `python scripts/gallery_index.py`. Pull new renders out of
+`~/Downloads` with `python scripts/studio_sync.py` — Downloads is staging, the gallery is the
+archive.
+
+### Don't break the studio pieces
+
+The 51 candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` live OUTSIDE the package
+and are not in `GENERATOR_REGISTRY`, so `make test` never touches them — yet they import
+`engine.geometry`, `engine.kit`, `engine.policies` and the private helpers `_poly`, `_dot`,
+`_stroke_text`, `_text_width`, `_chain_segments` from `generators.py`. An edit to any of
+those can change an approved plate with nothing going red.
+
+```
+python scripts/studio_regression.py            # compare against the baseline
+python scripts/studio_regression.py --write    # re-record it (only when the change is intended)
+```
+
+Each piece is fingerprinted by command count, draw/travel length, pens and a hash of every
+coordinate, so any geometry change shows up even when the totals match. Baseline:
+`studio/REGRESSION.json`. **Run it after touching anything under `generative/engine/` or
+`generators.py`.**
+
+### Juan's feedback — READ THIS BEFORE CHANGING ANY PIECE
+
+Juan reviews plates in the viewer and records a verdict plus a note. **Those notes are
+instructions, and they live in tracked files under `studio/`** (not in `gallery/`, which is
+gitignored and would lose them):
+
+| file | what it is |
+|---|---|
+| `studio/<slug>/FEEDBACK.md` | **the one to read before working on that drawing** — every judgement on it, newest first, and the source file to edit |
+| `studio/FEEDBACK.md` | the roll-up across all drawings, in `CURATION.md`'s column shape |
+| `studio/QUEUE.md` | open reworks — the worklist agents get dispatched against |
+| `studio/feedback.jsonl` | the append-only log the three views are generated from |
+
+**Before you touch a piece, read its `studio/<slug>/FEEDBACK.md` if one exists.** It names the
+exact render Juan was looking at, what he wants changed, and any other plates he referenced
+with `@`. Treat a REWORK note the same way you would treat a brief.
+
+Verdicts, mapping to `promptplot/generative/CURATION.md`'s vocabulary:
+
+- **PROMOTE** (= KEEP) — this is the final version of that drawing
+- **REWORK** (= REWORK) — good bones, fix what the note says
+- **CUT** (= KILL) — drop it
+
+To review: `python scripts/gallery_serve.py` opens the viewer on localhost and saves feedback
+straight to disk. The viewer's **Plot** panel can also send the plate on screen to the machine
+— it lists the gcode's colour layers, traces the frame and streams one layer at a time:
+
+```
+python scripts/gallery_serve.py --allow-plot --paper a5:landscape \
+    --serial-port /dev/cu.usbserial-14120
+```
+
+Only one colour layer per request today; the whole-plate job (pen-swap pauses,
+batching, re-zero, resume, ETA, queue) is planned in `studio/PLOT_JOBS.md`.
+
+Plotting is **off unless `--allow-plot` is passed**, every request must carry `confirm: true`,
+the target must resolve inside `gallery/` and end in `.gcode`, the layer is bounds-checked
+before a command goes out, and **the pen-up frame trace is enforced by the server, not by
+convention** — an ink job is refused until a frame has been traced for that paper *in this
+process* (`promptplot plot frame` in another terminal does not satisfy it). Endpoints live in
+`scripts/gallery_plotter.py`; `promptplot` is imported lazily so the server still runs on a
+bare interpreter. Opened as a plain `file://` page it still browses, but a `file://` page
+cannot write, so saving there falls back to the clipboard.
+
+PROMOTE and CUT only *record* a decision — nothing moves until
+`python scripts/gallery_apply.py --dry-run` is checked and re-run without the flag. CUT moves
+a plate to a `cut/` tier and **never deletes**; every move is appended to `MOVES.tsv` and is
+reversible.
+
+## Authored scenes — how a reference picture becomes a plotted drawing
+
+The three reference reconstructions ChatGPT made (cubist plate · Dalí engraving · acrylic
+Van Gogh) are the bar, and their packages are our oracles in
+`gallery/references/oracles/` (gitignored; read-only; never import their code). The
+method they used is now native here. **It is an illustrator's reconstruction, never a
+trace** — see `studio/AUTHORING.md` (the playbook) and `DESIGN_RUBRIC.md` § TRACING IS
+NOT AUTHORING + § MATERIAL GRAMMAR.
+
+**The model** — `promptplot/scene/` (`models.py`): a `Scene` is an ordered list of named
+`SceneObject`s, **back to front**, each with an occlusion `cover` polygon (source units,
+never drawn), a `material`, and `Mark`s that carry a `role`
+(contour|hatch|label|flow|construction|accent), an `ink`, a physical `width_mm` (nib OR
+brush footprint) and a `stage`. Pen work has one stage; acrylic has
+`underpainting → body → accents`. `name` is functional — ink/width rules key on it.
+
+**The compiler** — `compile_scene(scene, config) -> (commands, pen_plan)` and
+`compile_to_program(...) -> (GCodeProgram, pen_plan)`: occlusion → source units to mm
+(uniform fit, centred, y flipped) → width snapped to the nearest available nib/brush →
+exact dedup (widest wins) → passes ordered `(stage, width asc, ink)` → one colour index
+per pass → normal colour-layer pipeline. The pen plan says what each index physically is.
+Two occlusion modes: `cover` (pen — a hatch stops ON the facet edge in front of it, via
+`geometry.Polygon`) and `paint` (brush — later footprints hide earlier strokes;
+fully-hidden strokes are culled). Unused ink×width combinations never produce empty layers.
+
+**Two seats, one engine.** (1) In-app: `promptplot studio design <slug> --mode scene
+--reference img.png` — the designer LLM (any of the 7 providers) *sees* the reference and
+emits Scene JSON; the critic sees reference + render side by side and runs the seven
+acceptance questions. A reference at `studio/<slug>/ref/reference.png` is picked up
+automatically. (2) Claude Code in conversation: author the Scene JSON directly and compile
+it — same engine, same pen plan. `code` mode still exists for pieces needing bespoke
+computation (THE MIRROR FORGETS). Previews draw each pass at its physical width
+(`GCodeVisualizer.preview(pen_widths=)`) so a 4 mm underpainting reads as paint.
+
+**Engine additions for this:** `geometry.Polygon` (concave-capable exact Region),
+`bezier_flatten` (the oracles are 80k+ cubic segments — the SVG importer now flattens
+them instead of chording), `resample_by_arclength`. SVG import is **mm-native** with
+`--no-fit` when the file declares a viewBox + physical width (the three oracle SVGs land at
+exact `[0,297]×[0,420]` with 7,118 / 24,678 / 11,163 paths and 8 / 4 / 32 layers).
+
 ## File structure
 All source lives in `promptplot/`. Three formerly-monolithic modules are now **subpackages** whose
 `__init__.py` re-exports the same public names (so `from promptplot.llm import X` etc. are unchanged):
@@ -333,7 +466,12 @@ All source lives in `promptplot/`. Three formerly-monolithic modules are now **s
 - `generative/` — `rng.py` (`SeededRNG`: seeded Random + numpy + value/fbm noise), `generators.py` (30+ parametric generators), `registry.py` (`GENERATOR_REGISTRY` + signature-introspected schemas + `run_generator`), **`engine/`** (THE composition engine — `scene3d.py`: `Scene3D` builder with native default-ON anti-crowding — z-buffer hidden-line `surface()` w/ `ScreenThin` (depth-aware both-family floors, weave) + `PolarLOD` (spider-web polar meshing, ridge registration), `Occupancy` + `lines(mode="pause_resume")` crowd control, `halo_labels`, `poly/emit`, `fit="fill"|"rescue"|"none"`, `prime_scale`; plus `geometry.py` (moved), `kit.py` (moved), `policies.py` (occlude_crossings, enforce_line_spacing, focal_void, limit_ink_density), `looks.py` (anaglyph, echo, dash_rain, glitch_slice); old paths `engine3d.py`/`kit.py`/`geometry.py`/`effects.py` are compat shims, single def-sites in `engine/`; pieces are SHORT declarations on Scene3D — never hand-roll z-buffers/thinning in a piece), **`engine3d.py`** (compat wrapper: `_zbuf_terrain` = Scene3D exact mode + `_fit_out`), **`geometry.py`** (exact 2D diagram ops, FreeCAD-vocabulary: composable `Region`s — `Circle`/`HalfPlane`/`Band`/`Rect` with `|`/`&`/`~` — plus `clip(poly, region, keep='outside'|'inside')`, `trim_to`, `offset`; segment↔boundary intersections are closed-form so clipped curves stop exactly ON lines/circles, no sample-snap stagger — use this instead of hand-rolled `hidden=` conditionals; adoption roadmap for more CAD ops in `studio/engine/CAD_RESEARCH.md`), **`kit.py`** (the 2D design kit: fills, type, furniture, clipping — one import site incl. generators low-level helpers), **`pieces/{ml,abstract,physics}.py`** (the science compositions by domain; `bauhaus.py` + `physics.py` are compat shims re-exporting every historical name — the framework is style-NEUTRAL, style is chosen at the lamina level; new pieces get subject-based names, `bauhaus_*` is legacy). See "Generative art".
 - `lamina/` — **the finished-sheet layer.** `styles.py` (6 `StylePreset`s from STYLES.md: bauhaus, swiss, deco, pop, radial_viz, science_poster; semantic-pen → physical-pen mapping), `layout.py` (`reserve_bands`, `split_panels`, gutter rules, number chips), `plate.py` (`Panel`, `PlateSpec` + JSON round-trip, `compose_plate(spec, config) -> (GCodeProgram, pen_plan)`). CLI: `promptplot plate cnn:7 lstm:7 mlp:7 --style science_poster --paper a3` (single- or multi-panel; `--preview/--save/--simulate/--port` with the mandatory limits trace).
 - `studio/` (package) — **the native design layer.** `briefs.py` (parses `studio/<domain>/*.md` briefs: title—tagline, Essence/Status, sections), `prompts.py` (designer/critic/synth templates inlining the STYLES.md canon + DESIGN_RUBRIC.md), `loop.py` (`run_design_loop`: designer → render → vision-critic → synth on any of the 7 LLM providers; `params` mode renders existing pieces, `code` mode writes candidate piece source under `studio/<slug>/rounds/` — never inside the package). CLI: `promptplot studio list | brief <slug> | design <slug> --style --mode --rounds --provider`. **New pieces should go through this loop** — it consistently outperforms one-shot design.
-- `importers/` — `svg_import.py`, `dxf_import.py`, `layers.py` (fit-to-paper + color/layer grouping), `__init__.py` (`import_file`, `parse_file`). See "File import".
+- `scene/` — **the authored-scene layer** (see "Authored scenes"). `models.py` (`Scene`/`SceneObject`/`Mark`/`HatchRule`, pydantic, JSON round-trip — what an LLM emits in scene mode; an object's `fills` are `HatchRule`s the compiler expands over its `cover`), `occlusion.py` (`cover_walk` exact reverse-walk hidden-line removal with label protection; `paint_walk` footprint-raster culling for brushwork), `compile.py` (`compile_scene` → colour-tagged commands + pen plan; `compile_to_program`; `rules=` accepts `lamina.styles.PenRules.as_compile_rules()`).
+- `generative/engine/` — **the drawing engine, in layers** (innermost first; each uses only the ones above it, and `engine/__init__` re-exports all of it from one import site):
+  `geometry.py` exact 2D kernel (Region algebra + `clip`/`trim_to`, `offset`/`erode_ring` with miter-or-smooth joins and fold pruning, `bezier_flatten`, `resample_by_arclength`, `smooth_ring`) · `forms.py` **what the shapes are** · `material.py` **how a mark is made** · `kit.py` 2D furniture and type · `policies.py` guardrails · `looks.py` sheet effects · `scene3d.py` 3D composition with z-buffer hidden-line. `promptplot/scene/` sits above as the 2D authored-scene layer.
+- `generative/engine/forms.py` — **the form vocabulary**: the closed shapes technical plates are built from. Rings (`lobed_ring`, `hourglass_ring`, `funnel_ring`, `rounded_rect_ring`) and **three nesting rules that are not interchangeable**. **`field_nest` is the default and the only one that holds a constant PHYSICAL gap**: it walks level sets of the shape's distance field, where `|grad d| = 1` makes every level exactly `pitch` from the last, in every direction, all the way to the medial axis — so it neither folds nor leaves a hollow centre, and a pinched mass splits into components on its own. `pitch` is in caller units; set it above the pen tip or the mass inks solid. The other two are kept for the cases they suit and **must not be used for a filled contour mass**: `contour_nest` offsets inward (exact gap, but dies at the tightest valley — measured 0.32 mm minimum where it folds), and `radial_nest` scales about the centroid (never folds, but the gap runs with the local radius — measured 1.9x across a 4-lobe blob, and 0.66 mm minimum at 26 rings, which is what turned the v3 latent-topography masses into black blots). `max_erode` measures a shape's real offset limit by bisection. Plus `dissolve` (a nest walked from solid contours → broken → dots → scatter: the diffusion forward process as one drawing op), `dot_cloud`, `radial_burst`, `ribbon`.
+- `generative/engine/material.py` — **how a MARK is made, per material** (the layer the engine lacked; algorithms + constants from the reference reconstructions, on exact `geometry` Regions, no shapely). Cubist: `hatch_polygon` (exact clip, grid phase-locked to the origin so adjacent facets stay collinear), `physical_spacing` (floor 2.4 × finest nib), `physical_inset` (½ border + ½ hatch + 0.035 mm), `shadow_cross` (+67°, ×1.5). Engraving: `cut_tone` (tone → arc-length duty cycle: `(t−0.06)/0.65`, ink floor 0.13, solid at 0.71), `flow_family` (two guides → tracks; count = 76th-percentile width ÷ spacing; travelling highlight σ 0.026; `dark_edge` rims; `count=` override), `surface_grid` (warped (u,v) net `bend·sin(πu)sin(πv) + slope·(u−½)`, golden-ratio row phase, cross family only in shadow, elliptical `protect` holes), `gauss_tone`. Painterly: `brush_family`, `load_image_grid` (cover-fit reference → per-cell RGB + tone + structure-tensor tangent/coherence), `quantize_palette` (median-cut, dark→light) + `snap_color`, `flow_strokes` (short curved strokes riding the tangent field, seeded on a jittered lattice so density is bounded, colour sampled then snapped). De-crowding: `suppress_parallel` (drop only if too close AND |cos θ| > 0.93 — crossings may touch). `lamina/styles.py` gained `PenRule`/`PenRules` (semantic name+role → ink, width; first match wins per list) and the `cubist_plate` preset carrying the oracle's `CUBIST_RULES`.
+- `importers/` — `svg_import.py` (stdlib default: group-inherited stroke, Inkscape layers, Bezier via `bezier_flatten`, viewBox + physical units), `dxf_import.py`, `layers.py` (fit-to-paper + color/layer grouping; **mm-native passthrough** for `fit=False` when the page is declared), `__init__.py` (`import_file`, `parse_file`). See "File import".
 
 Core flat modules:
 - `config.py` — **Dataclass** config tree (paper, pen, brush, **color**, bounds, vision, serial, LLM, workflow). `ColorConfig` (palette, park_position, pause_for_swap, assign_mode) and `PaperConfig.from_size("a4")`. Not pydantic-BaseSettings and not `PROMPTPLOT_`-prefixed — LLM keys read direct env vars: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `GPT4_API_KEY`/`GPT4_ENDPOINT`/`GPT4_API_VERSION` (Azure). Don't "modernize" to the workspace env_prefix convention without being asked.

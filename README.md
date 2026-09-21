@@ -70,6 +70,20 @@ promptplot studio design diffusion --style bauhaus --rounds 2 --provider nvidia
 # designer → render → vision critic → synth; artifacts in studio/<slug>/
 ```
 
+**Reconstruct a reference picture as an authored plotter drawing** (the method behind the
+cubist / Dalí-engraving / acrylic reference plates — `studio/AUTHORING.md`):
+
+```bash
+# in-app seat: the designer LLM SEES the reference and emits a Scene JSON;
+# the critic judges reference vs render side by side
+promptplot studio design cubist-repro --mode scene --reference painting.png --rounds 4 --provider anthropic
+
+# conversation seat (Claude Code, or by hand): author the Scene JSON yourself, then
+promptplot scene validate scene.json
+promptplot scene render scene.json --out ~/Downloads/plate.png      # preview at real pen/brush widths + GCode + pen plan
+promptplot scene render scene.json --port /dev/cu.usbserial-14120   # streams pass by pass, parks for each swap
+```
+
 **Draw something (simulated, no hardware needed):**
 
 ```bash
@@ -269,6 +283,13 @@ promptplot config show           Display current configuration
 promptplot plotter connect       Test plotter connection
 promptplot plotter list-ports    List available serial ports
 promptplot interactive           Interactive REPL mode
+promptplot scene validate F      Parse an authored Scene JSON; report objects/marks/inks/widths/stages
+promptplot scene render F        Compile a Scene → colour-layered GCode + preview at physical widths
+                                 (--out PNG, --gcode PATH, --simulate, --port)
+promptplot import F --no-fit     SVG/DXF → GCode; --no-fit is mm-native when the SVG declares
+                                 viewBox + physical width (Bezier curves are flattened exactly)
+promptplot studio design SLUG --mode scene --reference IMG
+                                 Reference-driven reconstruction loop (see studio/AUTHORING.md)
 ```
 
 ## Architecture
