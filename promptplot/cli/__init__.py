@@ -17,5 +17,6 @@ from . import plot_cmd  # registers plot — frame trace + per-layer guardrailed
 from . import agent  # noqa: F401  (registers agent — agentic controller)
 from . import studio  # noqa: F401  (registers studio — briefs + design loop)
 from . import plate  # noqa: F401  (registers plate — lamina composition)
+from . import scene_cmd  # noqa: F401  (registers scene — authored Scene JSON validate/render)
 
 __all__ = ["cli", "main"]

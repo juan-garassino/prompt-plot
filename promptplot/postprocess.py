@@ -481,16 +481,23 @@ def insert_paint_dips(program: GCodeProgram, brush_config: BrushConfig) -> GCode
 
     commands: List[GCodeCommand] = []
     stroke_count = 0
-    cx, cy = brush_config.charge_position
+    reloads = 0
+    current_color: Optional[int] = None
     fw = getattr(brush_config, "firmware", "grbl")
     dip_p = _dwell_p(brush_config.dip_duration, fw) or 0
     drip_p = _dwell_p(brush_config.drip_duration, fw) or 0
 
     for cmd in program.commands:
         if cmd.command == "M3":
+            # a colour swap hands back a freshly loaded brush: restart the count
+            if cmd.color is not None and cmd.color != current_color:
+                current_color = cmd.color
+                stroke_count = 0
             stroke_count += 1
             if stroke_count % brush_config.strokes_before_reload == 0:
-                # Insert reload before this pen-down
+                reloads += 1
+                cx, cy = brush_config.well_for(current_color)
+                # Insert reload before this pen-down, at THIS colour's well
                 commands.append(GCodeCommand(command="M5"))
                 commands.append(GCodeCommand(command="G0", x=cx, y=cy))
                 commands.append(
@@ -509,7 +516,7 @@ def insert_paint_dips(program: GCodeProgram, brush_config: BrushConfig) -> GCode
         commands=commands,
         metadata={
             **(program.metadata or {}),
-            "brush_reloads": stroke_count // brush_config.strokes_before_reload,
+            "brush_reloads": reloads,
         },
     )
 
