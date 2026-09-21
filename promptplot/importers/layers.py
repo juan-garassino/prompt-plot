@@ -27,6 +27,12 @@ class ImportResult:
     paths: List[ImportedPath] = field(default_factory=list)
     y_down: bool = True  # SVG is y-down; DXF is y-up
     source: str = ""
+    # Page geometry when the file declares it (SVG viewBox + physical width):
+    # viewbox = (min_x, min_y, width, height) in user units, unit_scale = mm per
+    # user unit. Both None when unknown. This is what lets ``fit=False`` be a
+    # true mm-native passthrough instead of a recentred guess.
+    viewbox: Optional[Tuple[float, float, float, float]] = None
+    unit_scale: Optional[float] = None
 
 
 def _bbox(paths: List[ImportedPath]) -> Tuple[float, float, float, float]:
@@ -50,30 +56,43 @@ def build_program_commands(
     if not paths:
         return [], []
 
-    minx, miny, maxx, maxy = _bbox(paths)
-    src_w = max(maxx - minx, 1e-6)
-    src_h = max(maxy - miny, 1e-6)
+    if not fit and result.viewbox is not None and result.unit_scale:
+        # mm-native passthrough: the file declared its page, so honour it exactly.
+        # Page origin → (0, 0) mm; y flipped within the page, not the ink bbox; no
+        # recentring. A 297x420 viewBox lands at precisely [0,297]x[0,420].
+        vx, vy, vw, vh = result.viewbox
+        s = result.unit_scale
 
-    dx0, dy0, dx1, dy1 = config.paper.get_drawable_area()
-    dst_w = dx1 - dx0
-    dst_h = dy1 - dy0
+        def tx(x: float, y: float) -> Point:
+            nx = (x - vx) * s
+            ny = (vh - (y - vy)) * s if result.y_down else (y - vy) * s
+            return round(nx, 3), round(ny, 3)
 
-    if fit:
-        scale = min(dst_w / src_w, dst_h / src_h)
     else:
-        scale = 1.0
-    # center the scaled drawing in the drawable area
-    off_x = dx0 + (dst_w - src_w * scale) / 2.0
-    off_y = dy0 + (dst_h - src_h * scale) / 2.0
+        minx, miny, maxx, maxy = _bbox(paths)
+        src_w = max(maxx - minx, 1e-6)
+        src_h = max(maxy - miny, 1e-6)
 
-    def tx(x: float, y: float) -> Point:
-        nx = off_x + (x - minx) * scale
-        # SVG y grows downward — flip so the drawing isn't mirrored top/bottom.
-        if result.y_down:
-            ny = off_y + (maxy - y) * scale
+        dx0, dy0, dx1, dy1 = config.paper.get_drawable_area()
+        dst_w = dx1 - dx0
+        dst_h = dy1 - dy0
+
+        if fit:
+            scale = min(dst_w / src_w, dst_h / src_h)
         else:
-            ny = off_y + (y - miny) * scale
-        return round(nx, 2), round(ny, 2)
+            scale = 1.0
+        # center the scaled drawing in the drawable area
+        off_x = dx0 + (dst_w - src_w * scale) / 2.0
+        off_y = dy0 + (dst_h - src_h * scale) / 2.0
+
+        def tx(x: float, y: float) -> Point:
+            nx = off_x + (x - minx) * scale
+            # SVG y grows downward — flip so the drawing isn't mirrored top/bottom.
+            if result.y_down:
+                ny = off_y + (maxy - y) * scale
+            else:
+                ny = off_y + (y - miny) * scale
+            return round(nx, 2), round(ny, 2)
 
     # Assign a pen index per distinct color/layer key, in first-seen order.
     palette: List[str] = []
