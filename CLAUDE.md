@@ -364,6 +364,11 @@ Regenerate all three views with `python scripts/gallery_index.py`. Pull new rend
 `~/Downloads` with `python scripts/studio_sync.py` — Downloads is staging, the gallery is the
 archive.
 
+**NEW renders** (computed in the viewer from file mtime vs `studio/feedback.jsonl`): a render
+stays NEW until a verdict on its drawing is recorded after it, on it or on a newer render. A drawing
+never judged uses Juan's last verdict anywhere, frozen at page load. Viewing never clears NEW.
+Header **New · N** filters to NEW only, `n` jumps to the next one, and the page opens on the first.
+
 ### Don't break the studio pieces
 
 The 51 candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` live OUTSIDE the package
