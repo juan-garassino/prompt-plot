@@ -67,6 +67,10 @@ Python is `.venv/bin/python`. The dispatch prompt gives you: **slug**, **round**
 
 ## How quality actually happens here
 
+- **Answer a named work.** Pick a LINEAGE (DESIGN_RUBRIC § LINEAGE): one movement + one real
+  reference work, and borrow its ORDER, not its look. Plotter-era artists (Nees, Molnár,
+  Nake, Mohr, LeWitt, Riley) are first choices — they drew with line machines.
+
 - **Authoring depth beats round count.** The best plate in the studio (convolutions r01) is
   one round and 1,380 lines: every element MEASURED off the reference (colour masks,
   connected components, column scans) and recorded in normalised sheet `(u, v)`. A 103-line
@@ -132,6 +136,7 @@ final. Stop when you cannot name a fix — not when you run out of ideas for par
   gcode: ~/Downloads/pp_…_vN.gcode
   paper: a4 landscape, cream
   pens: 0 black = structure/type · 1 crimson = <meaning> · …
+  lineage: <movement> · <artist, work, year> · <the order borrowed, one line>
   compare-to: <parent render path> | reference: studio/<slug>/ref/reference.png | none
   ```
 

@@ -44,6 +44,10 @@ is a decision, never a symptom) · 5. craft for pen (spacing ≥0.8 mm, no flood
 knots, ≤3–4 swaps) · 6. concept legibility (NO SCHEMATICS ≤3; figure or illustration = fail;
 does the abstract order read?) · 7. depth & dimensionality (undeclared flatness ≤4).
 
+Also judge the LINEAGE named in HANDOFF (DESIGN_RUBRIC § LINEAGE): would this plate hold
+its own hung beside that work? Borrowing a surface texture without the order caps
+concept legibility at 5. No lineage stated = a mandate.
+
 Pass bar: **avg ≥ 8 and no dimension < 7.** Run the codebase's known failure modes from
 the rubric first. Run every encoding §11 acceptance check and mark each PASS/FAIL. With a
 reference, answer AUTHORING §6's seven acceptance questions — judge an interpretation, not

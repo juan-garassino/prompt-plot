@@ -37,7 +37,8 @@ failing mandate).
 
 ```
 # <slug> — encoding (VISUAL TRANSLATOR)   · Status: encoding vN · Date
-## 1. STYLE assignment        canon (or a STATED hybrid) + one line: why its order fits
+## 1. STYLE assignment        canon (or a STATED hybrid) + one line: why its order fits;
+                              plus the LINEAGE: one real reference work (DESIGN_RUBRIC § LINEAGE)
 ## 2. The one-glance statement   what a stranger feels at 3 m, before reading
 ## 3. The abstract ORDER      "what ORDER is this?" — and the one-line exact mapping
                               ("sign is over/under", "walls are the strokes")

@@ -152,6 +152,42 @@ scores **avg ≥ 8/10 with no dimension below 7** (all seven dimensions; a decla
    and the designer says so in the report, or the concept demands it. Undeclared
    flatness scores ≤ 4.
 
+## LINEAGE — every plate answers a named work
+
+Juan (2026-09-28): "need to be creative, plottable in the pen plotter, refer to good artistic
+waves." A canon from STYLES.md is the language; a LINEAGE is the conversation. Every plate
+names **one movement and one real reference work** it answers, and says in one line what
+ORDER it takes from it — never its look. "Riley's *Current*: one line family whose phase
+drift makes the surface" is a lineage; "Op Art style" is not.
+
+The pen plotter has its own art history — prefer it, these artists drew with line machines
+or wrote the instruction that a machine can follow:
+
+| lineage | reference | the order it lends |
+|---|---|---|
+| early computer art | Georg Nees, *Schotter* (c. 1968) | order → disorder down the sheet; noise as a controlled gradient |
+| early computer art | Vera Molnár, *Interruptions* (1968–69), *(Dés)Ordres* (1974) | a strict field with measured, local breaks |
+| early computer art | Frieder Nake, *Hommage à Paul Klee* (1965) | a random walk bounded by horizontal strata |
+| systems art | Manfred Mohr, hypercube works (1970s–) | a rule-generated projection; the rule IS the image |
+| conceptual | Sol LeWitt, *Wall Drawings* (1968–) | an instruction executed exactly; the text could redraw it |
+| Op Art | Bridget Riley, *Current* (1964), *Cataract 3* (1967) | one line family, phase/amplitude drift makes the surface move |
+| Op Art | Victor Vasarely, *Vega* series (1957–) | a lattice swollen by a hidden volume |
+| De Stijl | Piet Mondrian, *Broadway Boogie Woogie* (1942–43) | orthogonal lanes whose rhythm is the data |
+| Constructivism | El Lissitzky, *Beat the Whites with the Red Wedge* (1919) | one driving diagonal against a mass |
+| Bauhaus | Kandinsky, *Point and Line to Plane* (1926) | point / line / plane as forces with direction and weight |
+| textile | Anni Albers's weavings | interlacing: over/under as information |
+| minimalism | Agnes Martin's grids | a hand-ruled grid, tone by density alone |
+
+Rules: the lineage is stated in the designer's HANDOFF.md (`lineage:` line) and NOTES.md;
+the art critic judges whether the plate would hold its own **hung beside that work**
+(concept + craft, not resemblance) and fails a plate that merely borrows a surface texture.
+Two plates in one batch should not share a lineage unless the mechanism demands it.
+
+**Plottable is part of creative.** These plates will be plotted for real. A lineage is only
+honoured if the pen can deliver it: every render ships its `.gcode`, spacing ≥ 0.8 mm (2.4×
+the finest nib for hatch), ≤ 4 pens with a stated meaning each, no floods, bounds clean on
+the stated paper, and a plot time stated in NOTES. A plate that only works as a PNG fails.
+
 ## The designer's expressive levers (play them consciously, every round)
 
 - **Proportion** — scale ratios of at least 3:1 between dominant and secondary
