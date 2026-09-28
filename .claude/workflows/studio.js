@@ -16,6 +16,17 @@ const ITERATIONS = args && args.iterations != null ? args.iterations : 2
 const EXPLORE_EVERY = args && args.explore_every != null ? args.explore_every : 2
 const rr = (n) => 'r' + String(n).padStart(2, '0')
 
+// Juan: "remember that you need to try different styles". Every non-faithful design job gets
+// a canon from STYLES.md, rotated so parallel theses and sibling plates land on different
+// movements. The default "modern science poster" look is left out on purpose — it is what
+// the studio falls back to. Faithful keeps its reference's style; iterate keeps its parent's.
+const CANONS = [
+  'DE STIJL (STYLES.md §7)', 'PSYCHEDELIC (§9)', 'SWISS / INTERNATIONAL TYPOGRAPHIC (§3)',
+  'MEMPHIS GROUP (§10)', 'RUSSIAN CONSTRUCTIVISM (§8)', 'ART DECO (§2)', 'POP ART (§4)',
+  'RADIAL DATA-VIZ / INFORMATION ARCS (§5)', 'BAUHAUS (§1)',
+]
+const canonFor = (plateIdx, slot) => CANONS[(plateIdx * 2 + slot) % CANONS.length]
+
 const LEAD = {
   type: 'object', additionalProperties: false,
   required: ['route', 'best_round', 'best_scores', 'next_parent', 'instruction'],
@@ -28,7 +39,7 @@ const LEAD = {
   },
 }
 
-function designerPrompt(p, round, thesis, parent, instruction) {
+function designerPrompt(p, round, thesis, parent, instruction, canon) {
   const brief = thesis === 'wildcard'
     ? `WILDCARD round — a COMPLETELY DIFFERENT approach, deliberately. Do not start from any earlier round's composition or code: read them (and LEDGER.md) only to learn what NOT to repeat. Choose an abstract ORDER and a LINEAGE that no earlier round of this plate used. Keep only the truth (dossier.md or DESCRIPTION.md § The science it encodes) and Juan's FEEDBACK.md. Build it to the same finish as any round — this is exploration, not a sketch.`
     : thesis === 'iterate'
@@ -36,9 +47,12 @@ function designerPrompt(p, round, thesis, parent, instruction) {
     : p.fresh
       ? `This is a NEW plate. Your brief is studio/${p.slug}/encoding.md (read dossier.md too) and the reference studio/${p.slug}/ref/reference.png. Your thesis "${thesis}" is defined in your agent file (faithful = an illustrator's reconstruction of the reference per studio/AUTHORING.md — MEASURED, never traced; mechanism = every mark computed from the real mathematics in the dossier; abstract = transpose to an abstract ORDER under a named LINEAGE).`
       : `Your brief is the "${thesis}" paragraph in studio/${p.slug}/DESCRIPTION.md § Next versions.`
+  const style = canon
+    ? `\nSTYLE: work in the ${canon} canon — read that section of promptplot/generative/STYLES.md and commit to it (the rubric's "STYLE IS NOT OPTIONAL"; the style must still carry the mechanism). Sibling theses and plates were given different canons so the collection spans movements; change it only with a reason stated in NOTES.md. Put a \`canon:\` line in HANDOFF.md.`
+    : thesis === 'faithful' ? `\nSTYLE: keep the reference's own style; put a \`canon:\` line in HANDOFF.md naming the closest canon.` : ''
   return `slug=${p.slug} round=${round} thesis=${thesis} parent=${parent || 'none on disk — rebuild from DESCRIPTION.md § What is on the sheet'}.
 ${brief}
-Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
+Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${style}${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
 }
 
 function critique(p, round, phase) {
@@ -65,15 +79,15 @@ async function research(p) {
     { agentType: 'studio-translator', label: `translator:${p.slug}`, phase: 'Research' })
 }
 
-async function runPlate(p) {
+async function runPlate(p, pi) {
   if (p.fresh) await research(p)
   let n = p.next_round || 1
   const theses = p.theses && p.theses.length ? p.theses : ['iterate']
-  const first = theses.map((t) => ({ t, round: rr(n++) }))
+  const first = theses.map((t, ti) => ({ t, round: rr(n++), canon: t === 'faithful' ? null : canonFor(pi, ti) }))
 
   const built = (await pipeline(
     first,
-    (c) => agent(designerPrompt(p, c.round, c.t, p.parent), { agentType: 'studio-designer', label: `design:${p.slug}/${c.round}:${c.t}`, phase: 'Design' })
+    (c) => agent(designerPrompt(p, c.round, c.t, p.parent, null, c.canon), { agentType: 'studio-designer', label: `design:${p.slug}/${c.round}:${c.t}`, phase: 'Design' })
       .then((rep) => (rep ? c : null)),
     (c) => (c ? critique(p, c.round, 'Critique').then(() => c.round) : null),
   )).filter(Boolean)
@@ -94,10 +108,10 @@ async function runPlate(p) {
     }
     const exploring = EXPLORE_EVERY > 0 && i % EXPLORE_EVERY === 0
     const jobs = [{ t: 'iterate', round: rr(n++), parent: verdict.next_parent, instruction: verdict.instruction }]
-    if (exploring) jobs.push({ t: 'wildcard', round: rr(n++), parent: null })
+    if (exploring) jobs.push({ t: 'wildcard', round: rr(n++), parent: null, canon: canonFor(pi, 4 + 2 * i) })
     const done = (await pipeline(
       jobs,
-      (j) => agent(designerPrompt(p, j.round, j.t, j.parent, j.instruction),
+      (j) => agent(designerPrompt(p, j.round, j.t, j.parent, j.instruction, j.canon),
         { agentType: 'studio-designer', label: `design:${p.slug}/${j.round}${j.t === 'wildcard' ? ':wildcard' : ''}`, phase: 'Iterate' })
         .then((rep) => (rep ? j : null)),
       (j) => (j ? critique(p, j.round, 'Iterate').then(() => j) : null),
@@ -125,5 +139,5 @@ if (!PLATES.length) {
   return []
 }
 log(`${PLATES.length} plate(s), up to ${ITERATIONS} follow-up round(s) each`)
-const results = await parallel(PLATES.map((p) => () => runPlate(p)))
+const results = await parallel(PLATES.map((p, pi) => () => runPlate(p, pi)))
 return results.filter(Boolean)
