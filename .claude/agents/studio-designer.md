@@ -64,6 +64,10 @@ Python is `.venv/bin/python`. The dispatch prompt gives you: **slug**, **round**
   Print the checkable statistics into NOTES.
 - **abstract** — transpose to an abstract ORDER as far as it will go; nothing depicted.
 - **a named lens** (e.g. `origami-sheet`, `gates-as-attractors`) — follow the dispatch brief.
+- **wildcard** — a COMPLETELY different approach, on purpose (Juan: "from time to time expand to a
+  completely different approach"). No earlier round's composition or code as a start; a new
+  abstract order and a new lineage; only the truth and Juan's feedback carry over. Finish it
+  as fully as any round.
 
 ## How quality actually happens here
 

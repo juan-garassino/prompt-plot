@@ -111,7 +111,10 @@ python scripts/studio_descriptions.py --json    # rows with slug, theses, next_r
 Pick plates and theses from the JSON, then run the `studio` workflow with
 `{plates: [{slug, theses, next_round, parent, domain}], iterations: 2}`. Each plate costs
 roughly (theses × 3 + 1) agents for the fan-out and 4 per follow-up round. It stops at `vote`;
-Juan's verdicts in the viewer become J* mandates for the next run.
+Juan's verdicts in the viewer become J* mandates for the next run. Every `explore_every`-th follow-up round
+(default 2: the 1st, 3rd, …) also runs a **wildcard** designer beside the refinement — a
+completely different approach (new order, new lineage, from scratch) — so the loop explores
+instead of only polishing one idea; the lead adopts it if it wins.
 
 ## House rules
 

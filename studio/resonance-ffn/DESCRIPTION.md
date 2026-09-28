@@ -48,6 +48,7 @@ No feedback from Juan.
 - One axis carries Z → FFN → Y across the whole lower sheet at v 0.78, a strong horizontal.
 
 ## Weak — what doesn't
+- [craft] **DOTTED LINES — Juan's note of 2026-09-28** ("should be more continuous dots"; see FEEDBACK.md). Measured on the family's `_dash_mm`: the pitch is already regular (2.22 mm ± 0.05, straight or curved), so spacing is not the fault. The fault is the mark and the gap: each 'dot' is a 0.42 mm micro-dash followed by 1.8 mm of paper, which reads as a broken dashed line, and where dotted leaders converge (Q/K fans into the field, the gradient rails) dots from neighbouring paths interleave into noise. Fix: one round dot of a single fixed size (a pen touch or a tiny closed circle, never a micro-dash), centre-to-centre pitch ≈ 0.9–1.1 mm so the line reads as continuous, pitch end-anchored so both ends carry a dot, the same pitch family-wide, and converging dotted paths spaced ≥ 2 pitches apart. Judge it on the preview at the real nib width. Plot time may grow — Juan accepts that; do not trade the dots for dashes or hairlines.
 ### both
 - [concept] Schematic, as with every attention sibling. Labelled stages, a bracket, fractions and arrowheads make a transformer-block diagram (§ 6 ≤ 3).
 - [space] The lower third is jammed. V rows (v 0.65–0.72), the Z packet (to v 0.83), the FFN labels (v 0.82) and the backward row (v 0.83–0.95) leave no gap over 3 mm. The Z packet's lower envelope nearly meets the ∂L/∂Q rows at u 0.30–0.45.

@@ -92,6 +92,13 @@ next round: rMM · parent: rKK (best so far | latest — say why)
 Fewer, sharper mandates beat a long list: carry at most 5 into a round; defer the rest in the
 ledger with a reason.
 
+### A wildcard in the round
+
+Some follow-up rounds carry a WILDCARD beside the refinement: a deliberately different
+approach. Rank it on its merits, never against the refinement's history. If it wins, it becomes
+the new parent and the old line is kept as a flavour. If it loses but has one idea worth
+keeping, name that idea in SYNTH.md. Log it in the ledger with thesis `wildcard`.
+
 ### Several candidates at once (parallel theses)
 
 Rank them in the ledger. Either pick one winner as the next parent, or write a MERGE
