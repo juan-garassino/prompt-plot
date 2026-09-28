@@ -1,8 +1,9 @@
 export const meta = {
   name: 'studio',
   description: 'Iterate PromptPlot studio plates from their DESCRIPTION.md: parallel thesis designers, art + science critics, lead, follow-up rounds until a vote',
-  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?}], iterations}. Build plates from `python scripts/studio_descriptions.py --json`.',
+  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?, fresh?, topic?}], iterations}. fresh=true runs expert + translator first.. Build plates from `python scripts/studio_descriptions.py --json`.',
   phases: [
+    { title: 'Research', detail: 'new plates only: studio-expert dossier, then studio-translator encoding' },
     { title: 'Design', detail: 'one studio-designer per thesis, each in its own round' },
     { title: 'Critique', detail: 'studio-art-critic + studio-science-critic per round, blind to code' },
     { title: 'Lead', detail: 'studio-lead ranks/merges, keeps LEDGER.md, writes SYNTH.md, routes' },
@@ -29,7 +30,9 @@ const LEAD = {
 function designerPrompt(p, round, thesis, parent, instruction) {
   const brief = thesis === 'iterate'
     ? `Your work order is the latest SYNTH.md for this slug${instruction ? ` — in short: ${instruction}` : ''}. With no SYNTH yet, the "If only iterating" mandates in DESCRIPTION.md are your work order.`
-    : `Your brief is the "${thesis}" paragraph in studio/${p.slug}/DESCRIPTION.md § Next versions.`
+    : p.fresh
+      ? `This is a NEW plate. Your brief is studio/${p.slug}/encoding.md (read dossier.md too) and the reference studio/${p.slug}/ref/reference.png. Your thesis "${thesis}" is defined in your agent file (faithful = an illustrator's reconstruction of the reference per studio/AUTHORING.md — MEASURED, never traced; mechanism = every mark computed from the real mathematics in the dossier; abstract = transpose to an abstract ORDER under a named LINEAGE).`
+      : `Your brief is the "${thesis}" paragraph in studio/${p.slug}/DESCRIPTION.md § Next versions.`
   return `slug=${p.slug} round=${round} thesis=${thesis} parent=${parent || 'none on disk — rebuild from DESCRIPTION.md § What is on the sheet'}.
 ${brief}
 Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
@@ -50,7 +53,16 @@ function lead(p, rounds, nextRound, phase) {
     { agentType: 'studio-lead', schema: LEAD, label: `lead:${p.slug}`, phase })
 }
 
+async function research(p) {
+  const ref = `studio/${p.slug}/ref/reference.png`
+  await agent(`slug=${p.slug} domain=${p.domain || 'mathematics'}. NEW plate — topic: ${p.topic || p.slug}. A reference poster (AI-made, an interpretation brief, not ground truth) is at ${ref}: look at it. Write studio/${p.slug}/dossier.md.${p.note ? ` Curator note: ${p.note}` : ''}`,
+    { agentType: 'studio-expert', label: `expert:${p.slug}`, phase: 'Research' })
+  await agent(`slug=${p.slug}. NEW plate — topic: ${p.topic || p.slug}. Translate studio/${p.slug}/dossier.md into studio/${p.slug}/encoding.md; the reference is ${ref}. Designers will build these theses in parallel: ${(p.theses || []).join(', ')} — make the encoding serve all of them.${p.note ? ` Curator note: ${p.note}` : ''}`,
+    { agentType: 'studio-translator', label: `translator:${p.slug}`, phase: 'Research' })
+}
+
 async function runPlate(p) {
+  if (p.fresh) await research(p)
   let n = p.next_round || 1
   const theses = p.theses && p.theses.length ? p.theses : ['iterate']
   const first = theses.map((t) => ({ t, round: rr(n++) }))
