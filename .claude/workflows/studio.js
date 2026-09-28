@@ -1,7 +1,7 @@
 export const meta = {
   name: 'studio',
   description: 'Iterate PromptPlot studio plates from their DESCRIPTION.md: parallel thesis designers, art + science critics, lead, follow-up rounds until a vote',
-  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?, fresh?, topic?}], iterations, explore_every?}. fresh=true runs expert + translator first; every explore_every-th follow-up (default 2, 0 = never) adds a WILDCARD designer beside the refinement.. Build plates from `python scripts/studio_descriptions.py --json`.',
+  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?, fresh?, topic?, pre?}], iterations, explore_every?}. fresh=true runs expert + translator first; every explore_every-th follow-up (default 2, 0 = never) adds a WILDCARD designer beside the refinement.. Build plates from `python scripts/studio_descriptions.py --json`.',
   phases: [
     { title: 'Research', detail: 'new plates only: studio-expert dossier, then studio-translator encoding' },
     { title: 'Design', detail: 'one studio-designer per thesis, each in its own round' },
@@ -81,9 +81,14 @@ async function research(p) {
 
 async function runPlate(p, pi) {
   if (p.fresh) await research(p)
+  if (p.pre === 'translator' || p.pre === 'expert') {
+    // a relaunch of a plate the lead routed back: run that stage before any designer
+    await agent(`slug=${p.slug}. The studio lead routed this piece to you. Read studio/${p.slug}/LEDGER.md and the latest rounds/*/SYNTH.md first; do what the route asks.${p.note ? ` Curator note: ${p.note}` : ''}`,
+      { agentType: p.pre === 'expert' ? 'studio-expert' : 'studio-translator', label: `${p.pre}:${p.slug}`, phase: 'Research' })
+  }
   let n = p.next_round || 1
   const theses = p.theses && p.theses.length ? p.theses : ['iterate']
-  const first = theses.map((t, ti) => ({ t, round: rr(n++), canon: t === 'faithful' ? null : canonFor(pi, ti) }))
+  const first = theses.map((t, ti) => ({ t, round: rr(n++), canon: (t === 'faithful' || t === 'iterate') ? null : canonFor(pi, ti) }))
 
   const built = (await pipeline(
     first,
