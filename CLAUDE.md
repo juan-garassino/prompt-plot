@@ -156,7 +156,7 @@ Main commands:
 - `promptplot draw "prompt" --simulate` (batch) / `--live` (real-time) / `--colors N` (multi-color) / `--paper a4`.
 - `promptplot art <generator> --seed N --colors K --simulate --preview` (seeded generative, no LLM).
 - `promptplot import file.svg|file.dxf --simulate --preview` (vector file → color layers).
-- `promptplot plot frame --paper a4:landscape --margin 15` (MANDATORY pen-up paper-edge+margin trace, 3s hold on first edge) · `promptplot plot layer file.gcode 1 [--strokes S:E] [--dry-run]` (guardrailed per-colour streaming with batches, 60s acks, park (0,0)) · `promptplot plot file.gcode` (legacy full-file plot).
+- `promptplot plot frame --paper a4:landscape --margin 15` (MANDATORY pen-up paper-edge+margin trace, 3s hold on first edge) · `promptplot plot layer file.gcode 1 [--strokes S:E] [--dry-run]` (guardrailed per-colour streaming with batches, 60s acks, park (0,0)) · `promptplot plot plate file.gcode [--layers 0,2,3] [--batch-strokes 400] [--rezero-every 2000] [--resume JOB_ID] [--retrace] [--jobs] [--port …] [--paper …] [--dry-run]` (a WHOLE multi-pen plate as one resumable job — frame, per-layer park + pen-swap wait, pen-up approach, batches, re-zero checks, job file `~/.promptplot/plot_jobs/<id>.json` after every batch; Enter/p/s at waits, Ctrl-C once = pause, twice = stop; draws capped F500 + dwells floored 1.0s by default; engine `promptplot/plotjob.py`, spec + status `studio/PLOT_JOBS.md`) · `promptplot plot file.gcode` (legacy full-file plot).
 
 New flags on `draw`: `--plan` (LLM plans composition first), `--resume` (resume interrupted drawing),
 `--orchestrate --regions N` (supervisor-worker fan-out), `--colors N` (LLM assigns colors, plotter pauses
@@ -426,8 +426,17 @@ python scripts/gallery_serve.py --allow-plot --paper a5:landscape \
     --serial-port /dev/cu.usbserial-14120
 ```
 
-Only one colour layer per request today; the whole-plate job (pen-swap pauses,
-batching, re-zero, resume, ETA, queue) is planned in `studio/PLOT_JOBS.md`.
+**Plot plate** runs the whole plate as one job (the same `promptplot/plotjob.py` engine as
+`promptplot plot plate`): it traces the frame first, then per layer parks at (0,0) and waits
+for **Continue** (pen swap), streams batches of `batch_strokes`, parks for a re-zero check
+every `rezero_every` strokes, and rewrites `~/.promptplot/plot_jobs/<id>.json` after every
+batch. Endpoints: `POST /plotter/job {action: "plate", target, layers?, batch_strokes?,
+rezero_every?, max_feed?, min_dwell?, confirm}`, `POST /plotter/continue {wait_seq}` (must
+name the wait on screen), `POST /plotter/pause` (stop at the batch boundary, resumable),
+`POST /plotter/resume {job_id, retrace?, confirm}`, `GET /plotter/jobs`; `GET /plotter/state`
+adds `waiting_for`, `cursor`, `progress`, `eta_min`. One job owns the port (an `flock` shared
+with the terminal command). Built/not-built and the saturation argument: `studio/PLOT_JOBS.md`
+(queue + sort-by-cost are still planned).
 
 Plotting is **off unless `--allow-plot` is passed**, every request must carry `confirm: true`,
 the target must resolve inside `gallery/` and end in `.gcode`, the layer is bounds-checked
@@ -507,6 +516,7 @@ Core flat modules:
 - `orchestrate.py` — pure-function public API: `plan_regions`, `generate_region`, `validate_chunk`, `score_chunk`, `merge_chunks`, `stream_chunk`, `stream_pen_layers`/`split_color_layers` (multi-color), `load_and_continue`, `compose_and_stream`
 - `pipeline.py` — FilePipeline: load .gcode → postprocess → preview → stream
 - `plotter.py` — ConnectionState SM, BasePlotter ABC, SerialPlotter (ALARM/recovery/pause/resume), SimulatedPlotter
+- `plotjob.py` — **plate jobs**: `build_plan` (colour runs → prepared, every layer bounds-checked up front), `PlateJob` + `JobStore` (`~/.promptplot/plot_jobs/<id>.json`, atomic, `flock` port lock), `JobControl`/`KeypressControl`/`AutoContinueControl`, `PlateJobRunner` (frame → park + swap wait → pen-up approach → batches via `stream_chunk` → re-zero waits → park; stop/pause/resume, abort on the first failed ack), the Leo ETA model. Used by `plot plate` and `scripts/gallery_plotter.py`. Never writes to the port itself — every line goes through `plotter.send_command`.
 - `postprocess.py` — pipeline: arcs, bounds, pen safety, stroke optimization (or `reorder_by_color` when multi-color → per-color optimize, never across a color), dips, dwells; plus `validate_chunk`
 - `checkpoint.py` — CheckpointManager for resumable drawings
 - `visualizer.py` — matplotlib GCode renderer with stats; color-coded per-pen preview when a program has color layers

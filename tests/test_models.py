@@ -265,3 +265,13 @@ class TestModeSpecificPlans:
             ]
         )
         assert "ABSTRACT PLAN" in plan.to_prompt_guidance()
+
+
+def test_dwell_p_survives_load_as_float():
+    """G4 P0.2 used to load as G4 P0, silently dropping every pen dwell."""
+    from promptplot.models import GCodeCommand
+
+    cmd = GCodeCommand.from_string("G4 P0.2")
+    assert cmd.p == 0.2
+    assert "P0.2" in cmd.to_gcode()
+    assert GCodeCommand.from_string("G1 X1 Y2 F600").f == 600

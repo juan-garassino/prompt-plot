@@ -582,6 +582,16 @@ overflow:hidden;text-overflow:ellipsis}
 .plbtns button{flex:1;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:6px 0}
 .plbtns button:disabled{opacity:.4;cursor:not-allowed}
 #plgo{font-weight:650}
+.plopts{display:flex;gap:6px;font-size:10.5px;color:var(--dim)}
+.plopts label{display:flex;align-items:center;gap:3px}
+.plopts input{width:52px;font-size:10.5px}
+.plwait{font-size:11.5px;font-weight:650;color:var(--rework);display:none}
+.plwait.on{display:block}
+.plprog{font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+#plbar{width:100%;height:6px}
+.pljobs{display:flex;gap:5px}
+.pljobs select{flex:1;font-size:10.5px;min-width:0}
+.pljobs button{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px}
 .pllog{margin:0;font:10.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim);
 max-height:84px;overflow:auto;white-space:pre-wrap;word-break:break-word}
 
@@ -647,7 +657,25 @@ dialog p{color:#ddd;font-size:12px;text-align:center;margin:6px 0 0}
       <div class="plbtns">
         <button id="plframe" title="Mandatory pen-up trace of the paper edge and margin">Trace frame</button>
         <button id="plgo">Send layer</button>
+        <button id="plplate" disabled title="Every layer as one job: frame, then a pen-swap wait per layer">Plot plate</button>
+      </div>
+      <div class="plopts">
+        <label title="Strokes per batch: the pause / resume granularity">batch
+          <input id="plbatch" type="number" min="0" step="50" value="400"></label>
+        <label title="Park at (0,0) for an origin check every N strokes (0 = never)">re-zero
+          <input id="plrezero" type="number" min="0" step="250" value="2000"></label>
+      </div>
+      <div class="plwait" id="plwait"></div>
+      <div class="plbtns">
+        <button id="plcont" disabled title="Pen swapped / origin checked — carry on">Continue</button>
+        <button id="plpause" disabled title="Stop at the end of this batch; the job stays resumable">Pause</button>
         <button id="plstop">Stop</button>
+      </div>
+      <progress id="plbar" max="1" value="0"></progress>
+      <div class="plprog" id="plprog"></div>
+      <div class="pljobs">
+        <select id="pljobs"><option value="">no saved jobs</option></select>
+        <button id="plresume" disabled title="Reopen the port on a saved job and continue from its cursor">Resume</button>
       </div>
       <pre class="pllog" id="pllog"></pre>
     </div>
@@ -1055,6 +1083,10 @@ function plRender() {
     plSay(PL.reason || 'plotting disabled', 'warn');
   } else if (!t) {
     plSay('no gcode for this render', 'warn');
+  } else if (busy && (PL.job || {}).action === 'plate') {
+    const j = PL.job;
+    plSay(j.waiting_for ? 'waiting for you' : (j.state || '').replace('_', ' ') + '…',
+          j.waiting_for ? 'warn' : '');
   } else if (busy) {
     const j = PL.job || {}, p = j.progress;
     plSay((j.action === 'frame' ? 'tracing frame' : 'plotting colour ' + j.color)
@@ -1078,12 +1110,50 @@ function plRender() {
 
   $('plframe').disabled = !PL.enabled || busy;
   $('plgo').disabled = !PL.enabled || busy || plPick == null || !PL.frame_ok;
+  $('plplate').disabled = !PL.enabled || busy || !t || !plLayers.length;
   $('plstop').disabled = !busy;
+  plRenderJob(busy);
   $('pllog').textContent = (PL.log || []).slice(-8).join('\\n');
 
   // Poll only while something is moving.
   if (busy && !plTimer) plTimer = setInterval(plState, 1200);
-  if (!busy && plTimer) { clearInterval(plTimer); plTimer = null; }
+  if (!busy && plTimer) { clearInterval(plTimer); plTimer = null; plLoadJobs(); }
+}
+
+function plRenderJob(busy) {
+  const j = (PL.job && PL.job.action === 'plate') ? PL.job : null;
+  const w = $('plwait');
+  w.textContent = (j && j.waiting_for) ? j.message : '';
+  w.className = 'plwait' + ((j && j.waiting_for) ? ' on' : '');
+  $('plcont').disabled = !(busy && j && j.waiting_for);
+  $('plpause').disabled = !(busy && j);
+  const pr = j && j.progress, bar = $('plbar');
+  if (pr && pr.overall && pr.overall[1]) {
+    const u = j.cursor || {}, n = (j.units || []).length;
+    bar.max = pr.overall[1]; bar.value = pr.overall[0];
+    $('plprog').textContent = 'layer ' + Math.min((u.unit || 0) + 1, n) + '/' + n
+      + ' · strokes ' + pr.layer[0] + '/' + pr.layer[1]
+      + ' · plate ' + pr.overall[0] + '/' + pr.overall[1]
+      + (j.eta_min != null ? ' · ~' + Math.round(j.eta_min) + ' min left' : '')
+      + ' · ' + j.id;
+  } else { bar.value = 0; $('plprog').textContent = ''; }
+  $('plresume').disabled = !PL.enabled || busy || !$('pljobs').value;
+}
+
+async function plLoadJobs() {
+  if (!PL.enabled) return;
+  try {
+    const r = await fetch('/plotter/jobs', { cache: 'no-store' });
+    const js = ((await r.json()).jobs || []).filter(x => x.resumable);
+    const sel = $('pljobs'); sel.textContent = '';
+    if (!js.length) sel.append(new Option('no resumable jobs', ''));
+    js.forEach(x => {
+      const o = (x.progress || {}).overall || [0, 0];
+      sel.append(new Option(x.id + ' · ' + x.state + ' · ' + o[0] + '/' + o[1]
+        + ' · ' + String(x.target).split('/').pop(), x.id));
+    });
+  } catch (_) {}
+  plRender();
 }
 
 async function plPost(url, body) {
@@ -1110,13 +1180,41 @@ $('plgo').onclick = async () => {
   plState();
 };
 $('plstop').onclick = () => plPost('/plotter/stop', {});
+$('plplate').onclick = async () => {
+  const n = plLayers.length, str = plLayers.reduce((a, L) => a + L.strokes, 0);
+  if (!confirm('Plot the WHOLE plate: ' + n + ' layers, ' + str + ' strokes on ' + PL.paper
+               + '?\\n\\nIt traces the frame (pen up) first, then parks at (0,0) and waits '
+               + 'for you before each pen.\\n\\n' + plTarget)) return;
+  await plPost('/plotter/job', { action: 'plate', target: plTarget, confirm: true,
+    batch_strokes: +$('plbatch').value || 0, rezero_every: +$('plrezero').value || 0 })
+    && plState();   // on a refusal, keep the reason on screen
+};
+$('plcont').onclick = async () => {
+  const j = PL.job || {};
+  if (!confirm((j.message || 'Continue?') + '\\n\\nContinue?')) return;
+  (await plPost('/plotter/continue', { wait_seq: j.wait_seq })) && plState();
+};
+$('plpause').onclick = async () => { (await plPost('/plotter/pause', {})) && plState(); };
+$('pljobs').onchange = () => plRender();
+$('plresume').onclick = async () => {
+  const id = $('pljobs').value;
+  if (!id) return;
+  const retrace = !PL.frame_ok;
+  if (!confirm('Resume ' + id + '?\\n\\n' + (retrace
+      ? 'No frame traced in this session: it will trace the frame (pen up) first. '
+      : '') + 'It waits for you to confirm the head is on the paper corner before inking.'))
+    return;
+  (await plPost('/plotter/resume', { job_id: id, confirm: true, retrace: retrace }))
+    && plState();
+};
 
 loadFeedback().then(() => {
   // Freeze the review cutoff now: a verdict recorded on one drawing in this
   // session must not make every never-judged drawing stop being NEW.
   for (const v of verdicts()) BASE = Math.max(BASE, v.w);
   rebuild(false);   // lands on the first NEW render when there is one
-  plState();
+  // draw() asked for layers before the server said plotting is enabled; ask again.
+  plState().then(plLoadLayers).then(plLoadJobs);
 });
 </script></body></html>
 """

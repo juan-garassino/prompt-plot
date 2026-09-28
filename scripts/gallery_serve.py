@@ -40,7 +40,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=str(GALLERY), **kw)
 
     def log_message(self, fmt, *args):  # quieter than the default access log
-        if "POST" in (args[0] if args else ""):
+        if "POST" in (str(args[0]) if args else ""):  # log_error passes an HTTPStatus
             logger.info("%s", args[0])
 
     def _json(self, code: int, payload: dict) -> None:
@@ -63,6 +63,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if route == "/plotter/state":
             self._json(200, BRIDGE.state())
+            return
+        if route == "/plotter/jobs":
+            try:
+                self._json(200, BRIDGE.jobs())
+            except Exception as e:
+                self._json(500, {"error": str(e)})
             return
         if route == "/plotter/layers":
             qs = parse_qs(urlparse(self.path).query)
@@ -90,6 +96,20 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if route == "/plotter/stop":
             self._json(200, BRIDGE.stop())
+            return
+        if route in ("/plotter/continue", "/plotter/pause", "/plotter/resume"):
+            try:
+                if route == "/plotter/continue":
+                    has_body = int(self.headers.get("Content-Length") or 0) > 0
+                    out = BRIDGE.continue_(self._body() if has_body else None)
+                elif route == "/plotter/pause":
+                    out = BRIDGE.pause()
+                else:
+                    out = BRIDGE.resume(self._body())
+                self._json(200, out)
+            except Exception as e:
+                logger.warning("%s refused: %s", route, e)
+                self._json(400, {"error": str(e)})
             return
         if route != "/feedback":
             self._json(404, {"error": "no such endpoint"})
