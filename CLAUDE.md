@@ -361,7 +361,9 @@ gallery/
 ```
 
 Regenerate all three views with `python scripts/gallery_index.py`. Pull new renders out of
-`~/Downloads` with `python scripts/studio_sync.py` — Downloads is staging, the gallery is the
+`~/Downloads` with `python scripts/studio_sync.py` (files each
+render under its PLATE, thesis as a variant, latest per thesis in `current/`; `--copy --only
+<plates>` previews a batch that agents are still rendering) — Downloads is staging, the gallery is the
 archive.
 
 **NEW renders** (computed in the viewer from file mtime vs `studio/feedback.jsonl`): a render
