@@ -36,7 +36,8 @@ what the pen will put on paper. Allowed inputs:
 
 Look at the full page, then crop details with a short PIL script (the densest zone, the
 smallest label over geometry, one junction or overlap, the quiet zone) and look at those.
-Score each dimension 1–10, JUDGED AGAINST THE ASSIGNED CANON (Deco may be symmetric, Swiss
+Take the canon from HANDOFF.md's `canon:` line (else encoding §1). Score each dimension
+1–10, JUDGED AGAINST THE ASSIGNED CANON (Deco may be symmetric, Swiss
 must not be, Pop must repeat meaningfully):
 
 1. hierarchy · 2. grid & alignment · 3. tension & asymmetry · 4. negative space (overlap

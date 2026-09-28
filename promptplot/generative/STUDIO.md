@@ -114,7 +114,10 @@ roughly (theses × 3 + 1) agents for the fan-out and 4 per follow-up round. It s
 Juan's verdicts in the viewer become J* mandates for the next run. Every `explore_every`-th follow-up round
 (default 2: the 1st, 3rd, …) also runs a **wildcard** designer beside the refinement — a
 completely different approach (new order, new lineage, from scratch) — so the loop explores
-instead of only polishing one idea; the lead adopts it if it wins.
+instead of only polishing one idea; the lead adopts it if it wins. Styles rotate too (Juan: "try different styles"): every
+non-faithful design job is assigned a STYLES.md canon so parallel theses and sibling plates
+land on different movements (the default science-poster look is left out of the rotation);
+the canon is recorded in HANDOFF.md and the ledger, and a plate stuck in one canon is switched.
 
 ## House rules
 

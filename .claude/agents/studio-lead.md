@@ -44,7 +44,7 @@ description is kept forever; the next iteration starts from the newest one.
 **Round cap:** 5 designer rounds per encoding (DESIGN_RUBRIC)
 
 ## Rounds
-| round | parent | thesis | render | art avg/min | sci t/f/l | verdict | note |
+| round | parent | thesis | canon | render | art avg/min | sci t/f/l | verdict | note |
 
 ## Mandates
 | id | raised | by | mandate | status | closed |
@@ -65,7 +65,9 @@ description is kept forever; the next iteration starts from the newest one.
 2. The **same mandate** is NOT FIXED in two consecutive rounds → Route `translator` (the
    encoding is the problem), quoting the mandate and both critiques.
 3. Translator reported **UNWORKABLE** → Route `expert` (next visual truth).
-4. **Plateau**: best-so-far unchanged for 2 rounds → the next round must be a
+4. **Plateau**: best-so-far unchanged for 2 rounds, or the last two rounds share a canon
+   without improving → the next round must switch canon (STYLES.md; Juan: "try different
+   styles") or be a
    COMPOSITION move (reposition, rescale, crop at the frame, delete furniture), not a
    parameter tweak — or must fork from the best round instead of the latest.
 5. **Regression**: the latest round is worse than its parent → next round's parent is the
