@@ -28,7 +28,8 @@ scores **avg ≥ 8/10 with no dimension below 7** (all seven dimensions; a decla
    mistakes however rigorous the content behind them.
 5. **Craft for pen** — line weight built from 1–3 passes with purpose; fills solid
    without flooding; no muddy ink-on-ink collisions; density plottable (≥0.8 mm
-   spacing); ≤ 3–4 pen swaps.
+   spacing); one pen swap per colour layer (any number of
+   layers — see PLOTTABLE below).
 
    **CONTOUR LEVELS BY GRADIENT, NOT BY VALUE.** Evenly spaced iso-VALUES
    bunch wherever the field is steep, so a contour nest floods solid in the
@@ -183,10 +184,23 @@ the art critic judges whether the plate would hold its own **hung beside that wo
 (concept + craft, not resemblance) and fails a plate that merely borrows a surface texture.
 Two plates in one batch should not share a lineage unless the mechanism demands it.
 
-**Plottable is part of creative.** These plates will be plotted for real. A lineage is only
-honoured if the pen can deliver it: every render ships its `.gcode`, spacing ≥ 0.8 mm (2.4×
-the finest nib for hatch), ≤ 4 pens with a stated meaning each, no floods, bounds clean on
-the stated paper, and a plot time stated in NOTES. A plate that only works as a PNG fails.
+**Plottable is part of creative.** These plates will be plotted for real on Leo, as
+batched plate jobs (studio/PLOT_JOBS.md): frame → per colour layer: park, swap, stream in
+stroke batches with re-zero checks → park. Juan (2026-09-28): more than 4 colours and longer
+sessions are fine **as long as batching and colour changes are right**. So the rule is not a
+pen cap, it is layer discipline:
+
+- **As many pens as the mechanism has meanings** — each pen a stated meaning, each a clean
+  colour layer, never re-entered after its layer (one swap per pen). State the layer order
+  (usually light → dark so dark ink lands last) and why.
+- **Every layer streams well in batches**: strokes spatially ordered within the layer, no
+  sheet-crossing travel between consecutive strokes, no single stroke so long it cannot be
+  a batch boundary.
+- **Time is allowed, waste is not**: state draw length and minutes per layer and in total.
+  Pen cycles are time (each lift+drop dwells on Leo): a dotted run costing thousands of
+  cycles must earn them — otherwise fewer, longer dashes or one hairline.
+- Always: `.gcode` beside every render, spacing ≥ 0.8 mm (2.4× the finest nib for hatch),
+  no floods, bounds clean on the stated paper. A plate that only works as a PNG fails.
 
 ## The designer's expressive levers (play them consciously, every round)
 

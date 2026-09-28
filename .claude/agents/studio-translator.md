@@ -46,7 +46,8 @@ failing mandate).
                               nothing drawn that encodes nothing
 ## 5. Composition sketch      paper + orientation, margins, where masses sit in mm,
                               the dominant mass (≥3:1 over the next), the quiet zone
-## 6. Pen budget              ≤4 pens (say so if more), each with its MEANING; text layer
+## 6. Pen budget              every pen with its MEANING (more than 4 is fine), the layer
+                              order (usually light → dark), minutes per layer; text layer
 ## 7. Expressive levers       proportion, fill/void, density gradient, colour play,
                               texture direction — one decision each
 ## 8. The twist (if any)      what the viewer already holds, what the mechanism breaks
