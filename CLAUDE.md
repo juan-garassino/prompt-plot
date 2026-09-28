@@ -65,6 +65,20 @@ All seven pp-* skills/agents were rewritten 2026-09-21: the earlier versions cal
 `scripts/{validate,simulate,serial_stream,detect_ports,orchestrate}.py`, none of which
 exist, and `pp-stream` streamed whole files with no frame trace.
 
+### Studio agents (design new plates — project agents in `.claude/agents/`)
+- `studio-expert` — field expert → `studio/<slug>/dossier.md` (truths, lies list, check numbers)
+- `studio-translator` — dossier → `encoding.md` (canon, abstract order, mapping, acceptance checks)
+- `studio-designer` — builds one round `studio/<slug>/rounds/rNN/` by thesis (faithful / mechanism / abstract / lens), self-iterates on its PNG
+- `studio-art-critic` / `studio-science-critic` — blind to code; cold score, 3 mandates, follow-up on open mandates
+- `studio-lead` — keeps `LEDGER.md`, writes `SYNTH.md` (next work order), routes, runs the fabrication gate
+
+The main session is the curator; `.claude/workflows/studio.js` runs the whole loop per plate
+(parallel theses → both critics → lead → follow-up rounds → stop at vote). Every plate has a
+vision-reviewed `studio/<slug>/DESCRIPTION.md` (sheet in (u,v), Keep, Weak, three next
+theses) — the starting spec; `python scripts/studio_descriptions.py [--json]` rebuilds the
+`studio/DESCRIPTIONS.md` index and emits workflow args. Protocol:
+`promptplot/generative/STUDIO.md` § Iteration protocol.
+
 ### Controller skills (drive PromptPlot from Claude Code)
 - `pp-orchestrate` — supervisor-worker loop for dense (10k+) drawings: plan
   regions → generate per region → validate → score → retry weak → stream →
