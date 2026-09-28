@@ -1,7 +1,7 @@
 export const meta = {
   name: 'studio',
   description: 'Iterate PromptPlot studio plates from their DESCRIPTION.md: parallel thesis designers, art + science critics, lead, follow-up rounds until a vote',
-  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?}], iterations}. Build plates from `python scripts/studio_descriptions.py --json`.',
+  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?}], iterations}. Build plates from `python scripts/studio_descriptions.py --json`.',
   phases: [
     { title: 'Design', detail: 'one studio-designer per thesis, each in its own round' },
     { title: 'Critique', detail: 'studio-art-critic + studio-science-critic per round, blind to code' },
@@ -32,7 +32,7 @@ function designerPrompt(p, round, thesis, parent, instruction) {
     : `Your brief is the "${thesis}" paragraph in studio/${p.slug}/DESCRIPTION.md § Next versions.`
   return `slug=${p.slug} round=${round} thesis=${thesis} parent=${parent || 'none on disk — rebuild from DESCRIPTION.md § What is on the sheet'}.
 ${brief}
-Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.`
+Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
 }
 
 function critique(p, round, phase) {
@@ -46,7 +46,7 @@ function critique(p, round, phase) {
 
 function lead(p, rounds, nextRound, phase) {
   const many = rounds.length > 1 ? ' They are parallel theses: rank them, then pick one parent or write a MERGE instruction.' : ''
-  return agent(`slug=${p.slug}. Rounds just critiqued: ${rounds.join(', ')}.${many} Update LEDGER.md, write SYNTH.md in the latest critiqued round, and return your routing. The next free round is ${nextRound}.`,
+  return agent(`slug=${p.slug}. Rounds just critiqued: ${rounds.join(', ')}.${many} Update LEDGER.md, write SYNTH.md in the latest critiqued round, and return your routing. The next free round is ${nextRound}.${p.note ? ` Curator note for this plate (enforce it in routing and the gate): ${p.note}` : ''}`,
     { agentType: 'studio-lead', schema: LEAD, label: `lead:${p.slug}`, phase })
 }
 
