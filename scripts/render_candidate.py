@@ -41,6 +41,13 @@ def main() -> int:
     )
     ap.add_argument("--paper", default="a4")
     ap.add_argument("--orientation", default="portrait", choices=["portrait", "landscape"])
+    ap.add_argument(
+        "--margin",
+        type=float,
+        default=None,
+        help="paper margin in mm. Defaults to the paper config's margin; the frozen "
+        "originals of 2026-09-13 (studio/*/rounds/r00) were drawn at 15.",
+    )
     ap.add_argument("--out", required=True, help="PNG path")
     ap.add_argument(
         "--gcode",
@@ -65,7 +72,8 @@ def main() -> int:
     from promptplot.visualizer import GCodeVisualizer
 
     config = get_config()
-    config.paper = PaperConfig.from_size(args.paper, args.orientation)
+    paper_kw = {"margin": args.margin} if args.margin is not None else {}
+    config.paper = PaperConfig.from_size(args.paper, args.orientation, **paper_kw)
     config.color.enabled = True
     config.color.palette = [c.strip() for c in args.palette.split(",") if c.strip()]
 

@@ -377,6 +377,11 @@ python scripts/studio_regression.py            # compare against the baseline
 python scripts/studio_regression.py --write    # re-record it (only when the change is intended)
 ```
 
+**`rounds/r00/` is a FROZEN ORIGINAL** restored from history (LSTM helix, manifold fold
+braid, composition-nothing v2 — each verified identical to its gallery render); never edit
+one, new versions go in r01+. Re-render with `scripts/render_candidate.py ... --margin 15`
+(those three were drawn at a 15 mm margin; `--margin` defaults to the paper config's 10).
+
 Each piece is fingerprinted by command count, draw/travel length, pens and a hash of every
 coordinate, so any geometry change shows up even when the totals match. Baseline:
 `studio/REGRESSION.json`. **Run it after touching anything under `generative/engine/` or

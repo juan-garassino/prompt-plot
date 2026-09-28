@@ -6,7 +6,7 @@
 |---|---|
 | gallery | `gallery/neural-networks/manifold` |
 | current render | `gallery/neural-networks/manifold/candidates/pp_bauhaus_manifold_MLP_FOLD_v1_seed8.png` (pixel-identical sibling: `…_FOLD_v1_seed3.png` — the seed has no visible effect) |
-| source | **none on disk** for this render. It was drawn by the *interim* `bauhaus_manifold` ("the FOLD of space… streamlines fall from the INPUT plane, twist through a central petal-FOLD") added in commit `58bdb22`; commit `232622c` replaced that function with the petal-saddle 3D engine now at `promptplot/generative/pieces/ml.py::bauhaus_manifold` (see `studio/neural-networks-mlp/DESCRIPTION.md`). Brief: `studio/nets/mlp.md` |
+| source | `studio/neural-networks-manifold/rounds/r00/piece.py::bauhaus_manifold_fold` — **FROZEN ORIGINAL**, restored from the interim `bauhaus_manifold` at commit `58bdb22` with `twist=2.0` (the value on disk when the render was made; the commit's default is 1.6). Reproduces the original GCode exactly at the original frame (A4 portrait, margin 15) — see `rounds/r00/NOTES.md`. Replaced in code by `232622c` (the petal-saddle 3D engine now at `promptplot/generative/pieces/ml.py::bauhaus_manifold`, see `studio/neural-networks-mlp/DESCRIPTION.md`). Brief: `studio/nets/mlp.md` |
 | paper · pens | a4 portrait (210 × 297 mm), cream · 1 crimson = ~1 in 4 strands, `NONLINEAR` label, footer wave curves · 2 black = most strands, boxes, all other type |
 | status | unreviewed (no FEEDBACK.md) · 6 renders on disk, all in `candidates/`; superseded in code by the `mlp` subject |
 
