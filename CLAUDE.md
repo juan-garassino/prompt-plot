@@ -483,7 +483,7 @@ Core flat modules:
 - `plotter.py` — ConnectionState SM, BasePlotter ABC, SerialPlotter (ALARM/recovery/pause/resume), SimulatedPlotter
 - `postprocess.py` — pipeline: arcs, bounds, pen safety, stroke optimization (or `reorder_by_color` when multi-color → per-color optimize, never across a color), dips, dwells; plus `validate_chunk`
 - `checkpoint.py` — CheckpointManager for resumable drawings
-- `visualizer.py` — matplotlib GCode renderer with stats; color-coded per-pen preview when a program has color layers
+- `visualizer.py` — matplotlib GCode renderer with stats; color-coded per-pen preview when a program has color layers; `preview_frames()` / `promptplot preview --frames N` writes N cumulative build-up PNGs (ported from drawStream `--save-steps`)
 - `scoring.py` — Quality scorer (A–F grades), style profile extractor, `score_chunk`
 - `memory.py` — Drawing memory (JSONL) for few-shot retrieval
 - `tui.py` — Rich-based TUI with planning/paused phase display

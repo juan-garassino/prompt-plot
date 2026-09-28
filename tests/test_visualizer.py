@@ -119,3 +119,62 @@ class TestGCodeVisualizer:
         assert Path(artifacts["heatmap_path"]).exists()
         assert Path(artifacts["json_path"]).exists()
         assert artifacts["analysis"]["creative_mode"] == "abstract"
+
+
+class _RecordingVisualizer(GCodeVisualizer if MATPLOTLIB_AVAILABLE else object):
+    """Records which renderer each frame went through instead of drawing."""
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.calls = []
+
+    def _render(self, lines, stats, output_path, title=None):
+        self.calls.append(("mono", len(lines), stats["total_commands"], output_path))
+        Path(output_path).write_bytes(b"png")
+
+    def _render_color_layers(self, lines, stats, output_path, palette, pen_widths=None, title=None):
+        self.calls.append(("color", len(lines), stats["total_commands"], output_path))
+        Path(output_path).write_bytes(b"png")
+
+
+@pytest.fixture
+def two_color_program():
+    return GCodeProgram(commands=[
+        GCodeCommand(command="M3", s=1000, color=0),
+        GCodeCommand(command="G1", x=10, y=10, color=0),
+        GCodeCommand(command="M5"),
+        GCodeCommand(command="G0", x=20, y=20),
+        GCodeCommand(command="M3", s=1000, color=1),
+        GCodeCommand(command="G1", x=40, y=40, color=1),
+        GCodeCommand(command="M5"),
+    ])
+
+
+class TestPreviewFrames:
+    def test_writes_requested_frames(self, visualizer, simple_program, tmp_path):
+        paths = visualizer.preview_frames(simple_program, str(tmp_path / "f"), frames=3)
+        assert [Path(p).name for p in paths] == ["frame_001.png", "frame_002.png", "frame_003.png"]
+        assert all(Path(p).stat().st_size > 0 for p in paths)
+
+    def test_frames_are_cumulative_and_end_on_full_program(self, config, simple_program, tmp_path):
+        viz = _RecordingVisualizer(config)
+        viz.preview_frames(simple_program, str(tmp_path), frames=3)
+        counts = [c[2] for c in viz.calls]
+        assert counts == sorted(counts)
+        assert counts[-1] == len(simple_program.commands)
+
+    def test_frames_capped_at_command_count(self, config, simple_program, tmp_path):
+        viz = _RecordingVisualizer(config)
+        paths = viz.preview_frames(simple_program, str(tmp_path), frames=500)
+        assert len(paths) == len(simple_program.commands)
+        assert [c[2] for c in viz.calls] == list(range(1, len(simple_program.commands) + 1))
+
+    def test_render_mode_fixed_by_full_program(self, config, two_color_program, tmp_path):
+        # early frames only hold colour 0, but every frame must match the final render
+        viz = _RecordingVisualizer(config)
+        viz.preview_frames(two_color_program, str(tmp_path), frames=len(two_color_program.commands))
+        assert {c[0] for c in viz.calls} == {"color"}
+
+    def test_rejects_non_positive_frames(self, visualizer, simple_program, tmp_path):
+        with pytest.raises(ValueError):
+            visualizer.preview_frames(simple_program, str(tmp_path), frames=0)

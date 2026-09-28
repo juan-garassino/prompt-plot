@@ -68,15 +68,56 @@ class GCodeVisualizer:
         is what lets a vision critic judge brushwork at all.
         """
         lines, stats = self._trace(program)
+        use_color, palette = self._resolve_color_mode(lines, color_layers, palette, pen_widths)
+        if use_color:
+            self._render_color_layers(lines, stats, output_path, palette, pen_widths or {})
+        else:
+            self._render(lines, stats, output_path)
+
+    def preview_frames(
+        self,
+        program: GCodeProgram,
+        output_dir: str,
+        frames: int = 12,
+        color_layers: Optional[bool] = None,
+        palette: Optional[List[str]] = None,
+        pen_widths: Optional[Dict[int, float]] = None,
+    ) -> List[str]:
+        """Render the plot building up: ``frames`` cumulative snapshots of the
+        program, evenly spaced by command, the last one being the full drawing.
+
+        Ported from drawStream's ``--save-steps`` (which wrote one PNG per move —
+        thousands for a dense plate). The render mode is fixed by the full
+        program so every frame matches the final preview.
+        """
+        if frames < 1:
+            raise ValueError("frames must be >= 1")
+        full_lines, _ = self._trace(program)
+        use_color, palette = self._resolve_color_mode(full_lines, color_layers, palette, pen_widths)
+
+        n = len(program.commands)
+        cuts = sorted({max(1, round(n * i / frames)) for i in range(1, frames + 1)})
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for i, k in enumerate(cuts, 1):
+            lines, stats = self._trace(GCodeProgram(commands=program.commands[:k]))
+            path = str(out / f"frame_{i:03d}.png")
+            title = f"frame {i}/{len(cuts)} · {k}/{n} commands"
+            if use_color:
+                self._render_color_layers(lines, stats, path, palette, pen_widths or {}, title=title)
+            else:
+                self._render(lines, stats, path, title=title)
+            paths.append(path)
+        return paths
+
+    def _resolve_color_mode(self, lines, color_layers, palette, pen_widths):
         if palette is None and self.config is not None and getattr(self.config, "color", None):
             palette = list(self.config.color.palette)
         distinct = {l[5] for l in lines if l[4] and len(l) > 5 and l[5] is not None}
         if color_layers is None:
             color_layers = len(distinct) > 1 or bool(pen_widths)
-        if color_layers and distinct:
-            self._render_color_layers(lines, stats, output_path, palette or [], pen_widths or {})
-        else:
-            self._render(lines, stats, output_path)
+        return bool(color_layers and distinct), palette or []
 
     def get_stats(self, program: GCodeProgram) -> Dict[str, Any]:
         """Get drawing statistics without rendering."""
@@ -294,7 +335,7 @@ class GCodeVisualizer:
 
         return lines, stats
 
-    def _render(self, lines, stats, output_path: str):
+    def _render(self, lines, stats, output_path: str, title: Optional[str] = None):
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
         self._apply_paper(fig, ax)
 
@@ -422,7 +463,7 @@ class GCodeVisualizer:
                 bbox=dict(boxstyle="round", facecolor="white", alpha=0.9),
             )
 
-        ax.set_title("PromptPlot Preview")
+        ax.set_title(f"PromptPlot Preview — {title}" if title else "PromptPlot Preview")
         ax.legend(loc="upper right", fontsize="small")
         fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
@@ -485,6 +526,7 @@ class GCodeVisualizer:
         output_path: str,
         palette: List[str],
         pen_widths: Optional[Dict[int, float]] = None,
+        title: Optional[str] = None,
     ):
         """Render a multi-color program with one color per pen layer + legend.
 
@@ -577,7 +619,7 @@ class GCodeVisualizer:
             verticalalignment="top",
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
         )
-        ax.set_title("PromptPlot Preview — color layers")
+        ax.set_title(f"PromptPlot Preview — {title}" if title else "PromptPlot Preview — color layers")
         ax.legend(loc="upper right", fontsize="small", title="pen")
         fig.savefig(output_path, dpi=self.dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)

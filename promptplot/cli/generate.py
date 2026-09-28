@@ -156,8 +156,12 @@ def score(ctx, filepath):
 @click.option("--output", "-o", default=None, help="Output PNG path")
 @click.option("--stats", is_flag=True, help="Show statistics")
 @click.option("--score", "show_score", is_flag=True, help="Show quality score")
+@click.option(
+    "--frames", type=click.IntRange(min=1), default=None,
+    help="Also save N cumulative build-up frames to <preview>_frames/",
+)
 @click.pass_context
-def preview(ctx, filepath, output, stats, show_score):
+def preview(ctx, filepath, output, stats, show_score, frames):
     """Preview/visualize a GCode file."""
     config = ctx.obj["config"]
 
@@ -176,6 +180,11 @@ def preview(ctx, filepath, output, stats, show_score):
         save_to = str(out_dir / f"preview_{Path(filepath).stem}.png")
     viz.preview(program, save_to)
     logger.step_success(f"Preview saved to {save_to}")
+
+    if frames:
+        frames_dir = Path(save_to).with_suffix("").as_posix() + "_frames"
+        paths = viz.preview_frames(program, frames_dir, frames=frames)
+        logger.step_success(f"{len(paths)} frames saved to {frames_dir}/")
 
     if stats:
         s = viz.get_stats(program)

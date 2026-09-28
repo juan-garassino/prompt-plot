@@ -274,6 +274,7 @@ promptplot preview <file>
   -o, --output <path>            Output PNG path
   --stats                        Show statistics
   --score                        Show quality score
+  --frames N                     Also save N cumulative build-up frames to <preview>_frames/
 ```
 
 ### Other commands
