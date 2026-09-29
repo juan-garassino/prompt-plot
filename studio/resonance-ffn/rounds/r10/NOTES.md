@@ -20,8 +20,8 @@ The old helper sampled every 0.20 mm and drew each dot as a micro-dash followed 
 ## Plot budget (vs r01)
 | | r01 | r10 |
 |---|---|---|
-| draw mm |  |  |
-| travel mm | 12071.03 | 12844.11 |
-| pen cycles | 12190.79 | 13446.65 |
+| draw mm | 12071.0 | 12844.1 |
+| travel mm | 12190.8 | 13446.7 |
+| pen cycles | 3725 | 6326 |
 
 Each extra cycle is one dot lift; Juan accepts the longer plot. Knobs: `DOT_PITCH`, `DOT_R`.

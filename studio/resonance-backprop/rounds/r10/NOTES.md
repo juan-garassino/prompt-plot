@@ -20,8 +20,8 @@ The old helper sampled every 0.30 mm and DROPPED every one-sample run, so dot-si
 ## Plot budget (vs r01)
 | | r01 | r10 |
 |---|---|---|
-| draw mm |  |  |
-| travel mm | 11389.5 | 11994.19 |
-| pen cycles | 11902.34 | 13335.68 |
+| draw mm | 11389.5 | 11994.2 |
+| travel mm | 11902.3 | 13335.7 |
+| pen cycles | 4053 | 6111 |
 
 Each extra cycle is one dot lift; Juan accepts the longer plot. Knobs: `DOT_PITCH`, `DOT_R`.
