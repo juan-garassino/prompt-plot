@@ -1,5 +1,5 @@
 # Ledger — gan
-**Best so far:** **r07** — art 7.57/7 · sci 9/8/8 — `~/Downloads/pp_gan_iterate_v34.png` (gcode `~/Downloads/pp_gan_iterate_v34.gcode`). Science PASS, art FAIL (avg 7.57 < 8). It beats r05 on every tie-break key:
+**Best so far:** **r07** — art 7.57/7 · sci 9/8/8 — `gallery/studio/gan/current/pp_gan_iterate_v34.png` (gcode `gallery/studio/gan/current/pp_gan_iterate_v34.gcode`). Science PASS, art FAIL (avg 7.57 < 8). It beats r05 on every tie-break key:
 - verdict: one PASS against none;
 - art min: 7 vs 6;
 - sci min: 8 vs 7;
@@ -26,7 +26,7 @@
 | r04 | r03 (+ r02's circle) | iterate: outward L-blocks of summed moves, turn squares, `+` at (78, 117), 52 mm/unit | `gallery/studio/gan/trials/pp_gan_iterate_v16.png` | 6.29/6 | 8/7/8 | FAIL · rank 4 | Tape broke into rubble (A1), and the flip test failed (A7). Sent to the translator → `encoding.md` rev 1 |
 | r05 | r04 | iterate on encoding rev 1 (Red Meander proper): the whole window is cloth, with one reed 2.8 mm. The ribbon is the chord polygon × [0.9, 1.1], its face is sign(ψθ) per crossing, with double-pass floats on a 2/2 basket ground | `gallery/studio/gan/trials/pp_gan_iterate_v24.png` | 7.14/6 | 9/8/7 | FAIL · rank 2 | A1 and A7 fixed, 0 ink-on-ink. Weaknesses: crosshair seams on the axes, steps 0–9 invisible, a float riding the x = 200 cut, a loud title |
 | r06 | r04 (name only) | wildcard, De Stijl / *Broadway Boogie Woogie*: the run squared into a lane spiral, 6.5 mm cells blue / crimson / gold | `gallery/studio/gan/current/pp_gan_wildcard_v7.png` | 6.57/6 | 8/7/8 | FAIL · rank 3 · kept as the `boogie` flavour | Undermassed, over-keyed, order undocumented. Not continued. Its mandates are parked below |
-| **r07** | r05 | **iterate on rev 1 + rev 1.1**: each ribbon cell takes the face of the step that owns it (ψ_kθ_k), so the seams lean off the axes. The ribbon is shifted at the rim (full 0.2ρ from ρ_min = r0 + 1 mm), with `STEP 0` beside z_0. Re-cropped at (66, 100) @ 51.1 mm/unit with edges at mid-pitch. Title 118 mm flush left, top-right cream | `~/Downloads/pp_gan_iterate_v34.png` | **7.57/7** | **9/8/8** | art FAIL · **sci PASS** · **rank 1 (best)** | See the r07 detail below |
+| **r07** | r05 | **iterate on rev 1 + rev 1.1**: each ribbon cell takes the face of the step that owns it (ψ_kθ_k), so the seams lean off the axes. The ribbon is shifted at the rim (full 0.2ρ from ρ_min = r0 + 1 mm), with `STEP 0` beside z_0. Re-cropped at (66, 100) @ 51.1 mm/unit with edges at mid-pitch. Title 118 mm flush left, top-right cream | `gallery/studio/gan/current/pp_gan_iterate_v34.png` | **7.57/7** | **9/8/8** | art FAIL · **sci PASS** · **rank 1 (best)** | See the r07 detail below |
 
 **r07 detail.**
 - Held:
