@@ -6,6 +6,7 @@ studio workflow reads to choose which plates to iterate and with which theses:
 
     python scripts/studio_descriptions.py            # rewrite the index
     python scripts/studio_descriptions.py --json     # print rows as JSON (workflow args)
+    python scripts/studio_descriptions.py --census   # how circular is the collection?
 """
 
 from __future__ import annotations
@@ -23,6 +24,11 @@ OUT = STUDIO / "DESCRIPTIONS.md"
 logger = logging.getLogger(__name__)
 
 _ROW = re.compile(r"^\|\s*([^|]+?)\s*\|\s*(.+?)\s*\|\s*$")
+# DESIGN_RUBRIC § CIRCLES MUST BE EARNED: the vocabulary that gives the circle default away
+_CIRCULAR = re.compile(
+    r"\b(concentric|rings?|spirals?|orbits?|orbital|radial|whorls?|vortex|vortices|circles?|"
+    r"discs?|annul\w*|helix|bullseye)\b", re.I)
+_ORDER_LINE = re.compile(r"^order:\s*(.+)$", re.M)
 _SRC = re.compile(r"(studio/[\w\-/.]+/piece\w*\.py(?:::\w+)?|promptplot/generative/[\w\-/.]+\.py::\w+)")
 _THESIS = re.compile(r"^\s*(?:[-*]|\d+\.)?\s*\*\*([^*]+?)\*\*\s*\(([^)]*)\)")
 
@@ -95,11 +101,37 @@ def render(items: list[dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def census() -> str:
+    """Circle share of the plate descriptions and the order lines of every studio round."""
+    heavy = []
+    for p in sorted(STUDIO.glob("*/DESCRIPTION.md")):
+        text = p.read_text()
+        sheet = _section(text, "What is on the sheet") + _section(text, "In one line")
+        hits = len(_CIRCULAR.findall(sheet))
+        if hits >= 3:
+            heavy.append((hits, p.parent.name))
+    total = len(list(STUDIO.glob("*/DESCRIPTION.md")))
+    orders: dict[str, int] = {}
+    for h in STUDIO.glob("*/rounds/*/HANDOFF.md"):
+        m = _ORDER_LINE.search(h.read_text())
+        key = (m.group(1).split("·")[0].strip().lower() if m else "(no order line)")
+        orders[key] = orders.get(key, 0) + 1
+    lines = [f"descriptions: {len(heavy)}/{total} plates use circular vocabulary 3+ times",
+             "most circular: " + ", ".join(f"{n} ({h})" for h, n in sorted(heavy, reverse=True)[:8]),
+             "round orders (HANDOFF order: lines):"]
+    lines += [f"  {n:3}  {k}" for k, n in sorted(orders.items(), key=lambda kv: -kv[1])]
+    return "\n".join(lines)
+
+
 def main() -> None:
     logging.basicConfig(format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.INFO)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--json", action="store_true", help="print the rows as JSON instead of writing the index")
+    ap.add_argument("--census", action="store_true", help="report the circle share and round orders")
     args = ap.parse_args()
+    if args.census:
+        print(census())
+        return
     items = rows()
     if args.json:
         print(json.dumps(items, indent=1, ensure_ascii=False))

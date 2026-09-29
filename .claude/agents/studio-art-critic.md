@@ -45,6 +45,11 @@ is a decision, never a symptom) · 5. craft for pen (spacing ≥0.8 mm, no flood
 knots, ≤3–4 swaps) · 6. concept legibility (NO SCHEMATICS ≤3; figure or illustration = fail;
 does the abstract order read?) · 7. depth & dimensionality (undeclared flatness ≤4).
 
+Check CIRCLES MUST BE EARNED (DESIGN_RUBRIC): rings, spirals, orbits or radial bursts that the
+mechanism does not make rotational — fills, halos, ring-nodes, "emphasis" — cap concept
+legibility at 5 and become a mandate. Judge the stated `order:` line: is the plate actually
+built on it?
+
 Also judge the LINEAGE named in HANDOFF (DESIGN_RUBRIC § LINEAGE): would this plate hold
 its own hung beside that work? Borrowing a surface texture without the order caps
 concept legibility at 5. No lineage stated = a mandate.

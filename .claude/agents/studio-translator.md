@@ -40,7 +40,9 @@ failing mandate).
 ## 1. STYLE assignment        canon (or a STATED hybrid) + one line: why its order fits;
                               plus the LINEAGE: one real reference work (DESIGN_RUBRIC § LINEAGE)
 ## 2. The one-glance statement   what a stranger feels at 3 m, before reading
-## 3. The abstract ORDER      "what ORDER is this?" — and the one-line exact mapping
+## 3. The abstract ORDER      "what ORDER is this?" — and the one-line exact mapping; list at
+                              least two NON-circular orders considered (DESIGN_RUBRIC § CIRCLES
+                              MUST BE EARNED) before choosing a circular one, and say why
                               ("sign is over/under", "walls are the strokes")
 ## 4. Channel mapping         table: quantity → channel → exact rule/range. Tufte:
                               nothing drawn that encodes nothing

@@ -117,7 +117,12 @@ completely different approach (new order, new lineage, from scratch) — so the 
 instead of only polishing one idea; the lead adopts it if it wins. Styles rotate too (Juan: "try different styles"): every
 non-faithful design job is assigned a STYLES.md canon so parallel theses and sibling plates
 land on different movements (the default science-poster look is left out of the rotation);
-the canon is recorded in HANDOFF.md and the ledger, and a plate stuck in one canon is switched.
+the canon is recorded in HANDOFF.md and the ledger, and a plate stuck in one canon is switched. Orders
+rotate the same way (Juan: "we have a big tendency to go to circles"): each new thesis and
+wildcard is assigned a NON-circular order from DESIGN_RUBRIC § CIRCLES MUST BE EARNED (ruled
+field, ridge stack, partition, tessellation, branching, folding, moiré, network, …); circles
+stay only where the mechanism is truly rotational. `python scripts/studio_descriptions.py
+--census` reports the circle share (41/60 plates on 2026-09-29) and the declared round orders.
 
 ## House rules
 

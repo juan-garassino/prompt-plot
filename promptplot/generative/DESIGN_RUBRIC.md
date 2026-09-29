@@ -153,6 +153,40 @@ scores **avg ≥ 8/10 with no dimension below 7** (all seven dimensions; a decla
    and the designer says so in the report, or the concept demands it. Undeclared
    flatness scores ≤ 4.
 
+## CIRCLES MUST BE EARNED
+
+Juan (2026-09-28): "we have a big tendency to go to circles — it worked out for now, but we
+should explore other alternatives." Measured that day: 42 of 59 plates describe their sheet
+with circular vocabulary three or more times (rings 155×, circle 72×, spiral 49×, concentric
+36×). Concentric rings, spirals, orbits, whorls, radial bursts and ring-nodes became the
+studio's default answer. They are now a choice that must be argued:
+
+- A circular order is allowed when the mechanism is genuinely rotational, radial or
+  angle-periodic (a photon ring, an orbit, a phase, a point source's wavefronts). NOTES.md
+  says which, in one line ("why circular: …"). Otherwise it is a default, and the art critic
+  scores it as a concept fault (concept legibility ≤ 5).
+- Rings used as a fill, a halo, a node marker or "emphasis" are the tell: a ring must carry a
+  level of something.
+- The translator lists at least two non-circular orders considered before choosing a
+  circular one; the wildcard is never circular.
+
+**The non-circular orders** (each is plotter-native; the lineage is where to look first):
+
+| order | the mark system | lineage |
+|---|---|---|
+| ruled field | parallel lines whose spacing, phase or amplitude is the data | Riley *Current*; Agnes Martin |
+| ridge stack | horizontal profiles with hidden-line occlusion | *Unknown Pleasures* (Joy Division, 1979) |
+| orthogonal partition | areas that sum to a whole, cut by rules | Mondrian *Broadway Boogie Woogie*; De Stijl |
+| tessellation with defects | Voronoi cells, Truchet, stitch grids, quasicrystal tilings | Molnár *Interruptions*; Escher |
+| branching | trees, river deltas, dendrites, L-systems | Klee's line studies; Haeckel |
+| folding | crease patterns, origami, pleats | Josef Albers's Bauhaus paper studies |
+| interlacing | over/under, braids, knots | Anni Albers |
+| straight-line moiré | line grids at small angles | Soto; Riley |
+| scatter gradient | points drifting from order to disorder | Nees *Schotter* |
+| projective | axonometry, vanishing points, Prouns | Lissitzky *Prouns* |
+| network | straight lines between points, instructions | LeWitt *Wall Drawings* |
+| typographic | glyph rows as structure, the equation built of its own symbols | concrete poetry; Swiss |
+
 ## LINEAGE — every plate answers a named work
 
 Juan (2026-09-28): "need to be creative, plottable in the pen plotter, refer to good artistic

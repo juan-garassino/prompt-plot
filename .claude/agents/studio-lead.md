@@ -67,7 +67,7 @@ description is kept forever; the next iteration starts from the newest one.
 3. Translator reported **UNWORKABLE** → Route `expert` (next visual truth).
 4. **Plateau**: best-so-far unchanged for 2 rounds, or the last two rounds share a canon
    without improving → the next round must switch canon (STYLES.md; Juan: "try different
-   styles") or be a
+   styles") or ORDER (a non-circular one — DESIGN_RUBRIC § CIRCLES MUST BE EARNED) or be a
    COMPOSITION move (reposition, rescale, crop at the frame, delete furniture), not a
    parameter tweak — or must fork from the best round instead of the latest.
 5. **Regression**: the latest round is worse than its parent → next round's parent is the

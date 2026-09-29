@@ -140,6 +140,7 @@ final. Stop when you cannot name a fix — not when you run out of ideas for par
   gcode: ~/Downloads/pp_…_vN.gcode
   paper: a4 landscape, cream
   pens: 0 black = structure/type · 1 crimson = <meaning> · …
+  order: <the geometric order (DESIGN_RUBRIC § CIRCLES MUST BE EARNED) · "why circular: …" if it is>
   canon: <STYLES.md canon this round is drawn in — the one the dispatch assigned, or the reason it changed>
   lineage: <movement> · <artist, work, year> · <the order borrowed, one line>
   compare-to: <parent render path> | reference: studio/<slug>/ref/reference.png | none
