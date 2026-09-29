@@ -37,7 +37,11 @@ Python is `.venv/bin/python`. The dispatch prompt gives you: **slug**, **round**
 
 ## Read first — in this order
 
-1. `studio/<slug>/FEEDBACK.md` — Juan's verdicts. A REWORK note is your top-priority brief.
+1. `studio/<slug>/FEEDBACK.md` — Juan's verdicts. Its **Directions** table comes first: never
+   build on a DEAD END direction or fork from a round listed under "Rounds not to fork from";
+   a KEEP render is a protected flavour (never rework it in place). A REWORK note is your
+   top-priority brief. If the dispatch names your direction, put a `direction: <key>` line in
+   HANDOFF.md.
 2. `studio/<slug>/LEDGER.md` — best round so far, score history, **every open mandate**
    (J* = Juan, A* = art critic, S* = science critic). These are your work order.
 3. `studio/<slug>/DESCRIPTION.md` — the vision-reviewed spec of the CURRENT version: what is

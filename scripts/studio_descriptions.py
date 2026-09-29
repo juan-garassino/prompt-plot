@@ -7,6 +7,12 @@ studio workflow reads to choose which plates to iterate and with which theses:
     python scripts/studio_descriptions.py            # rewrite the index
     python scripts/studio_descriptions.py --json     # print rows as JSON (workflow args)
     python scripts/studio_descriptions.py --census   # how circular is the collection?
+
+The JSON rows also carry Juan's steering from the gallery viewer (see
+``gallery_feedback.steering``): ``directions`` {works, maybe, dead_end},
+``avoid_parents`` (rounds never to fork from), ``protected`` (KEEP renders),
+each thesis's ``direction`` + ``verdict``, and ``blocked_theses`` — theses whose
+direction Juan called a DEAD END, dropped from ``theses``.
 """
 
 from __future__ import annotations
@@ -15,6 +21,7 @@ import argparse
 import json
 import logging
 import re
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -36,6 +43,71 @@ _THESIS = re.compile(r"^\s*(?:[-*]|\d+\.)?\s*\*\*([^*]+?)\*\*\s*\(([^)]*)\)")
 def _section(text: str, heading: str) -> str:
     m = re.search(rf"^## {re.escape(heading)}[^\n]*\n(.*?)(?=^## |\Z)", text, re.M | re.S)
     return m.group(1).strip() if m else ""
+
+
+def _rel(path: Path) -> str:
+    for base in (REPO, STUDIO.parent):
+        try:
+            return str(path.relative_to(base))
+        except ValueError:
+            continue
+    return str(path)
+
+
+def _scripts() -> None:
+    here = str(Path(__file__).resolve().parent)
+    if here not in sys.path:
+        sys.path.insert(0, here)
+
+
+def _steering(slug: str) -> dict:
+    """Juan's direction/render verdicts for this plate (empty when there are none)."""
+    _scripts()
+    import gallery_feedback as fb  # lazy: tests repoint its globals
+
+    try:
+        return fb.steering(slug)
+    except Exception:  # steering is advice; a broken log must not break the index
+        logger.exception("steering unreadable for %s", slug)
+        return {"directions": {"works": [], "maybe": [], "dead_end": []},
+                "avoid_parents": [], "protected": [], "verdicts": {}}
+
+
+def _slugify(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def _judge_theses(slug: str, theses: list[dict], steer: dict) -> tuple[list[dict], list[dict]]:
+    """Tag each thesis with its direction + verdict; drop the dead ends.
+
+    A thesis names its direction by a round in its kind (``flavour, r06``), else
+    by its name matching a direction's slug or label.
+    """
+    _scripts()
+    import gallery_directions as gd  # lazy
+
+    try:
+        dirs = gd.directions_for_slug(slug)
+    except Exception:
+        logger.exception("directions unreadable for %s", slug)
+        dirs = {}
+    verdicts = steer.get("verdicts", {})
+    keep, blocked = [], []
+    for t in theses:
+        key = None
+        m = re.search(r"\br(\d{1,3})\b", t["kind"], re.I)
+        if m:
+            key = gd.direction_of_round(slug, f"r{int(m.group(1)):02d}")
+        if key is None:
+            ns = _slugify(t["name"])
+            for k, d in dirs.items():
+                ls = _slugify(d.get("label", ""))
+                if ns and (ns == d.get("slug") or ns == ls or ns in ls or (ls and ls in ns)):
+                    key = k
+                    break
+        out = {**t, "direction": key, "verdict": verdicts.get(key) if key else None}
+        (blocked if out["verdict"] == "dead_end" else keep).append(out)
+    return keep, blocked
 
 
 def parse(path: Path) -> dict:
@@ -60,6 +132,8 @@ def parse(path: Path) -> dict:
         parent = path_m.group(1)
         own = re.match(rf"studio/{re.escape(path.parent.name)}/rounds/(r\d+)/", parent)
         parent = own.group(1) if own else parent
+    steer = _steering(path.parent.name)
+    theses, blocked = _judge_theses(path.parent.name, theses, steer)
     return {
         "slug": path.parent.name,
         "title": title.group(1).strip() if title else path.parent.name,
@@ -70,7 +144,12 @@ def parse(path: Path) -> dict:
         "next_round": (rounds[-1] + 1) if rounds else 1,
         "current": table.get("current render", ""),
         "theses": theses,
-        "path": str(path.relative_to(REPO)),
+        "blocked_theses": blocked,
+        "directions": {v: [{k: d[k] for k in ("key", "label", "rounds")} for d in ds]
+                       for v, ds in steer["directions"].items()},
+        "avoid_parents": steer["avoid_parents"],
+        "protected": steer["protected"],
+        "path": _rel(path),
     }
 
 

@@ -1,7 +1,7 @@
 export const meta = {
   name: 'studio',
   description: 'Iterate PromptPlot studio plates from their DESCRIPTION.md: parallel thesis designers, art + science critics, lead, follow-up rounds until a vote',
-  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?, fresh?, topic?, pre?}], iterations, explore_every?}. fresh=true runs expert + translator first; every explore_every-th follow-up (default 2, 0 = never) adds a WILDCARD designer beside the refinement.. Build plates from `python scripts/studio_descriptions.py --json`.',
+  whenToUse: 'Newer versions of existing studio plates. args = {plates: [{slug, theses, next_round, parent, domain?, note?, fresh?, topic?, pre?, directions?, avoid_parents?}], iterations, explore_every?}. directions/avoid_parents come from studio_descriptions.py --json (the WORKS / DEAD END verdicts from the review UI; dead-end theses are already dropped there). fresh=true runs expert + translator first; every explore_every-th follow-up (default 2, 0 = never) adds a WILDCARD designer beside the refinement.. Build plates from `python scripts/studio_descriptions.py --json`.',
   phases: [
     { title: 'Research', detail: 'new plates only: studio-expert dossier, then studio-translator encoding' },
     { title: 'Design', detail: 'one studio-designer per thesis, each in its own round' },
@@ -50,6 +50,15 @@ const LEAD = {
   },
 }
 
+// Juan's direction verdicts (studio_descriptions.py --json) travel with every prompt: continue
+// what WORKS, never build on a DEAD END, never fork from a dead-end / archived / cut round.
+function juanDirections(p) {
+  const d = p.directions
+  if (!d) return ''
+  const fmt = (xs) => (xs || []).map((x) => `${x.key} (${x.label})`).join(', ') || '—'
+  return `\nJUAN'S DIRECTIONS for this plate — WORKS: ${fmt(d.works)} · MAYBE: ${fmt(d.maybe)} · DEAD END: ${fmt(d.dead_end)}. Continue what works; never build on a dead end.${(p.avoid_parents || []).length ? ` Do not fork from: ${p.avoid_parents.join(', ')}.` : ''}`
+}
+
 function designerPrompt(p, round, thesis, parent, instruction, canon, order) {
   const brief = thesis === 'wildcard'
     ? `WILDCARD round — a COMPLETELY DIFFERENT approach, deliberately. Do not start from any earlier round's composition or code: read them (and LEDGER.md) only to learn what NOT to repeat. Choose an abstract ORDER and a LINEAGE that no earlier round of this plate used. Keep only the truth (dossier.md or DESCRIPTION.md § The science it encodes) and Juan's FEEDBACK.md. Build it to the same finish as any round — this is exploration, not a sketch.`
@@ -66,7 +75,7 @@ function designerPrompt(p, round, thesis, parent, instruction, canon, order) {
     : ''
   return `slug=${p.slug} round=${round} thesis=${thesis} parent=${parent || 'none on disk — rebuild from DESCRIPTION.md § What is on the sheet'}.
 ${brief}
-Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${style}${form}${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
+Other designers may be building sibling rounds of this slug right now — stay inside studio/${p.slug}/rounds/${round}/ and put "${thesis}" in your render filename.${style}${form}${juanDirections(p)}${p.note ? `\nCURATOR NOTE (binding for this plate): ${p.note}` : ''}`
 }
 
 function critique(p, round, phase) {
@@ -81,7 +90,7 @@ function critique(p, round, phase) {
 function lead(p, rounds, nextRound, phase, wildcard) {
   const many = rounds.length > 1 ? ' They are parallel theses: rank them, then pick one parent or write a MERGE instruction.' : ''
   const wild = wildcard ? ` ${wildcard} is a WILDCARD (a deliberately different approach): judge it on its own merits; if it beats the refinement line, make it the new parent; if it loses but carries one idea worth keeping, name that idea in SYNTH.md.` : ''
-  return agent(`slug=${p.slug}. Rounds just critiqued: ${rounds.join(', ')}.${many}${wild} Update LEDGER.md, write SYNTH.md in the latest critiqued round, and return your routing. The next free round is ${nextRound}.${p.note ? ` Curator note for this plate (enforce it in routing and the gate): ${p.note}` : ''}`,
+  return agent(`slug=${p.slug}. Rounds just critiqued: ${rounds.join(', ')}.${many}${wild}${juanDirections(p)} Update LEDGER.md, write SYNTH.md in the latest critiqued round, and return your routing. The next free round is ${nextRound}.${p.note ? ` Curator note for this plate (enforce it in routing and the gate): ${p.note}` : ''}`,
     { agentType: 'studio-lead', schema: LEAD, label: `lead:${p.slug}`, phase })
 }
 
@@ -124,6 +133,12 @@ async function runPlate(p, pi) {
     if (verdict.route === 'translator' || verdict.route === 'expert') {
       await agent(`slug=${p.slug}. The studio lead routed this piece to you: ${verdict.instruction} Read studio/${p.slug}/LEDGER.md and the latest SYNTH.md first.`,
         { agentType: verdict.route === 'expert' ? 'studio-expert' : 'studio-translator', label: `${verdict.route}:${p.slug}`, phase: 'Iterate' })
+    }
+    if ((p.avoid_parents || []).includes(verdict.next_parent)) {
+      const works = (p.directions && p.directions.works) || []
+      const fallback = works.length ? (works[0].rounds || [works[0].key]).slice(-1)[0] : null
+      log(`${p.slug}: lead chose ${verdict.next_parent}, which Juan marked not-to-fork; ${fallback ? `using ${fallback} (WORKS)` : 'no WORKS direction — keeping the lead\'s choice'}`)
+      if (fallback) verdict = { ...verdict, next_parent: fallback }
     }
     const exploring = EXPLORE_EVERY > 0 && i % EXPLORE_EVERY === 0
     const jobs = [{ t: 'iterate', round: rr(n++), parent: verdict.next_parent, instruction: verdict.instruction }]

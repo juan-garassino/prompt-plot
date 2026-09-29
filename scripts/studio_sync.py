@@ -139,27 +139,119 @@ def plan(only: set[str] | None = None, min_age_min: float = 0.0) -> tuple[dict, 
     return summary, moves
 
 
-def rewrite_refs(placed: dict[str, Path] | None = None) -> int:
-    """Point studio notes at a render's archive path instead of ~/Downloads.
+def _gallery_rel(q: Path) -> str:
+    """'gallery/<path>' for a file under GALLERY (read at call time, so tests can repoint it)."""
+    return "gallery/" + q.relative_to(GALLERY).as_posix()
 
-    Ledgers, handoffs, NOTES and critiques cite renders by their staging path; after a
-    move those paths would dangle and a critic mid-review would lose its render. Any
-    Downloads reference whose file is archived anywhere in gallery/ is rewritten (files
-    placed by this run win; otherwise current/ beats trials/).
+
+def rewrite_refs(placed: dict[str, Path] | None = None,
+                 extra: dict[str, Path] | None = None) -> int:
+    """Point studio notes at a render's archive path.
+
+    Two kinds of stale reference:
+
+    * ``~/Downloads/pp_…`` staging paths. Ledgers, handoffs, NOTES and critiques cite
+      renders there; after a move those paths would dangle and a critic mid-review
+      would lose its render. Any Downloads reference whose file is archived anywhere
+      in gallery/ is rewritten (files ``placed`` by this run win; otherwise current/
+      beats trials/).
+    * ``extra``: old gallery-relative path (``studio/ising/current/x.png``) -> new
+      absolute path, for moves between gallery tiers (``gallery_apply.py``). Every
+      ``gallery/<old>`` in a note becomes ``gallery/<new>``.
     """
     index: dict[str, Path] = {}
-    for q in sorted(GALLERY.rglob("pp_*"), key=lambda q: "current" not in q.parts):
-        index.setdefault(q.name, q)
-    index.update(placed or {})
+    if placed is not None or extra is None:
+        for q in sorted(GALLERY.rglob("pp_*"), key=lambda q: "current" not in q.parts):
+            index.setdefault(q.name, q)
+        index.update(placed or {})
     pat = re.compile(r"(?:~|/Users/[^/\s`]+|\$HOME)/Downloads/(pp_[^\s`'\")\],;*]+?)(?=[.]?(?:[\s`'\")\],;*]|$))")
+    moved = None
+    if extra:
+        alts = sorted(extra, key=len, reverse=True)
+        moved = re.compile(r"gallery/(" + "|".join(re.escape(a.strip("/")) for a in alts)
+                           + r")(?![\w\-.])")
+        new_of = {a.strip("/"): _gallery_rel(p) for a, p in extra.items()}
     changed = 0
-    for md in (REPO / "studio").rglob("*.md"):
+    for md in STUDIO.rglob("*.md"):
         text = md.read_text()
-        new = pat.sub(lambda m: str(index[m[1]].relative_to(REPO)) if m[1] in index else m[0], text)
+        new = pat.sub(lambda m: _gallery_rel(index[m[1]]) if m[1] in index else m[0], text) \
+            if index else text
+        if moved is not None:
+            new = moved.sub(lambda m: new_of[m[1]], new)
         if new != text:
             md.write_text(new)
             changed += 1
     return changed
+
+
+PARKED = ("archive", "cut", "promoted")
+
+
+def parked_twin(src: Path, dst: Path) -> Path | None:
+    """A byte-identical copy of ``src`` already parked beside ``dst``'s tier.
+
+    Juan's ARCHIVE / CUT verdicts move a render out of current/trials; a re-sync of
+    the same staging file must not bring it back. Only identical bytes count — a
+    different render that reuses the name is new work and is placed as usual.
+    """
+    subject = dst.parent.parent
+    for tier in PARKED:
+        twin = subject / tier / dst.name
+        if twin.exists() and filecmp.cmp(twin, src, shallow=False):
+            return twin
+    return None
+
+
+def execute(moves: list[tuple[Path, Path]], copy: bool = False) -> dict[str, int]:
+    """Carry out ``plan()``'s moves. Returns counts; appends every action to MOVES.tsv."""
+    log = DEST / "MOVES.tsv"
+    DEST.mkdir(parents=True, exist_ok=True)
+    op = shutil.copy2 if copy else shutil.move
+    placed: dict[str, Path] = {}
+    kept_both = deduped = parked = done = 0
+    with log.open("a") as fh:
+        for src, dst in moves:
+            if not src.exists():
+                continue
+            twin = parked_twin(src, dst)
+            if twin is not None:
+                # archived / cut / promoted already: never resurrect it into current/trials
+                if not copy:
+                    src.unlink()
+                parked += 1
+                placed[src.name] = twin
+                fh.write(f"{src}\t{twin}\tdedup-parked\n")
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            # a file that was current on an earlier (copy) run and is a trial now
+            # must not stay behind in the other tier
+            for tier in TIERS:
+                other = dst.parent.parent / tier / dst.name
+                if other != dst and other.exists():
+                    if filecmp.cmp(other, src, shallow=False):
+                        other.unlink()
+            if dst.exists():
+                if filecmp.cmp(dst, src, shallow=False):
+                    # already archived byte-identical: the staging copy is redundant
+                    if not copy:
+                        src.unlink()
+                        deduped += 1
+                    placed[src.name] = dst
+                    fh.write(f"{src}\t{dst}\tdedup\n")
+                    continue
+                # never overwrite a different render: keep both
+                k = 2
+                while (alt := dst.with_name(f"{dst.stem}__alt{k}{dst.suffix}")).exists():
+                    k += 1
+                dst = alt
+                kept_both += 1
+            op(str(src), str(dst))
+            done += 1
+            placed[src.name] = dst
+            fh.write(f"{src}\t{dst}\t{'copy' if copy else 'move'}\n")
+    refs = rewrite_refs(placed) if (not copy and placed) else 0
+    return {"placed": done, "deduped": deduped, "parked": parked,
+            "kept_both": kept_both, "refs": refs}
 
 
 def main() -> int:
@@ -191,45 +283,13 @@ def main() -> int:
     if args.dry_run:
         return 0
 
-    log = DEST / "MOVES.tsv"
-    DEST.mkdir(parents=True, exist_ok=True)
-    op = shutil.copy2 if args.copy else shutil.move
-    placed: dict[str, Path] = {}
-    kept_both = deduped = 0
-    with log.open("a") as fh:
-        for src, dst in moves:
-            if not src.exists():
-                continue
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            # a file that was current on an earlier (copy) run and is a trial now
-            # must not stay behind in the other tier
-            for tier in TIERS:
-                twin = dst.parent.parent / tier / dst.name
-                if twin != dst and twin.exists():
-                    if filecmp.cmp(twin, src, shallow=False):
-                        twin.unlink()
-            if dst.exists():
-                if filecmp.cmp(dst, src, shallow=False):
-                    # already archived byte-identical: the staging copy is redundant
-                    if not args.copy:
-                        src.unlink()
-                        deduped += 1
-                    placed[src.name] = dst
-                    fh.write(f"{src}\t{dst}\tdedup\n")
-                    continue
-                # never overwrite a different render: keep both
-                k = 2
-                while (alt := dst.with_name(f"{dst.stem}__alt{k}{dst.suffix}")).exists():
-                    k += 1
-                dst = alt
-                kept_both += 1
-            op(str(src), str(dst))
-            placed[src.name] = dst
-            fh.write(f"{src}\t{dst}\t{'copy' if args.copy else 'move'}\n")
-    logger.info("%s %d files (%d already archived, %d name clashes kept as __alt); log at %s",
-                "copied" if args.copy else "moved", len(moves), deduped, kept_both, log)
-    if not args.copy and placed:
-        logger.info("rewrote Downloads references in %d studio notes", rewrite_refs(placed))
+    st = execute(moves, copy=args.copy)
+    logger.info("%s %d files (%d already archived, %d already parked in archive/cut/promoted, "
+                "%d name clashes kept as __alt); log at %s",
+                "copied" if args.copy else "moved", st["placed"], st["deduped"], st["parked"],
+                st["kept_both"], DEST / "MOVES.tsv")
+    if st["refs"]:
+        logger.info("rewrote Downloads references in %d studio notes", st["refs"])
     return 0
 
 

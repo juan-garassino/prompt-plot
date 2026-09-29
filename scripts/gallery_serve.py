@@ -33,6 +33,9 @@ REPO = Path(__file__).resolve().parent.parent
 GALLERY = REPO / "gallery"
 MAX_BODY = 256 * 1024
 BRIDGE: PlotterBridge | None = None  # set in main()
+# One writer at a time: the viewer's 1-5 / W-M-D keys can fire POSTs faster than
+# write_views regenerates the markdown, and two interleaved rewrites race.
+FEEDBACK_LOCK = threading.Lock()
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -122,9 +125,10 @@ class Handler(SimpleHTTPRequestHandler):
             resolved = (GALLERY / target).resolve()
             if not resolved.is_relative_to(GALLERY.resolve()):
                 raise ValueError(f"target escapes the gallery: {target!r}")
-            entry = fb.append(record)
-            stats = fb.write_views()
-            logger.info("%s %s -> %s", entry["verdict"].upper(),
+            with FEEDBACK_LOCK:
+                entry = fb.append(record)
+                stats = fb.write_views()
+            logger.info("%s %s %s -> %s", entry["scope"], entry["verdict"].upper(),
                         entry["target"], entry["piece"] or "no source on disk")
             self._json(200, {"ok": True, "entry": entry, "stats": stats})
         except Exception as e:
@@ -159,7 +163,8 @@ def main() -> int:
     # from the network.
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     logger.info("gallery on %s", url)
-    logger.info("feedback -> studio/feedback.jsonl, studio/<slug>/FEEDBACK.md, studio/QUEUE.md")
+    logger.info("feedback -> studio/feedback.jsonl, studio/<slug>/FEEDBACK.md, "
+                "studio/DIRECTIONS.md, studio/QUEUE.md")
     if args.allow_plot:
         logger.info("PLOTTING ENABLED — port %s, paper %s, margin %g",
                     args.serial_port or "(config default)", args.paper, args.margin)

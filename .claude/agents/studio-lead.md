@@ -35,6 +35,19 @@ DESCRIPTION.md to `studio/<slug>/history/DESCRIPTION-<its current round or "orig
 version and add a `previous:` row to its table pointing at the archived copy. The original
 description is kept forever; the next iteration starts from the newest one.
 
+## 0. Juan's directions come first
+
+The review UI lets Juan judge **directions** (the approach behind a set of rounds, keyed by its
+root round — `r02`, `original`, a wildcard's round) as WORKS / MAYBE / DEAD END, and renders
+as PROMOTE / KEEP / REWORK / ARCHIVE / CUT. They are in the **Directions** table at the top of
+`studio/<slug>/FEEDBACK.md` (collection-wide: `studio/DIRECTIONS.md`), and the dispatch prompt
+repeats them. Binding:
+- Never route a round onto a DEAD END direction, and never pick as parent a round listed under
+  "Rounds not to fork from" (dead-end rounds and rounds whose render Juan archived or cut).
+- Prefer the latest round of a WORKS direction as the next parent when scores are close.
+- A KEEP render is a protected flavour: never "fix" it in place; fork a new round if at all.
+- A MAYBE direction may be continued, but say in SYNTH.md what would decide it.
+
 ## 1. Update `studio/<slug>/LEDGER.md` (create it if missing)
 
 ```
