@@ -6,11 +6,11 @@
 .venv/bin/python scripts/render_candidate.py studio/convolutions/rounds/r04/piece.py \
   --fn convolutions_wavefront --seed 7 --paper a4 --orientation landscape \
   --palette black,crimson,dodgerblue \
-  --out ~/Downloads/pp_convolutions_iterate_v9.png
+  --out gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.png
 ```
 
-- final PNG: `~/Downloads/pp_convolutions_iterate_v9.png`
-- final GCODE: `~/Downloads/pp_convolutions_iterate_v9.gcode`
+- final PNG: `gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.png`
+- final GCODE: `gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.gcode`
 - seed 7. The piece uses no randomness: r03's ±0.12-pitch fbm wobble is gone because it
   was what pushed the 45° stretches under pitch. Seeds 3, 7 and 11 give byte-identical
   gcode (md5 `7feda169…` for v9 s7 and s3; v5 s3/s7/s11 also matched each other).

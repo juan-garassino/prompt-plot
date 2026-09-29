@@ -1,5 +1,5 @@
 # Art critique — gan r03 · canon: Bauhaus weaving workshop, declared flat (lineage: Anni Albers, Red Meander 1954) · 2026-09-28
-render: ~/Downloads/pp_gan_two-players-interlaced_v10.png
+render: gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.png
 
 No `encoding.md` and no `studio/gan/BRIEF.md`. The only brief on file is `studio/nets/gan.md` (twin opposing terrains), which this round leaves behind on purpose, following DESCRIPTION's Next-version #2. The checks below come from the HANDOFF rule/lineage lines and the rubric.
 

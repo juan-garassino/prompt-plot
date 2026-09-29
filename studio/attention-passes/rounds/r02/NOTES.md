@@ -5,14 +5,14 @@ forward *and* backward. Nothing on this plate is a plausible-looking shape; ever
 dot radius, tooth length, ribbon width and ink pass is a number computed in
 `mechanism.py` and checked below.
 
-**Final render:** `~/Downloads/pp_attention_passes_mechanism_v15.png`
+**Final render:** `gallery/studio/attention_passes/current/pp_attention_passes_mechanism_v15.png`
 (+ `.gcode` beside it; identical geometry to v14, which is the same plate).
 
 ```
 .venv/bin/python scripts/render_candidate.py studio/attention-passes/rounds/r02/piece.py \
   --fn attention_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_attention_passes_mechanism_v15.png
+  --out gallery/studio/attention_passes/current/pp_attention_passes_mechanism_v15.png
 ```
 
 Files: `piece.py` (the plate), `mechanism.py` (the maths; `python mechanism.py`

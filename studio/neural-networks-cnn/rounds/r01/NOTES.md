@@ -6,9 +6,9 @@ lineage: Vera Molnár, *(Dés)Ordres* (1974). The order taken from it is a stric
 ```
 .venv/bin/python scripts/render_candidate.py studio/neural-networks-cnn/rounds/r01/piece.py \
   --fn pooling_cascade --seed 7 --paper a4 --palette black,crimson,black \
-  --out ~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.png
+  --out gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.png
 ```
-- final: `~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.png` + `.gcode`, seed 7
+- final: `gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.png` + `.gcode`, seed 7
 - seed variants: v12 (seed 3) and v13 (seed 11). The seed only moves the probabilistic pixel ticks and the one-ring 2-px cells, and all three read the same.
 - iteration trail: v1–v10 (same prefix), all kept
 

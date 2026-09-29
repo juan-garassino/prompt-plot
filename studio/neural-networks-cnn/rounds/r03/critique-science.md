@@ -1,5 +1,5 @@
 # Science critique — neural-networks-cnn r03 · machine learning (CNNs, receptive fields) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_iterate_v5.png (+ .gcode: 9826 cmds; pen0 662 polylines, 12506 mm; pen1 13 polylines, 772 mm)
+render: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_iterate_v5.png (+ .gcode: 9826 cmds; pen0 662 polylines, 12506 mm; pen1 13 polylines, 772 mm)
 
 Process note (S6, still open): the slug still has no `dossier.md` or `encoding.md`. The check numbers
 below come from the HANDOFF claims and the round's `maps.npz`. That file is byte-identical to r02's

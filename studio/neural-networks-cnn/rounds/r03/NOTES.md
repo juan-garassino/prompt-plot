@@ -8,10 +8,10 @@ hidden-line profile row, and the parameter is the map's resolution.
 ```
 .venv/bin/python scripts/render_candidate.py studio/neural-networks-cnn/rounds/r03/piece.py \
   --fn cnn_one_valley_rows --seed 7 --paper a4 --palette black,crimson \
-  --out ~/Downloads/pp_neural_networks_cnn_iterate_v5.png
+  --out gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_iterate_v5.png
 ```
 
-- Final: `~/Downloads/pp_neural_networks_cnn_iterate_v5.png` + `~/Downloads/pp_neural_networks_cnn_iterate_v5.gcode`
+- Final: `gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_iterate_v5.png` + `gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_iterate_v5.gcode`
 - Earlier self-rounds: v1–v4 in the same folder (kept).
 - a4 portrait, drawable 10–200 × 10–287. Pens: 0 black, 1 crimson.
 - The seed does nothing because the piece uses no randomness. Seeds 2, 7 and 11 give identical

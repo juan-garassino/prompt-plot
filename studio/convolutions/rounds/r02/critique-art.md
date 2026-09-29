@@ -1,5 +1,5 @@
 # Art critique — convolutions r02 · canon: UNASSIGNED (HANDOFF names no canon, no `lineage:` line) · 2026-09-28
-render: ~/Downloads/pp_convolutions_real-kernel_v9.png  (gcode alongside; a4 landscape, cream; 4 pens)
+render: gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.png  (gcode alongside; a4 landscape, cream; 4 pens)
 
 No encoding.md or BRIEF.md exists for this slug, and HANDOFF declares no canon or lineage (the
 rubric's LINEAGE rule requires a `lineage:` line). Judged against the generic rubric plus the

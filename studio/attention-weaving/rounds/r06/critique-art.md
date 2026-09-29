@@ -1,5 +1,5 @@
 # Art critique — attention-weaving r06 · canon: Deco (declared flat) · 2026-09-28
-render: `~/Downloads/pp_attention_weaving_iterate_v16.png` (seed shown; v14/v15 siblings not scored)
+render: `gallery/studio/attention_weaving/trials/pp_attention_weaving_iterate_v16.png` (seed shown; v14/v15 siblings not scored)
 lineage claimed: Anni Albers, *Black-White-Gold I* (1950)
 
 ## Scores

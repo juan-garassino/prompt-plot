@@ -1,5 +1,5 @@
 # Art critique — ising r04 · canon: science_poster · 2026-09-28
-render: ~/Downloads/pp_ising_r04_iterate_v5.png (gcode beside it; A4 landscape, cream; seed sweep s3/s13 glanced, same structure)
+render: gallery/studio/ising/current/pp_ising_r04_iterate_v5.png (gcode beside it; A4 landscape, cream; seed sweep s3/s13 glanced, same structure)
 
 ## Scores
 | # | dimension | score | why |

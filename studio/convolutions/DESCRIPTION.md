@@ -1,78 +1,137 @@
 # CONVOLUTIONS — description
 
-<!-- written 2026-09-28 from a vision review. This is the spec the studio workflow iterates from: edit it freely. -->
+<!-- rewritten 2026-09-29 by the studio lead when r07 went to the vote. It describes the CURRENT best version (r07, the one-X wavefront lattice) so the next iteration starts from the truth. The r01 description (the laminar band X → 5 whorl tiles → Y, with a footnote row) is history: r01 remains the unscored craft benchmark. See rounds/r01 and LEDGER.md. -->
 
 | | |
 |---|---|
-| gallery | `gallery/studio/convolutions` |
-| current render | `gallery/studio/convolutions/current/pp_convolutions_v1.png` |
-| source | `studio/convolutions/rounds/r01/piece.py::convolutions` |
-| reference | `studio/convolutions/ref/reference.png` (1536×1024, the reconstruction target) |
-| paper · pens | a4 landscape, cream · 0 black = input blob X, type, furniture, dots, receptive-field cone · 1 crimson = tiles 1 & 5, kernel cells, first connector fan, one feature map · 2 dodgerblue = tile 3, kernel cells, output connectors, one feature map · 3 olive = output blob Y, tile 4, kernel cells, one feature map |
-| status | unreviewed (no FEEDBACK.md) · 1 render on disk · **the studio's quality benchmark** (memory: "the best plate is r01, not v13") |
+| gallery | `gallery/studio/convolutions` (r01 at `current/pp_convolutions_v1.png` until the curator syncs) |
+| current render | `gallery/studio/convolutions/trials/pp_convolutions_iterate_v30.png`, with the gcode beside it. The seed sweep `_s3` and `_s11` gives byte-identical bodies. Pending the curator's sync |
+| source | `studio/convolutions/rounds/r07/piece.py::convolutions_onex` (seed 7, a4 landscape, palette crimson,dodgerblue,black) |
+| encoding | `studio/convolutions/encoding.md` v1 (codifies the wavefront-lattice order). There is no `dossier.md`. Encoding §4b is the check table |
+| paper · pens | a4 landscape, cream · 0 crimson = y > 0 response rings, + collars, and key icons · 1 dodgerblue = y < 0 response rings, − collars, and key icons · 2 black = X (dots, stripes, the x = 0 keyline), the staircase, the card and its shadow hatch, and the key text and title |
+| plot | crimson 49 strokes ≈ 3 min → dodgerblue 51 ≈ 3.5 min → black 795 ≈ 47 min. Total ≈ 54 min. Draw 12.65 m, travel 5.47 m. The fabrication gate is clean |
+| status | r07 at vote. Art 7.29/7 FAIL · science 9/9/8 PASS. Juan's feedback: none recorded |
 
 ## In one line
-A convolution pipeline drawn as a **laminar flow band with nested whorls** — input field X (black trefoil of distance-field rings) → five kernel tiles (concentric rings around a starburst) → output field Y (olive trefoil), with the kernel bank, receptive field and feature maps as a three-part footnote row beneath.
+**One X being read into Y.**
+- One Y-shaped figure X is drawn by a single black outline, with a heavy black kernel card at its fork.
+- A staircase is the frontier of the convolution's sweep. Below and left of it, X has been sampled into a Ben-Day dot lattice and turned into chains of crimson and blue targets (Y = K∗X).
+- Above and right of it, X is still a pale field of level-set stripes, running out through the top-right corner.
 
 ## What is on the sheet
-All positions normalised to the sheet (u → right, v → down). The ink lives inside a 13 mm frame on all four edges.
+Reading order:
+1. The card.
+2. The blue target chain down the stem.
+3. The one keyline.
+4. The dot lattice.
+5. The stripe wing.
+6. The key and title in the lower-right wedge.
 
-**1. The flow band (dominant mass, v ≈ 0.20–0.53).** A horizontal left→right reading across the full width.
-- **Blob X** (black) at u 0.04–0.20, v 0.21–0.48 — a three-lobed trefoil (lobes pointing left, up-right, down), ~0.16 sheet width. Filled with ~11 nested dashed/solid rings that follow the outline inward (distance-field contours) with a small eye in the left lobe. ~20 solid black dots of varying size sit on the rings; two little clusters of short crossed dashes sit inside the left lobe (u≈0.12, v≈0.28) and the lower lobe (u≈0.13, v≈0.40). Letter **`X`** at u≈0.10, v≈0.41, outside the blob's lower-left.
-- **Hub**: a large black dot on blob X's right rim (u≈0.18, v≈0.33), from which a fan of ~10 curves (alternating black solid, black dashed, crimson solid) spreads right to the first tile. Small black dots ride several curves.
-- **Tile strip**: five portrait rectangles (each ≈ 0.063 sheet wide × 0.107 tall, black keyline), u 0.29–0.71, v 0.33–0.43, on a regular ~8 mm gap, centred on u = 0.50. Colours in order: **crimson, black, blue, olive, crimson**. Each tile holds dashed concentric rings around a central starburst of ~20 straight rays and a solid centre dot, with scattered solid dots. In each gap: a column of three dots (u-centred in the gap) and short connector stubs that disappear behind the tiles and reappear in the next gap. A short vertical tick sits above each tile (v≈0.29).
-- **Display labels** above the strip: **`K * X`** centred at u≈0.49, v≈0.28 and **`σ(·)`** at u≈0.63, v≈0.28 (sigma drawn as a mark). A dashed black ellipse arc terminates just left of the `K`, reading as a small `>` pointer.
-- **Dashed ellipses**: five large dashed ellipses (black ×3, blue, olive, one crimson arc above) loop above and below the strip, reaching down to v≈0.53; they are clipped out of the strip slab, so they appear to pass behind it.
-- **Output connectors**: blue and olive curves from tile 5 converge on a dot at blob Y's left rim (u≈0.81, v≈0.33).
-- **Blob Y** (olive) at u 0.80–0.96, v 0.22–0.45 — a second trefoil (lobes up-left, right, down), ~11 nested rings, dots, **`Y`** at u≈0.90, v≈0.41 just outside its lower right.
-- **Vertical dashed spines**: one at u = 0.505 running the full height from v 0.08 down through the strip, the gutter and the cone to v≈0.87; a second at u≈0.845 from v 0.08 to v≈0.50, cutting through blob Y.
-
-**2. Title block (top-left, v 0.07–0.17).** `CONVOLUTIONS` in spaced caps at u 0.04–0.20, v≈0.08; a short rule under it; then three spaced lowercase lines: `local patterns` / `global structures` / `continuous perception`. Below blob X: a crosshair rule (u 0.04–0.16, v≈0.505) carrying the label `input x`.
-
-**3. Top-right note (u 0.89–0.96, v 0.08–0.12).** Four tiny spaced lines `stride` / `padding` / `dilation` / `channels`, underlined, a dot on the rule's left end. Sits pressed against the top-right corner of the frame.
-
-**4. Furniture.** Four quarter-circle "corner bracket" marks (u≈0.18, 0.38, 0.49 top; u≈0.55 v 0.26; u≈0.87 v 0.60), plus marks (u≈0.10 v 0.44, u≈0.25 v 0.28, u≈0.75 v 0.67), a hollow square at u≈0.86 v 0.67 joined to the plus by a hairline, and ~30 solid black dots of 3 sizes scattered through the band and the gutter.
-
-**5. Gutter (v 0.54–0.61).** Clear paper across the whole width apart from the two spines and three dots.
-
-**6. Lower row (v 0.60–0.87), three zones on one baseline, equal gutters.**
-- **Kernel bank** (u 0.04–0.27): 3 × 3 grid of square cells (~0.07 sheet wide each), each cell subdivided 3 × 3 by coloured rules; inside: a dashed ring whorl, a solid centre dot and grid dots; four cells carry a diagonal-hatched corner or edge sub-square. Colours by row: crimson/black/blue · olive/crimson/crimson · blue/olive/black. Caption `kernel bank` below at v≈0.90.
-- **Receptive field** (u 0.39–0.61, apex v≈0.60, base v≈0.87): a black dashed parabola/triangle envelope over ~9 nested closed teardrops (solid), pointed at the top, widest ~63 % down, open to the base; flanks outside the teardrops filled with sparse short horizontal dashes (stipple). The centre spine runs through its axis; a large dot sits in the smallest teardrop, two dots above the apex. Caption `receptive field` at v≈0.90.
-- **Feature maps** (u 0.73–0.96, v 0.77–0.87): three landscape tiles, crimson / blue / olive, each filled with ~6–10 widely spaced wavy contour lines and 2–3 black dots. Caption `feature maps` at v≈0.90.
+- **The lattice.** 37 × 25 samples at 7.2 mm, at centres x = 21.2 + 7.2c, y = 20.6 + 7.2r. Its top and right edges are the crop line (y 197, x 284).
+- **The X keyline** (black, 2 passes, ≈ 0.60 mm).
+  - One open polyline, 583 mm per pass.
+  - It leaves the top crop at (166, 197), rounds the left arm (x ≈ 24–60, y ≈ 120–178), and runs down the stem (x ≈ 74–141).
+  - It rounds the foot at (107.5, 27.8), climbs the stem's right flank, and runs out along the wing's lower flank to the right crop at (284, 153).
+  - It crosses the staircase unbroken. Pass 2 sits 0.30 mm outward, on X's outside.
+- **Dots (read side, black).** 180 dots, each one pen-down: a solid spiral whose INK area ∝ the cell-mean depth x. Inked Ø runs 0.54–2.56 mm. There is no dot for x < 1.5 mm.
+- **Stripes (unread wing, black).**
+  - Level sets of X's distance field at Δd = 2.1 mm: 5.18 m of 0.30 mm hairline, about 14 % tone.
+  - The wing (x 83–284, y 97–197) rises to the top-right corner and bleeds off both crop edges.
+- **The staircase** (black, 1 pass).
+  - It is the exact union boundary of the 66 read windows (i + j ≤ 10), with vertices on cell lines.
+  - It falls from (53.6, 197) to (197.6, 53.0), and the last riser stops at (197.6, 24.2).
+- **Response rings** (crimson y > 0, blue y < 0).
+  - 37 ring nodes, centred on their own input sample at (35.6 + 14.4i, 35.0 + 14.4j).
+  - Each carries 1–4 rings at a 1.02 mm pitch. For |bin| ≥ 3 the outer ring is doubled (0.55 mm).
+  - Blue chain: the stem column (107.6, 64 / 78 / 93), then (78.8, 135.8) and (50, 150.2).
+  - Crimson: rims and stem flanks. Ten crimson nodes sit on bare paper outside the keyline, where the window reaches X's edge.
+- **The card** (head node (5,6)).
+  - Window 89.6–125.6 × 103.4–139.4. Keyline 4 passes, fused to 1.05 mm: the heaviest line.
+  - A 3.2 mm hatched 45° shadow on the right and bottom.
+  - The 25 kernel taps carry collars whose ink ∝ |w|: crimson +, blue −.
+  - It hides outputs (4,5) 0, (5,5) −3 and (4,6) −2. This is declared.
+- **Key** (lower-right wedge beyond the last riser).
+  - 8 rows on lattice rows y 35.0 … 85.4. Icons sit on the axis x 204.8, and text starts at 215.6.
+  - Rows: dots · stripes · K card · staircase · Y rings · blank · crimson · blue.
+  - Bare paper sits above the key (y ≈ 92–120).
+- **Title.** `CONVOLUTIONS` on row 0 (baseline y 20.6), x 204.8–277.0, 3-pass segment bands.
 
 ## The science it encodes
-From `piece.py` docstring and `rounds/r01/NOTES.md`: a 2D convolution `Y = σ(K ∗ X)` — an input field is swept by a bank of kernels whose local responses stack into output feature maps; the dashed ellipses read as **overlapping receptive fields**, the cone as how the receptive field grows with depth. What is exact: every contour ladder (blob rings are level sets of a distance-to-boundary field with |∇d| = 1, so pitch = level step; whorls are conical `a·exp(−r/σ)` cusps with a geometric ladder `F_k = a·e^(−k·pitch/σ)`); measured min spacings 0.86–1.18 mm in every family; all tones are `kit.tone_dots`. What is decoration: blob shapes (seeded trefoil harmonics), kernel-cell contents, feature-map contours (seeded fbm) — no real convolution is computed; the feature maps are **not** the output of the drawn kernels on the drawn X. The placement of every element was measured off the reference raster and recorded in normalised coordinates in the source header.
+A 2D valid convolution with stride 2.
+- **X** is the distance-inside-outline field of a 3-capsule Y. The dots show it as cell means (6×6 quadrature); the stripes show it as its own level sets.
+- **K** is a 5×5 Laplacian-of-Gaussian with σ = 1 cell. It is zero-sum, with 5 negative and 20 positive taps.
+- **Y = K∗X** is a 17 × 11 output, of which 66 windows are read. It is drawn as the ring count rint(4|y|/max|y|), with max|y| = 18.731. The pen carries the sign.
+
+The finding on the sheet: the LoG responds only where X bends.
+- It is blank where X is straight (flat or constant slope).
+- It is blue where X bends down (the spine ridge and the tips).
+- It is crimson where X bends up (where it starts, at the edge).
+
+So the Y's broad interior stays blank.
+
+**Checks the science critic reproduced independently from the gcode:**
+- 17 × 11 grid; 66 read windows.
+- Ring counts 37/37 and signs 37/37.
+- Y recomputed from the inked dot areas: 66/66 bins.
+- Dot area error −0.6 … +3.8 % on 180/180.
+- Collar ink ∝ |w| to 0.36 %.
+- Stripe level residual median 0.003 mm.
+- Staircase exact to 0.01 mm.
+
+**Declared omissions:**
+- (a) The last riser stops at y 24.2.
+- (b) Three outputs are hidden under the card.
+- (c) X is cell-averaged. At the rim, a point-sampled reading would be off by up to 24 %.
 
 ## How it got here
-One round (r01), six internal iterations in NOTES.md: `_dash` float-phase hang fixed → gaps and ellipse routing → metaball blobs collapsed to an egg and the cone contoured in a wedge came out a solid black triangle (both reverted) → trefoil harmonics tested side-by-side, cone rebuilt as measured parabola + teardrops → teardrops closed at the mouth → geometric level ladders and spacing verified. Versus the reference: nothing clipped (reference bleeds off the bottom), ellipses routed behind the strip instead of across it, three lower zones on one baseline with equal 36 mm gutters (reference: 33/17 mm, three different bottoms), a 14.2 mm empty gutter where the reference had 1.3 mm of air full of arcs, tile gap 0.28× → 0.43× tile width. Lost vs. reference: blob ring count (~15 → 11), the reference's fine grey wash, serif/italic type, denser whorls with rays breaking out of the tiles. No feedback from Juan recorded.
+- **r01**: a measured reconstruction of the reference (a pipeline band with whorl tiles and a footnote row). It is the craft benchmark.
+- **r02 real-kernel** and **r03 sliding-window**: they computed the convolution but stayed a triptych.
+- **r04**: the wavefront. ONE lattice with a staircase front and the LoG card at the fork. It read as a heart.
+- **r05**: cropped the lattice at the top and right, added the stripe wing, the lifted card and the |w| collars.
+- **r06**: the *Bacterio* wildcard, kept as a flavour.
+- The translator then codified r05 as `encoding.md` v1.
+- **r07**:
+  - made X one keyline;
+  - halved the wing ink;
+  - doubled the strong rings;
+  - nib-corrected the dots (ink area ∝ x);
+  - closed the riser on row 0;
+  - seated the key and title on lattice rows;
+  - rewrote the key to name every mark.
+
+  Science passed for the first time. The designer round cap (5 per encoding) is hit.
+
+Ledger: `studio/convolutions/LEDGER.md`.
 
 ## Keep — what works
-Why this is the benchmark — it was **measured, not guessed**, and every spacing decision is structural:
-- **One axis ties three zones**: u = 0.50 carries the strip centre, the dashed spine and the cone apex; the spine runs uninterrupted v 0.08 → 0.87, so the upper and lower bands lock together.
-- **Gutters equal by construction**: the kernel bank and the feature maps are built from the same `3 × cell + 2 × gap` width and the cone sits on the centreline, so both lower gutters are 36.1 mm whatever the cell size; one bottom baseline (v≈0.87) and one caption baseline (v≈0.90) for all three.
-- **The 14 mm empty gutter at v 0.54–0.61** is treated as a zone (scatter, ellipses and furniture excluded) — it is why the flow band reads as one mass and the lower row as a footnote.
-- **Depth by clipping, not by collision**: connector curves vanish behind each tile (+1.1 mm) and reappear in the gaps; the dashed ellipses pass behind the strip slab. Every overlap on the sheet is one of these two defended cases.
-- **Contour discipline**: blob rings from a distance field (constant pitch to the medial axis, no flooding), whorls from geometric level ladders — rings stay continuous, which is the plate's dominant texture. Min gap ≥ 0.86 mm everywhere.
-- **Colour as a sequence**: the tile strip runs crimson → black → blue → olive → crimson, and the pen identity travels — X is black, Y is olive, the first fan is black+crimson, the last is blue+olive — so colour carries the transformation left→right.
-- **Two blobs as bookends**: similar trefoil mass (~0.16 width each) at the two ends of the band at the same height, one black one olive, is a strong input/output rhyme.
-- **Receptive-field cone**: mostly white paper inside a dashed envelope, teardrops closing at the mouth, stipple only in the flanks — the one element in the lower row that reads at 1 m.
+- **One X.** A single continuous keyline carries X across the read/unread front. It is the first round in this order where the figure is one contour, which is the r01 quality most often lost.
+- **One lattice, one front.** The staircase is the exact read set. Colour appears only behind it. Every mark is data, and every mark type has a key row.
+- **Exact channels on one scale.** Dot ink area ∝ x, ring count ∝ |y|, pen = sign, collar ink ∝ |w|, and stripe = isoline at 2.1 mm. All are recomputable from the sheet.
+- **Two diagonals cross at the card.** The staircase falls ↘ and the wing rises ↗. Both bleed off the frame, and the card sits off-centre at their crossing.
+- **The strict grid.** The riser, the title, the key baselines and the axis x 204.8 all sit on the 7.2 mm lattice.
+- **Contour discipline in the field.** Wing tips ≥ 0.86 mm, rings ≥ 0.85 mm off the keyline, dots ≥ 0.93 mm off it, and collars ≥ 0.62 mm.
+- **Plot contract.** 3 pens, one clean layer each, streamed crimson → dodgerblue → black, with seed-independent gcode.
 
 ## Weak — what doesn't
-- [concept] It is a **pipeline schematic**: input → labelled operator `K * X` → `σ(·)` → output, plus captioned inset panels (`kernel bank`, `feature maps`). By § 6 NO SCHEMATICS this is textbook-figure territory; it survives on craft, not on an abstract order.
-- [concept] Nothing is computed: the feature maps are not the convolution of anything on the sheet, the tiles are identical whorls in different pens. The mechanism (a small kernel sliding and summing) is never visible as a *process*.
-- [tension] The composition is bilaterally symmetric about u = 0.50 (blob / strip / blob, bank / cone / maps). Balanced and calm, but by the rubric centred-symmetric caps tension.
-- [concept] ~30 scattered black dots, four quarter-circle brackets, plus marks and the hollow square carry no data — decoration inherited from the reference.
-- [craft] Tile interiors: 20 straight rays overprint the dashed rings and dots; at 1 m each tile reads as a muddy starburst, not a whorl. Crossed-dash clusters inside blob X (u≈0.12 v≈0.28, u≈0.13 v≈0.40) read as scribble over the rings.
-- [craft] The dashed ellipse clipped at the `K` box leaves a `>` pointer shape in front of `K`, i.e. an accidental arrow.
-- [space] The `stride / padding / dilation / channels` block is jammed into the top-right corner against the frame, and the second spine at u≈0.845 cuts straight through blob Y.
-- [hierarchy] All type is hairline spaced caps/lowercase at caption size; the title does not dominate anything. Dominant mass is the band as a whole, not one element — the two blobs and the strip compete at similar weight.
-- [depth] Apart from the behind-the-tile clipping, the plate is flat and the flatness is undeclared.
+- **[hierarchy / canon]** The Pop outline does not dominate. At 0.60 mm the X keyline weighs the same as the doubled rings (0.55) and the stripes at 3 m. The plate reads as a precise dot diagram, not a Lichtenstein (A25).
+- **[craft]** There are a few sub-floor contacts (A26):
+  - 8 stripe tips stop 0.55 mm from the staircase;
+  - dots at (100.4 / 107.6 / 114.8, 99.8) are 0.63 mm off the card hatch;
+  - an orphan 4.5 mm stripe stub sits at (69–74, 169–171).
+- **[craft]** The title's per-segment bands double-ink every chamfer corner (A27).
+- **[space / legibility]** The lone crimson rim rings on bare paper read as strays until the key says why (A16 residue → S12a). The 8-row key edges toward a figure caption.
+- **[travel]** Key swatches are drawn mid-layer, with blue hops up to 179 mm. This is engine-blocked (`reorder_by_color` re-chains from (0,0)).
 
 ## Next versions
-- **real-kernel** (mechanism) — Compute it. Draw X as the field, pick three real kernels (edge, blur, Gabor), convolve numerically, and make the three feature maps the true iso-contours of `K_i ∗ X`; the tiles become the actual 5×5 kernels as signed Ben-Day discs (radius = |w|, pen = sign). Same layout, same spine, same gutters — but every ring on the right is caused by the rings on the left. Scores higher on [concept] without losing the benchmark craft.
-- **sliding-window** (abstract) — Transpose to a **lattice-with-a-travelling-window** order: one large field X fills the left 60 % as a distance-field whorl; a single kernel square is stamped along a diagonal path at stride s, each stamp leaving its response as a nested ring of proportional count; the stamps overlap by exactly (k − s) cells, so dilation/stride become visible spacings. No boxes, no labels except the title. Breaks the symmetry with a working diagonal [tension] and drops the schematic reading [concept].
-- **receptive-cone** (lens) — Promote the receptive-field teardrop to the dominant mass (0.5 of sheet height, cropped at the bottom edge), with each nested teardrop being one layer's receptive field computed from kernel size and stride, and the input blob drawn tiny at the apex. Hierarchy becomes 3:1 at a glance; the pipeline shrinks to a footnote.
-- **If only iterating:**
-  1. Replace the straight-ray starbursts in all five tiles with the whorl rings alone (or ≤ 6 rays that stop at the first ring) so each tile reads as a clean eye at 1 m.
-  2. Delete the decorative scatter dots and quarter brackets that sit in the band (u 0.2–0.8, v 0.05–0.53) and move the `stride…channels` block down to share the title block's top line at v≈0.08, 13 mm off the right frame.
-  3. Clip the dashed ellipse 3 mm short of the `K * X` label box so no `>` shape points into the `K`, and drop the second spine at u≈0.845 or stop it above blob Y (v ≤ 0.20).
+1. **one-X r08 (REWORK, parent r07)**
+   - First, encoding v1.1: X keyline in 3 passes (≈ 0.90 mm), card in 5 (≈ 1.30 mm), everything re-clipped ≥ 0.8 mm off the widened ink.
+   - Then close A26 and A27, and add the S12 key clauses without growing the block.
+2. ***Bacterio*** (flavour, r06): three kernel cards over unit-impulse confetti. Parked mandates W1–W3, including the regressed sign channel.
+3. **sliding-window** (r03) / **real-kernel** (r02): earlier flavours on disk.
+
+**If only iterating:**
+- thicken the X keyline to 3 fused passes and the card to 5;
+- butt or clear the 8 staircase stripe tips;
+- trim the hatch off the row-y 99.8 dots;
+- draw each title glyph as one band path;
+- key crimson as "the window reaches X's edge".

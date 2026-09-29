@@ -108,8 +108,9 @@ def <distinct_fn_name>(rng: SeededRNG, bounds, colors: int = 3) -> list[GCodeCom
   --out ~/Downloads/pp_<slug_with_underscores>_<thesis>_vN.png
 ```
 
-The `.gcode` lands beside the PNG. Before choosing `N`, `ls ~/Downloads/pp_<slug>*` and
-take the next free number. Stats: `.venv/bin/python -m promptplot preview <file>.gcode
+The `.gcode` lands beside the PNG. Renders are later MOVED into `gallery/`, so pick `N` from
+both: `ls ~/Downloads/pp_<slug>*` and `find gallery -name 'pp_<slug>*'`. `render_candidate.py`
+refuses a name that exists in either place and prints the next free version — use it. Stats: `.venv/bin/python -m promptplot preview <file>.gcode
 --stats --score`.
 
 ## Iterate — at least 3 self-rounds, usually 4–6

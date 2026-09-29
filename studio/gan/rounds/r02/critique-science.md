@@ -1,5 +1,5 @@
 # Science critique — gan r02 · machine learning (GAN training dynamics, game theory) · 2026-09-28
-render: ~/Downloads/pp_gan_escape-spiral_v8.png (gcode: ~/Downloads/pp_gan_escape-spiral_v8.gcode, a4 portrait, 3 pens)
+render: gallery/studio/gan/current/pp_gan_escape-spiral_v8.png (gcode: gallery/studio/gan/current/pp_gan_escape-spiral_v8.gcode, a4 portrait, 3 pens)
 
 Pass 1 (cold). No `studio/gan/dossier.md`, no `encoding.md`, no `LEDGER.md` exist. **That is a finding in itself:**
 there are no §7 check numbers to recompute. The science was reverse-engineered from the gcode instead. The drawn

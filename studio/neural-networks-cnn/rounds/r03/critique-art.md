@@ -1,5 +1,5 @@
 # Art critique — neural-networks-cnn r03 · canon: none declared (lineage: Nees, *Schotter*) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_iterate_v5.png
+render: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_iterate_v5.png
 
 This slug has no `encoding.md` or `BRIEF.md`, so the plate is judged against the HANDOFF thesis, its lineage and DESIGN_RUBRIC. Coordinates are sheet mm as shown on the preview axes (x right, y up). The drawable area is x 10–200, y 10–287. The preview is on white; per A12 that is not held against the plate.
 

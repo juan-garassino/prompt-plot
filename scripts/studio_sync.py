@@ -16,9 +16,11 @@ Nothing here is committed; gallery/ is gitignored.
 from __future__ import annotations
 
 import argparse
+import filecmp
 import logging
 import re
 import shutil
+import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -104,11 +106,19 @@ def resolve(stem: str, targets: dict[str, Path]) -> tuple[str, Path, str]:
     return base, DEST / base, ""
 
 
-def plan(only: set[str] | None = None) -> tuple[dict, list]:
+def plan(only: set[str] | None = None, min_age_min: float = 0.0) -> tuple[dict, list]:
     targets = plate_targets()
     groups: dict[tuple[str, Path, str], list[Path]] = {}
+    # a png and its gcode move together or not at all: judge freshness on the newer of the pair
+    newest: dict[str, float] = {}
+    for q in DOWNLOADS.glob("pp_*"):
+        if q.suffix in (".png", ".gcode"):
+            newest[q.stem] = max(newest.get(q.stem, 0.0), q.stat().st_mtime)
+    cutoff = time.time() - min_age_min * 60
     for pat in ("pp_*.png", "pp_*.gcode"):
         for p in DOWNLOADS.glob(pat):
+            if min_age_min and newest.get(p.stem, 0.0) > cutoff:
+                continue   # still being iterated or critiqued: leave it for the next sync
             key, dest, variant = resolve(p.stem, targets)
             if only and key not in only:
                 continue
@@ -129,6 +139,29 @@ def plan(only: set[str] | None = None) -> tuple[dict, list]:
     return summary, moves
 
 
+def rewrite_refs(placed: dict[str, Path] | None = None) -> int:
+    """Point studio notes at a render's archive path instead of ~/Downloads.
+
+    Ledgers, handoffs, NOTES and critiques cite renders by their staging path; after a
+    move those paths would dangle and a critic mid-review would lose its render. Any
+    Downloads reference whose file is archived anywhere in gallery/ is rewritten (files
+    placed by this run win; otherwise current/ beats trials/).
+    """
+    index: dict[str, Path] = {}
+    for q in sorted(GALLERY.rglob("pp_*"), key=lambda q: "current" not in q.parts):
+        index.setdefault(q.name, q)
+    index.update(placed or {})
+    pat = re.compile(r"(?:~|/Users/[^/\s`]+|\$HOME)/Downloads/(pp_[^\s`'\")\],;*]+?)(?=[.]?(?:[\s`'\")\],;*]|$))")
+    changed = 0
+    for md in (REPO / "studio").rglob("*.md"):
+        text = md.read_text()
+        new = pat.sub(lambda m: str(index[m[1]].relative_to(REPO)) if m[1] in index else m[0], text)
+        if new != text:
+            md.write_text(new)
+            changed += 1
+    return changed
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -137,11 +170,20 @@ def main() -> int:
                     help="copy instead of move — safe while agents still render into "
                     "~/Downloads (they pick their next _vN from what is there)")
     ap.add_argument("--only", help="comma-separated plate keys (e.g. ising,gan) to limit the sync")
+    ap.add_argument("--fix-refs", action="store_true",
+                    help="only rewrite ~/Downloads references in studio notes to archived gallery paths")
+    ap.add_argument("--min-age", type=float, default=0.0, metavar="MIN",
+                    help="skip renders newer than MIN minutes (the live working set of running "
+                    "agents) so a sync can run while they work")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
+    if args.fix_refs:
+        logger.info("rewrote Downloads references in %d studio notes", rewrite_refs())
+        return 0
+
     only = {k.strip().replace("-", "_") for k in args.only.split(",")} if args.only else None
-    summary, moves = plan(only)
+    summary, moves = plan(only, args.min_age)
     for label, s in summary.items():
         logger.info("%-44s %3d files -> %-32s latest: %s", label, s["files"], s["dest"], s["latest"])
     logger.info("--- %d plates/theses, %d files ---", len(summary), len(moves))
@@ -152,6 +194,8 @@ def main() -> int:
     log = DEST / "MOVES.tsv"
     DEST.mkdir(parents=True, exist_ok=True)
     op = shutil.copy2 if args.copy else shutil.move
+    placed: dict[str, Path] = {}
+    kept_both = deduped = 0
     with log.open("a") as fh:
         for src, dst in moves:
             if not src.exists():
@@ -162,12 +206,30 @@ def main() -> int:
             for tier in TIERS:
                 twin = dst.parent.parent / tier / dst.name
                 if twin != dst and twin.exists():
-                    twin.unlink()
+                    if filecmp.cmp(twin, src, shallow=False):
+                        twin.unlink()
             if dst.exists():
-                dst.unlink()          # re-run: newer copy wins
+                if filecmp.cmp(dst, src, shallow=False):
+                    # already archived byte-identical: the staging copy is redundant
+                    if not args.copy:
+                        src.unlink()
+                        deduped += 1
+                    placed[src.name] = dst
+                    fh.write(f"{src}\t{dst}\tdedup\n")
+                    continue
+                # never overwrite a different render: keep both
+                k = 2
+                while (alt := dst.with_name(f"{dst.stem}__alt{k}{dst.suffix}")).exists():
+                    k += 1
+                dst = alt
+                kept_both += 1
             op(str(src), str(dst))
+            placed[src.name] = dst
             fh.write(f"{src}\t{dst}\t{'copy' if args.copy else 'move'}\n")
-    logger.info("%s %d files; log at %s", "copied" if args.copy else "moved", len(moves), log)
+    logger.info("%s %d files (%d already archived, %d name clashes kept as __alt); log at %s",
+                "copied" if args.copy else "moved", len(moves), deduped, kept_both, log)
+    if not args.copy and placed:
+        logger.info("rewrote Downloads references in %d studio notes", rewrite_refs(placed))
     return 0
 
 

@@ -10,11 +10,11 @@ three different ways in the colophon.
 ```
 .venv/bin/python scripts/render_candidate.py studio/ising/rounds/r03/piece.py \
   --fn ising_coastline --seed 7 --paper a4 --palette black,crimson \
-  --out ~/Downloads/pp_ising_COASTLINE_v8.png
+  --out gallery/studio/ising/current/pp_ising_COASTLINE_v8.png
 ```
 
-- final PNG: `~/Downloads/pp_ising_COASTLINE_v8.png`
-- final GCODE: `~/Downloads/pp_ising_COASTLINE_v8.gcode` (geometry byte-identical to v7, which confirms the run is deterministic)
+- final PNG: `gallery/studio/ising/current/pp_ising_COASTLINE_v8.png`
+- final GCODE: `gallery/studio/ising/current/pp_ising_COASTLINE_v8.gcode` (geometry byte-identical to v7, which confirms the run is deterministic)
 - seed 7, a4 portrait, cream, 2 pens
 - trials: v1 (log16 ladder, 1-site dots only), v2 (log8 ladder + dust), v3 (+ dotted divider walk),
   v4 (torus rolled to the widest bay), v5_s3 / v5_s13 (seed sweep), v6 (weighted title), v7 (Onsager check added to the colophon)

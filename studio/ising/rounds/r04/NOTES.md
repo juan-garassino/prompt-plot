@@ -4,10 +4,10 @@
 ```
 .venv/bin/python scripts/render_candidate.py studio/ising/rounds/r04/piece.py \
   --fn ising_cooling_strip_iterate --seed 7 --paper a4 --orientation landscape \
-  --palette black,crimson --out ~/Downloads/pp_ising_r04_iterate_v5.png
+  --palette black,crimson --out gallery/studio/ising/current/pp_ising_r04_iterate_v5.png
 ```
-Final: `~/Downloads/pp_ising_r04_iterate_v5.png` / `.gcode`, seed 7 (the seed the r02 science critic verified).
-Seed sweep (v4 geometry): `~/Downloads/pp_ising_r04_iterate_v4_s3.png`, `~/Downloads/pp_ising_r04_iterate_v4_s13.png`.
+Final: `gallery/studio/ising/current/pp_ising_r04_iterate_v5.png` / `.gcode`, seed 7 (the seed the r02 science critic verified).
+Seed sweep (v4 geometry): `gallery/studio/ising/trials/pp_ising_r04_iterate_v4_s3.png`, `gallery/studio/ising/trials/pp_ising_r04_iterate_v4_s13.png`.
 Iterations:
 - v1: hull outlines, cut 30, vertical CRITICAL, key.
 - v2: seam roll (unsafe: the frontier guard dropped 82 real coast edges, so it was fixed in v3).

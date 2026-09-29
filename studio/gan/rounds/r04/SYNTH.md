@@ -52,7 +52,7 @@ Deferred in the ledger: A4 (shaped negative space, which follows from the new or
 - **Plot discipline.** 13,962 cmds, travel 10.4 m < draw 15.0 m, dashes ≥ 2.5 mm, 0 ink-on-ink crossings, serpentine direction (A3).
 - **Gutters and footer.** The 12 mm gutter module between cloth and type, top and bottom. The footer on shared baselines with the symmetric legend `WEFT G MOVES THETA` / `WARP D MOVES PSI` (A11, A13).
 - **Pens.** Three pens with stated meanings. Type on black, plotted last. Declared flat Bauhaus-weaving canon (A14).
-- **From r03, the look to recover.** The full-reed woven body and the continuous NE/SW arcs: `~/Downloads/pp_gan_two-players-interlaced_v10.png`.
+- **From r03, the look to recover.** The full-reed woven body and the continuous NE/SW arcs: `gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.png`.
 
 ## Do not
 - Do not break the ribbon into per-run L-blocks jogged outward. That is r04's rubble.

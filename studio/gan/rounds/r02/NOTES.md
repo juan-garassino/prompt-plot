@@ -12,10 +12,10 @@ made of bare paper.
 ```
 .venv/bin/python scripts/render_candidate.py studio/gan/rounds/r02/piece.py \
   --fn escape_spiral --seed 7 --paper a4 --palette black,crimson,dodgerblue \
-  --out ~/Downloads/pp_gan_escape-spiral_v8.png
+  --out gallery/studio/gan/current/pp_gan_escape-spiral_v8.png
 ```
-- final PNG: `~/Downloads/pp_gan_escape-spiral_v8.png`
-- final GCODE: `~/Downloads/pp_gan_escape-spiral_v8.gcode`
+- final PNG: `gallery/studio/gan/current/pp_gan_escape-spiral_v8.png`
+- final GCODE: `gallery/studio/gan/current/pp_gan_escape-spiral_v8.gcode`
 - seed 7, a4 portrait, 3 pens. Seeds 11 and 3 were also rendered
   (`pp_gan_escape-spiral_v7_s11.png`, `_v7_s3.png`) and give the same composition. The
   seed only moves the start angle a0 (0.43 / 0.57 / 0.33 rad), and those runs exit after

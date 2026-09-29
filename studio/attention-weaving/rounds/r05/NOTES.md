@@ -6,11 +6,11 @@
 .venv/bin/python scripts/render_candidate.py studio/attention-weaving/rounds/r05/piece.py \
   --fn attention_weaving_area_smooth --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_area-smooth_v7.png
+  --out gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.png
 ```
 
-- final PNG: `~/Downloads/pp_attention_weaving_area-smooth_v7.png`
-- final GCODE: `~/Downloads/pp_attention_weaving_area-smooth_v7.gcode`
+- final PNG: `gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.png`
+- final GCODE: `gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.gcode`
 - seed 7. The geometry does **not depend on the seed**: nothing is random any more (the
   numbers are GPT-2's). Seed 3 gives a byte-identical body, only the header differs. `rng`
   is used only by the numpy fallback if `~/.promptplot/attn_gpt2.npz` is missing.

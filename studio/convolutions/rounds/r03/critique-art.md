@@ -1,5 +1,5 @@
 # Art critique — convolutions r03 · canon: UNDECLARED (HANDOFF names no canon and no `lineage:` line; judged against the rubric + the reference as interpretation) · 2026-09-28
-render: ~/Downloads/pp_convolutions_sliding-window_v10.png
+render: gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.png
 
 ## Scores
 

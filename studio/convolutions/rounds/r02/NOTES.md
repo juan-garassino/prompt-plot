@@ -6,11 +6,11 @@
 .venv/bin/python scripts/render_candidate.py studio/convolutions/rounds/r02/piece.py \
   --fn convolutions_real_kernel --seed 7 --paper a4 --orientation landscape \
   --palette black,crimson,dodgerblue,olive \
-  --out ~/Downloads/pp_convolutions_real-kernel_v9.png
+  --out gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.png
 ```
 
-- final PNG: `~/Downloads/pp_convolutions_real-kernel_v9.png`
-- final GCODE: `~/Downloads/pp_convolutions_real-kernel_v9.gcode`
+- final PNG: `gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.png`
+- final GCODE: `gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.gcode`
 - seed 7 (seeds 3 and 11 checked: `pp_convolutions_real-kernel_seed{3,11}_v7.png`; the seed only
   moves the X wobble, and the Y still comes out clean)
 - self-rounds: v1…v9 on disk, none overwritten

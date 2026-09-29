@@ -9,7 +9,7 @@ Render:
 ```
 .venv/bin/python scripts/render_candidate.py studio/topography-scatter/rounds/r01/piece.py \
   --fn attention_as_topography --seed 7 --paper a4 --orientation landscape --colors 4 \
-  --palette crimson,dodgerblue,goldenrod,black --out ~/Downloads/pp_topo_scatter_v16.png
+  --palette crimson,dodgerblue,goldenrod,black --out gallery/studio/topo_scatter/current/pp_topo_scatter_v16.png
 ```
 
 Plot cost (A4 landscape, 10 mm margins): **36 318 commands · 14 564 mm drawn ·

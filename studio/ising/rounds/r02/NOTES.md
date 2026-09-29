@@ -4,9 +4,9 @@
 ```
 .venv/bin/python scripts/render_candidate.py studio/ising/rounds/r02/piece.py \
   --fn ising_cooling_strip --seed 7 --paper a4 --orientation landscape \
-  --palette black,crimson --out ~/Downloads/pp_ising_COOLING_STRIP_v9.png
+  --palette black,crimson --out gallery/studio/ising/current/pp_ising_COOLING_STRIP_v9.png
 ```
-Final: `~/Downloads/pp_ising_COOLING_STRIP_v9.png` / `.gcode`, seed 7. (v9 is byte-identical
+Final: `gallery/studio/ising/current/pp_ising_COOLING_STRIP_v9.png` / `.gcode`, seed 7. (v9 is byte-identical
 to v8 in geometry; v9 only drops dead helpers from the source.) Seed sweep:
 `pp_ising_COOLING_STRIP_v6_s3.png`, `pp_ising_COOLING_STRIP_v8_s13.png`.
 Iterations: v1 spin walls (maze) → v2 FK weights + FK shore → v3 FK bond sticks + ruled sea (mud,

@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Approved render** | `~/Downloads/pp_diffusion_passes_abstract_v2.png` / `.gcode` |
+| **Approved render** | `gallery/studio/diffusion_passes/current/pp_diffusion_passes_abstract_v2.png` / `.gcode` |
 | **Approved source** | **`studio/diffusion-passes/rounds/r03/piece_v2_APPROVED.py`** — frozen, do not edit |
 | **Entry point** | `diffusion_passes(rng, bounds, colors=5)` |
-| **Verified** | re-rendered to `~/Downloads/pp_diffusion_passes_abstract_v2_verify.png` |
+| **Verified** | re-rendered to `gallery/studio/diffusion_passes/trials/pp_diffusion_passes_abstract_v2_verify.png` |
 | **Verification** | draw **13427.1 mm**, travel **15101.2 mm** (visualizer reports 15120.8 — it counts the home move my parser starts after), **18301 commands** |
 | **Proof** | the two gcode bodies (everything past the provenance header) are **byte-identical**, md5 `fc682e0b75a1d0c193170f710a556b2b` |
 
@@ -26,7 +26,7 @@ approved file.
   studio/diffusion-passes/rounds/r03/piece_v2_APPROVED.py \
   --fn diffusion_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,mediumpurple,palevioletred,crimson \
-  --out ~/Downloads/pp_diffusion_passes_abstract_v2_verify.png
+  --out gallery/studio/diffusion_passes/trials/pp_diffusion_passes_abstract_v2_verify.png
 ```
 
 ---

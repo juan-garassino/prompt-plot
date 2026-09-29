@@ -1,5 +1,5 @@
 # Art critique — convolutions r04 · canon: Op Art / Ben-Day (flat, one lifted plane) · lineage: Vasarely, Vega · 2026-09-28
-render: ~/Downloads/pp_convolutions_iterate_v9.png (gcode beside it; a4 landscape, cream; 3 pens black / crimson / dodgerblue)
+render: gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.png (gcode beside it; a4 landscape, cream; 3 pens black / crimson / dodgerblue)
 
 ## Scores
 
@@ -49,7 +49,7 @@ The input mass is the loudest thing on the sheet and its closed outline reads as
 Polish (not mandates): fatten the diagonals of both N's to the vertical stroke weight, and delete the wobbly contour crumb in the first step pocket (x≈50, y≈182).
 
 ## Follow-up on open mandates
-(Written after pass 1. Scores above unchanged. Compare-to: r03 `~/Downloads/pp_convolutions_sliding-window_v10.png` and the r01 benchmark. There is no FEEDBACK.md, so there are no J* mandates.)
+(Written after pass 1. Scores above unchanged. Compare-to: r03 `gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.png` and the r01 benchmark. There is no FEEDBACK.md, so there are no J* mandates.)
 
 | id | status | evidence |
 |---|---|---|

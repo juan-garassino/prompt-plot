@@ -2,13 +2,13 @@
 
 Reference: `studio/resonance-clean/ref/reference.png` (1122 x 1402 px).
 Piece: `piece.py :: attention_as_resonance(rng, bounds, colors=5)`.
-Render: `~/Downloads/pp_resonance_clean_v1.png`.
+Render: `gallery/studio/resonance/trials/pp_resonance_clean_v1.png`.
 
 ```
 .venv/bin/python scripts/render_candidate.py studio/resonance-clean/rounds/r01/piece.py \
   --fn attention_as_resonance --seed 7 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black --colors 5 \
-  --out ~/Downloads/pp_resonance_clean_v1.png
+  --out gallery/studio/resonance/trials/pp_resonance_clean_v1.png
 ```
 
 Plot cost: **49,682 commands · 35,209 draw moves (G1) · 2,894 pen-down cycles

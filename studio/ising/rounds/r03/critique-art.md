@@ -1,5 +1,5 @@
 # Art critique — ising r03 · canon: Bauhaus (lineage Kandinsky, *Point and Line to Plane*; twist Mandelbrot coastline) · 2026-09-28
-render: ~/Downloads/pp_ising_COASTLINE_v8.png  (gcode ~/Downloads/pp_ising_COASTLINE_v8.gcode, A4 portrait, cream, 2 pens)
+render: gallery/studio/ising/current/pp_ising_COASTLINE_v8.png  (gcode gallery/studio/ising/current/pp_ising_COASTLINE_v8.gcode, A4 portrait, cream, 2 pens)
 
 ## Scores
 

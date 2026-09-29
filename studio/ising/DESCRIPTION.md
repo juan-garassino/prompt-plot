@@ -1,66 +1,124 @@
 # CRITICAL — description
 
-<!-- written 2026-09-28 from a vision review. This is the spec the studio workflow iterates from: edit it freely. -->
+<!-- rewritten 2026-09-29 by the studio lead when r07 went to the vote. It describes the CURRENT best version (r07, COOLING STRIP) so the next iteration starts from the truth. The r01 description (the Tc hero + temperature deck + chart) is history: see rounds/r01 and LEDGER.md. -->
 
 | | |
 |---|---|
 | gallery | `gallery/studio/ising` |
-| current render | `gallery/studio/ising/current/pp_ising_v6.png` |
-| source | `studio/ising/rounds/r01/piece.py::ising_critical` |
-| paper · pens | a4 portrait, cream · 0 black = domain walls (1–3 passes by domain scale), deck, type, chart · 1 crimson = the macroscopic interface, the empty Tc plate, the `1.00` tick, the Tc line in the chart |
-| status | unreviewed (no feedback) · 8 renders on disk |
+| current render | `gallery/studio/ising/trials/pp_ising_r07_iterate_v5.png` (gcode beside it; seed sweep `_s3`, `_s13`) — pending the curator's sync |
+| source | `studio/ising/rounds/r07/piece.py::ising_cooling_strip_r07` (seed 7, a4 landscape, palette black,crimson,gray) |
+| paper · pens | a4 landscape, cream · 0 black = ruled sea, free FK hulls ≥ 30 sites (1/2/3 passes), ruler, CRITICAL spine, type · 1 crimson = the held cluster's hull (the frontier) + the `1.00` tick · 2 grey = free FK hulls 13–29 sites |
+| plot | black 947 strokes ≈ 47 min → crimson 14 ≈ 3 min → grey 167 ≈ 12 min · draw 12.37 m, travel 0.499× · no shared line between layers |
+| status | r07 at vote. Art 7.43/7 FAIL · science 9/8/9 PASS. Fabrication gate clean. Juan's feedback: none recorded |
 
 ## In one line
-The 2D Ising model at Tc drawn as a **lattice-with-defects** — the dual-lattice domain walls of a real Wolff-sampled 128² configuration, where pen passes = the size of the smaller domain a wall separates and crimson = the one wall between two macroscopic domains — with a small temperature deck and an order-parameter chart underneath.
+**COOLING STRIP.** One 212 × 129 Ising lattice with temperature running linearly from 0.70 Tc at the left edge to 2.30 Tc at the right edge. The Fortuin–Kasteleyn cluster held by a fixed + wall on the left is drawn as a ruled sea. Its hull is **one crimson coast**, at mean 1.02 Tc: Tc is a *place*. Free FK clusters are drawn as closed outlines, weighted by size. They shrink and thin to the right until heat is finer than the 13-site cut, and the sheet ends in bare paper.
 
 ## What is on the sheet
-Reading order: the big wall field upper right, the crimson interface meandering through it, then the diagonal temperature deck lower left, then the footer and chart.
+Reading order:
+1. CRITICAL up the left edge.
+2. The ruled black sea.
+3. The ragged crimson coast.
+4. Black continents and islands just past it.
+5. Grey islands thinning into bare cream.
+6. The footer.
 
-- **Hero field** (dominant mass, ≈0.65 of sheet width): a square window u 0.30–0.95, v 0.03–0.50, flush to the drawable top and right edges, its left and bottom edges defined only by where the walls stop (a short black baseline stub at u 0.30–0.37 and u 0.87–0.95, v 0.50). Contents: staircase polylines on a ~1.07 mm lattice —
-  - hundreds of tiny closed rectangular loops (1–3 sites, 1 pass) scattered evenly over the whole window;
-  - mid-size ragged islands in 2 passes (e.g. u 0.35–0.45, v 0.20–0.30);
-  - a few bold 3-pass continents in black (u 0.47–0.55, v 0.24–0.32; u 0.75–0.90, v 0.38–0.47; u 0.62–0.68, v 0.07–0.13);
-  - **the crimson interface**: one long branching staircase wall that enters at the top edge (u 0.32 and u 0.64), wanders down the right half with fjords and peninsulas, reaches the right edge at v≈0.15–0.25, and a second crimson strand crosses the lower half from the left edge (u 0.30, v 0.33) to the bottom edge (u 0.55–0.85, v 0.50). It is the longest and most continuous line on the sheet.
-- **Title block over the field's upper-left**, flush left at u 0.06: `C R I T I C A L` (hairline spaced caps, ~7 mm, u 0.06–0.62, v 0.10–0.13), `DOMAIN WALLS AT EVERY SCALE` (v 0.16), `ONE RULE     NO LENGTH SCALE` (v 0.18). The walls stop around the type (a halo) — the field is carved out behind the words from u 0.30 to u 0.66, v 0.08–0.20; left of u 0.30 the title sits on bare paper.
-- **Quiet band** v 0.50–0.58 across the full width, crossed by two black dotted blow-up rays from the empty Tc plate to the hero's bottom corners (to u 0.30 and to u 0.95).
-- **Temperature deck** (second mass), lower left, running as a descending diagonal: label `T IN UNITS OF TC` (u 0.06, v 0.58); an axis line from u 0.06, v 0.64 to u 0.57, v 0.83 with ticks and labels `0.75`, `0.90`, crimson `1.00`, `1.20`, `1.80`; five equal parallelogram plates (≈0.28 wide) stepping down-right along it:
-  - `0.75` (u 0.10–0.38, v 0.60–0.68): almost empty, two specks.
-  - `0.90` (u 0.19–0.48, v 0.64–0.72): a handful of small loops.
-  - `1.00` (u 0.29–0.59, v 0.67–0.75): **empty**, outlined in crimson dashes — "its content is the hero".
-  - `1.20` (u 0.38–0.67, v 0.71–0.80): a labyrinth of mid-size walls.
-  - `1.80` (u 0.47–0.72, v 0.74–0.83): dense short fragments, overlapping (and occluding) the 1.20 plate's corner.
-- **Footer**, u 0.07–0.66, v 0.84–0.95, under a black rule, set in a plain (non-spaced) mono stroke font: `WOLFF AND METROPOLIS   L 128   PBC   SEED 7   SYMMETRIC SECTOR` / `TC 2.269185   ONSAGER 1944   EXACT` / `UNSATISFIED BONDS   CHAIN 0.1501   ONSAGER 0.1464` / `THIS CONFIGURATION   M 0.018   464 DOMAINS` / `LINE WEIGHT   THE SIZE OF THE DOMAIN THE WALL ENCLOSES` / `RED   BOTH DOMAINS OVER 3 PCT OF THE LATTICE`.
-- **Order-parameter chart**, u 0.74–0.95, v 0.80–0.94: `ORDER PARAMETER` / `EXACT   PLATES L 24`; an L-axis, the exact Onsager–Yang m(T) curve falling vertically at Tc, a crimson dashed vertical at Tc, four `+` markers for the plates, axis labels `0.55` and `1.95`.
+- **CRITICAL spine**
+  - Vertical giant caps at x 15–33 (u 0.05–0.11), spanning the full field height (y 36–188).
+  - 3 passes, 18 mm cap. The `A` diagonals are at full weight.
+  - Off the lattice.
+- **Thermometer ruler** along the field top (y ≈ 189–197)
+  - Ticks every 0.05 Tc, labels 0.80 … 2.20, exact to 1e-4.
+  - The `1.00` tick and label are crimson and taller, at x 83.6 (u 0.28).
+- **The ruled sea** (dominant dark mass, x 37–≈ 90, u 0.12–0.30)
+  - Horizontal rules on lattice lines, every 3rd row (43 rows), strictly inside the held FK cluster.
+  - Rule density *is* the magnetisation.
+  - Rules end 0.85 mm short of the coast.
+- **The crimson coast**
+  - One continuous 3-pass staircase (±0.15 mm), 352 dual-lattice edges, 1 component, wrapping top to bottom.
+  - It wanders x 75–105 (u 0.25–0.35) as a near-vertical ragged wall with small fjords.
+  - Nothing black or grey comes within 0.85 mm of it.
+- **Black continents / islands** (x ≈ 85–195)
+  - Closed hulls of free FK clusters: 30–49 sites at 1 pass, 50–154 at 2 passes, ≥ 155 at 3 passes, grown inward at 0.35 mm.
+  - Seed 7 carries one 376-site 3-pass continent against the coast (x 85–110, y 55–165).
+- **Grey islands** (x ≈ 90–280)
+  - 1-pass closed hulls of 13–29-site clusters, 115 of them on seed 7.
+  - Count per band past 1.15 Tc: 44 → 33 → 27 → 10. Mean size: 27.1 → 19.5 → 17.4 → 13.7.
+- **Bare paper**
+  - The right quarter thins to paper: x 240–287, y 36–110 is mark-free.
+  - The last 25 mm column holds 2 outlines.
+- **Footer** (y 13–31, 5 lines at 4 mm pitch, three columns hung on the grid)
+  - **col 1** (x 15, on the spine axis): `RULED THE HELD FK CLUSTER` … `UNDER 0.80 TC AS DRAWN 0.984` / `ONSAGER M 0.969`.
+  - **col 2** (x 83.6, on the red tick):
+    - `RED HELD CLUSTER HULL MEAN 1.02 TC`
+    - `TC 2.269185 ONSAGER 1944 EXACT`
+    - `WEIGHT PEAKS AT TC COUNT PEAKS PAST IT`
+    - `TC IS A PLACE` (large).
+  - **col 3** (x 177.3, on the 1.60 tick):
+    - run metadata
+    - `FK SPINS BONDED WITH PROB 1-EXP(-2J/T)`
+    - the key (`GREY 13-29` in grey, `1 PASS 30-49` · `2 PASSES 50-154` · `3 PASSES 155+`)
+    - `BLANK DISORDER FINER THAN 13 SITES`.
 
 ## The science it encodes
-From `r01/NOTES.md` and the docstring: 2D Ising, J = 1, zero field, periodic 128² lattice at Tc = 2/ln(1+√2) = 2.269185 exactly; checkerboard Metropolis burn-in then Wolff single-cluster (P_add = 1−exp(−2βJ)); domains are exact 4-connected components; walls are dual-lattice edges, wrap bonds counted but not drawn. Pen weight = min(|A|,|B|): 1 pass < 10 sites, 2 < 120, 3 above; crimson when the smaller domain ≥ 3 % of the lattice. Exact check printed on the sheet: unsatisfied-bond fraction 0.1501 (chain) vs Onsager 0.146447. Hero picked as the least-magnetised of 16 decorrelated samples from one seeded chain (declared "symmetric sector", |m| = 0.018). Plates L = 24 at T/Tc 0.75, 0.90, 1.20, 1.80 (m 0.99, 0.88, 0.18, 0.06). NOTES are candid that big spin clusters persist above Tc, so red is not by itself a critical signature; the critical claim rests on the weight ladder and the bond fraction.
-Visibility: the three weight rungs are present, but at 3 m the field reads as even confetti plus one red line — the ladder is a 1 m read, and the 1-pass specks outnumber everything, so "structure at every scale" reads more as "noise plus a coastline".
+2D Ising, J = 1, zero field, Tc = 2/ln(1+√2) = 2.269185.
+
+**Lattice and sampling**
+- 212 × 129 lattice at 1.178 mm display pitch, periodic in y.
+- The left column is bonded to a fixed + wall. The right edge is free.
+- Local temperature T/Tc = 0.70 + 1.60 (i+½)/212.
+- Sampled by Swendsen–Wang with FK bonds p = 1 − e^(−2J/T) between aligned neighbours.
+
+**Checks the science critic reproduced on the ink, on seeds 7 / 3 / 13, against an independent SW simulation of the identical lattice**
+- The held density under 0.80 Tc: 0.984 against Onsager–Yang 0.969 (sim 0.969 ± 0.008).
+- The hull mean at 1.02 Tc (sim 1.038 ± 0.022).
+- The per-band outline census, within 1.3σ.
+- The count and size peaking apart: size peaks at 1.00–1.15, count at 1.15–1.35.
+- The last-column fade: 2 outlines (sim 2.08 ± 1.41).
+
+**Caveats**
+- Seed 7's hottest band is fine-grained: mean 13.7 against a sim value of 15.9 ± 1.0.
+- The top rung (≥ 155) is populated in only 40–51 % of configurations, so the plate must stay seed 7 (or 3).
+- `dossier.md` / `encoding.md` do not exist yet. The r07 science critique's check table is the de facto dossier.
 
 ## How it got here
-Six versions plus a seed sweep (v5 s3/s7/s13), all on one layout. v4: plates at 0.70/0.90/1.00/1.15/1.60, chart to 1.75. v5 seeds 3/7/13: same composition, different configurations — s3 (m 0.165, 501 domains) had a sparser field with more red; s13 filled the window more evenly. v6: plates moved to 0.75/0.90/1.00/1.20/1.80 and the chart axis extended to 1.95; seed 7 retained. Gained: a stronger contrast between the near-empty cold plates and the busy hot ones. Nothing structural changed across the round. Juan's feedback: none recorded.
+- **r01** (the Tc hero + deck + chart) had no critique.
+- **r02** COOLING STRIP and **r03** COASTLINE both FAILed.
+- **r04** merged in closed hulls and the vertical CRITICAL spine.
+- **r05** added the grey rung. Science PASSed, but the hot half became wallpaper.
+- **r06** SUNBURST was the Art Deco wildcard on RG flow. It is kept as a flavour.
+- **r07** gave the dissolve its ending:
+  - the axis was extended to 2.30 Tc at the same cut;
+  - the coast became a wall nothing crosses;
+  - the footer got measured air;
+  - the stranger lines were added.
+
+Ledger: `studio/ising/LEDGER.md`.
 
 ## Keep — what works
-- The crimson interface: one long fractal coastline winding from the top edge to the right and bottom edges — the single long-range object, scarce and loud.
-- Line weight = domain scale (1/2/3 passes): a real data-carrying weight ladder; the bold continents (u 0.47–0.55, v 0.24–0.32; u 0.75–0.90, v 0.38–0.47) give the field depth planes.
-- The hero cropped flush at the top and right drawable edges — a window onto the torus, and the sheet's main asymmetry.
-- The empty crimson-dashed `1.00` plate in the deck with blow-up rays to the hero — the best idea on the lower half: Tc is not in the row, it IS the sheet.
-- Walls drawn exactly on the dual lattice as staircases — honest to the model, crisp to plot, no crowding (≥1.07 mm).
+- **The ending.** The dissolve reaches bare paper by physics at one printed rule, not by thinning by hand.
+- **One crimson coast**, the single long-range object. It is continuous, wraps, and nothing crosses it (0.85 mm clearance, 0 crossings).
+- **Line weight = cluster size** (grey / 1 / 2 / 3 passes). A real data ladder, with ≥ 0.8 mm between owners (1.03 mm minimum).
+- **Rule density = magnetisation**, with the check printed from the ink (`AS DRAWN` beside `ONSAGER M`).
+- **The CRITICAL spine** at the left edge, and the three footer columns hung on the spine axis, the red tick and a ruler tick.
+- **Plot contract.** 3 pens, one clean layer each, stated order, travel ≈ 0.5×, ~1 h total.
 
 ## Weak — what doesn't
-- [concept] The lower half is the scientific figure: parameter deck of labelled plates + an axis chart (m vs T with markers) + six-line colophon. The chart alone fails § 6.
-- [hierarchy] At 3 m the field is uniform-grey confetti: hundreds of 1-site square loops at equal spacing drown the mid rung; only the red line separates out.
-- [grid] Two type systems: spaced hairline caps for the title vs. a plain condensed mono in the footer and deck labels; the chart sits on its own baseline, not the footer's.
-- [space] The band v 0.50–0.58 and the area right of the deck (u 0.72–0.95, v 0.55–0.78) are leftover, crossed only by dotted rays.
-- [craft] The halo cut behind the title leaves a ragged hole in the field's upper-left (u 0.30–0.66, v 0.08–0.20) that reads as a missing rectangle, not as the title owning the space.
-- [depth] The field is flat line work; depth exists only as the thin deck cards. Not declared flat.
-- [concept] The 0.75 and 0.90 plates are nearly blank and read as empty frames rather than "order" — the cold phase has no visual body (no fill for the majority domain).
+- **[hierarchy]** The crimson coast is a 1-pass-weight hairline beside 3-pass black hulls 1–2 mm away (x 85–100). At 1 m the black out-weighs the red it borders (art r07 M1 → A25).
+- **[craft]** 49 black strokes under 4 mm, mostly clip residue beside the coast at x 68–100. There are also open hull ends at the wrap edges and a lone dash at (142.8, 188.4) (A26).
+- **[space / tension]** The transition band (0.90–1.35 Tc) gets only ≈ 23 % of the width, so it reads as a knot of parallel black and grey outlines.
+  - The coast lost r05's fjords and diagonal. It is now confined to x 75–105.
+  - The ruled sea narrowed from ≈ 78 to ≈ 53 mm, and r05's black continent at x 110–175 is gone (A27, A28).
+- **[fidelity]** The clearance drops the last held site from each rule run, and a pass from multi-pass hulls, at the coast (S14). The FK line omits "aligned" (S15). The red seam edges are undrawn (S16).
 
 ## Next versions
-1. **COASTLINE** (abstract) — Full-bleed the critical configuration at a larger L across the entire sheet, drop the deck, chart and footer (one line of colophon), and make the weight ladder the whole design: 1-site specks removed or rendered as single dots, mid domains 1 pass, continents 3 passes, the crimson interface 4 passes. Lattice-with-defects at every scale with nothing else on the sheet; hierarchy and concept both rise.
-2. **COOLING STRIP** (mechanism) — One continuous lattice whose temperature ramps across the sheet (a real simulated gradient from 0.7 Tc at left to 1.8 Tc at right, or a quench): ordered sea on one side, confetti on the other, and at the Tc column the crimson interface runs vertically as the frontier. Replaces five plates and a chart with one field where the transition is a place you can point at.
-3. **NO LENGTH SCALE** (lens) — Nested windows: the same configuration shown at three zooms (full, ¼, 1/16) as concentric/cascading squares cropped into one another, each rescaled so the pictures look statistically identical — scale invariance as a self-similar nest. Twist: the caption asks "which one is the close-up?"
+1. **COOLING STRIP r08 (rework)**
+   - A printed, non-linear x(T) magnifying 0.90–1.35 Tc to ≥ 45 % of the width.
+   - The sea back to ≈ 78 mm.
+   - The coast at ≥ the 3-pass black weight.
+   - Zero crumbs.
+   - Run the translator first to write `encoding.md` + `dossier.md`.
+2. **SUNBURST** (flavour, r06): RG block-spin flow as an Art Deco half-sunburst. Its parked mandates are A22–A24 / S11–S13.
+3. **COASTLINE** (flavour, r03): the full-bleed critical torus with the coast as the hero.
 
-**If only iterating:**
-- Delete the order-parameter chart and cut the footer to two lines set in the title's spaced caps on the same left axis.
-- Remove 1–2-site loops from the hero (or render them as dots) so the 2- and 3-pass domains read at 3 m.
-- Fill the majority domain of the 0.75 plate with a sparse hatch so the cold side of the deck has mass, and pull the deck up to close the v 0.50–0.58 gap.
+**If only iterating:** thicken the crimson to the 3-pass band, drop or close every sub-4 mm clipped stroke, and add `INK STOPS 0.85 MM SHORT OF RED` + "alike neighbours" to the key.

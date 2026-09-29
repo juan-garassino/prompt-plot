@@ -1,5 +1,5 @@
 # Science critique — attention-weaving r04 · machine learning (transformer attention, softmax) · 2026-09-28
-render: ~/Downloads/pp_attention_weaving_mirror-drain_v13.png (gcode: ~/Downloads/pp_attention_weaving_mirror-drain_v13.gcode, seed 7, 24x30 portrait)
+render: gallery/studio/attention_weaving/current/pp_attention_weaving_mirror-drain_v13.png (gcode: gallery/studio/attention_weaving/current/pp_attention_weaving_mirror-drain_v13.gcode, seed 7, 24x30 portrait)
 
 Pass 1 (cold). There is **no `dossier.md`, no `encoding.md` and no `LEDGER.md`** for this slug, and that is a
 finding in its own right: nothing states the §7 check numbers, the §4 lies list or the §3–4 channel

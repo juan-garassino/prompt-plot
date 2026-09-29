@@ -4,10 +4,10 @@
 ```
 .venv/bin/python scripts/render_candidate.py studio/gan/rounds/r04/piece.py \
   --fn gan_repels --seed 7 --paper a4 --palette black,crimson,dodgerblue \
-  --out ~/Downloads/pp_gan_iterate_v16.png
+  --out gallery/studio/gan/trials/pp_gan_iterate_v16.png
 ```
-- final PNG: `~/Downloads/pp_gan_iterate_v16.png`
-- final GCODE: `~/Downloads/pp_gan_iterate_v16.gcode`
+- final PNG: `gallery/studio/gan/trials/pp_gan_iterate_v16.png`
+- final GCODE: `gallery/studio/gan/trials/pp_gan_iterate_v16.gcode`
 - seed 7, A4 portrait, cream (preview on white). Seeds 3 and 11 (`pp_gan_iterate_v8_s3/_s11`) change the
   start angle by < 0.1 rad and give the same composition. Seed 7 is the mandated run.
 - self-rounds v1 → v16. v1–v2: exact tapes only, each leg's own family. The ribbon broke into single-family

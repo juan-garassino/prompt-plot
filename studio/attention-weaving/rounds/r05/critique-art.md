@@ -1,5 +1,5 @@
 # Art critique — attention-weaving r05 · canon: none assigned in HANDOFF (judged against BRIEF + rubric; no `lineage:` line either) · 2026-09-28
-render: ~/Downloads/pp_attention_weaving_area-smooth_v7.png
+render: gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.png
 
 ## Scores
 

@@ -1,5 +1,5 @@
 # Science critique — neural-networks-cnn r02 · machine learning (CNNs, receptive fields) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_one-valley_v12.png (+ .gcode, 26641 cmds, pen0 14250.9 mm / pen1 1025.9 mm)
+render: gallery/neural-networks/cnn/current/pp_neural_networks_cnn_one-valley_v12.png (+ .gcode, 26641 cmds, pen0 14250.9 mm / pen1 1025.9 mm)
 
 Process finding: `studio/neural-networks-cnn/` has **no dossier.md, no encoding.md, no LEDGER.md**. There
 are no §7 check numbers, no §4 lies list, no §5 misconception to grade against. Check numbers below are

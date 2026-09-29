@@ -14,7 +14,7 @@ The old helper sampled every 0.20 mm and drew each dot as a micro-dash followed 
 .venv/bin/python scripts/render_candidate.py studio/resonance-ffn/rounds/r10/piece.py \
   --fn attention_as_resonance_ffn --seed 7 --colors 6 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,darkviolet,black \
-  --out ~/Downloads/pp_res_ffn_continuous-dots_v1.png
+  --out gallery/studio/res_ffn/current/pp_res_ffn_continuous-dots_v1.png
 ```
 
 ## Plot budget (vs r01)

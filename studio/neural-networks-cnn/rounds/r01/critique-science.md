@@ -1,5 +1,5 @@
 # Science critique — neural-networks-cnn r01 · machine learning (convolutional networks, receptive fields) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.png (gcode: same stem .gcode, 11157 cmds, pens 0/1/2 = 2846/656/1168 layer cmds)
+render: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.png (gcode: same stem .gcode, 11157 cmds, pens 0/1/2 = 2846/656/1168 layer cmds)
 
 **Process finding:** `studio/neural-networks-cnn/` has **no `dossier.md`, no `encoding.md`, no `LEDGER.md`**.
 There are no §7 check numbers or §4 lies list to verify against, so every check below comes from first

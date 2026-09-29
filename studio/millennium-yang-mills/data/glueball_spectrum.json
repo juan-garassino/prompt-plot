@@ -1,0 +1,282 @@
+{
+ "source": "Athenodorou & Teper, 'The glueball spectrum of SU(3) gauge theory in 3+1 dimensions', JHEP 11 (2020) 172, arXiv:2007.06422, Table 'table_MK_J' (continuum limit, units of sqrt(string tension)); read from the arXiv LaTeX source 2026-09-28",
+ "theory": "pure SU(3) Yang-Mills (no quarks), continuum-extrapolated lattice",
+ "Delta_over_sqrt_sigma": [
+  3.405,
+  0.021
+ ],
+ "two_particle_threshold_over_Delta": 2.0,
+ "note": "id_quality: '*' likely, '**' significant uncertainty (paper's own stars). 2++ ex1 (6.788) sits on the 2*Delta=6.810 threshold within errors.",
+ "lattice_approach_to_continuum": {
+  "source": "same paper, Table 'table_param'",
+  "beta": [
+   5.6924,
+   5.8,
+   5.8941,
+   5.99,
+   6.0625,
+   6.235,
+   6.338,
+   6.5
+  ],
+  "a_sqrt_sigma": [
+   0.3999,
+   0.31666,
+   0.26118,
+   0.21982,
+   0.19472,
+   0.15003,
+   0.12928,
+   0.10383
+  ],
+  "a_mG": [
+   0.987,
+   0.908,
+   0.7991,
+   0.7045,
+   0.6365,
+   0.4969,
+   0.4276,
+   0.3474
+  ]
+ },
+ "cross_check": {
+  "source": "Chen et al., Phys. Rev. D 73, 014516 (2006), hep-lat/0510074, Table 'summary1' (r0*M_G)",
+  "r0M": {
+   "0++": 4.16,
+   "2++": 5.83,
+   "0-+": 6.25,
+   "1+-": 7.27,
+   "2-+": 7.42,
+   "3+-": 8.79,
+   "3++": 8.94,
+   "1--": 9.34,
+   "2--": 9.77,
+   "3--": 10.25,
+   "2+-": 10.32,
+   "0+-": 11.66
+  }
+ },
+ "states": [
+  {
+   "JPC": "0++",
+   "level": "gs",
+   "M_over_sqrt_sigma": 3.405,
+   "err": 0.021,
+   "M_over_Delta": 1.0,
+   "below_2Delta": true,
+   "J": 0,
+   "multiplicity": 1,
+   "id_quality": ""
+  },
+  {
+   "JPC": "2++",
+   "level": "gs",
+   "M_over_sqrt_sigma": 4.894,
+   "err": 0.022,
+   "M_over_Delta": 1.4373,
+   "below_2Delta": true,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": ""
+  },
+  {
+   "JPC": "0-+",
+   "level": "gs",
+   "M_over_sqrt_sigma": 5.276,
+   "err": 0.045,
+   "M_over_Delta": 1.5495,
+   "below_2Delta": true,
+   "J": 0,
+   "multiplicity": 1,
+   "id_quality": ""
+  },
+  {
+   "JPC": "0++",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 5.855,
+   "err": 0.041,
+   "M_over_Delta": 1.7195,
+   "below_2Delta": true,
+   "J": 0,
+   "multiplicity": 1,
+   "id_quality": ""
+  },
+  {
+   "JPC": "1+-",
+   "level": "gs",
+   "M_over_sqrt_sigma": 6.065,
+   "err": 0.04,
+   "M_over_Delta": 1.7812,
+   "below_2Delta": true,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": ""
+  },
+  {
+   "JPC": "2-+",
+   "level": "gs",
+   "M_over_sqrt_sigma": 6.32,
+   "err": 0.09,
+   "M_over_Delta": 1.8561,
+   "below_2Delta": true,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": ""
+  },
+  {
+   "JPC": "2++",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 6.788,
+   "err": 0.04,
+   "M_over_Delta": 1.9935,
+   "below_2Delta": true,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": ""
+  },
+  {
+   "JPC": "3+-",
+   "level": "gs",
+   "M_over_sqrt_sigma": 7.27,
+   "err": 0.12,
+   "M_over_Delta": 2.1351,
+   "below_2Delta": false,
+   "J": 3,
+   "multiplicity": 7,
+   "id_quality": ""
+  },
+  {
+   "JPC": "0-+",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 7.29,
+   "err": 0.13,
+   "M_over_Delta": 2.141,
+   "below_2Delta": false,
+   "J": 0,
+   "multiplicity": 1,
+   "id_quality": ""
+  },
+  {
+   "JPC": "4++",
+   "level": "gs",
+   "M_over_sqrt_sigma": 7.6,
+   "err": 0.12,
+   "M_over_Delta": 2.232,
+   "below_2Delta": false,
+   "J": 4,
+   "multiplicity": 9,
+   "id_quality": "*"
+  },
+  {
+   "JPC": "3++",
+   "level": "gs",
+   "M_over_sqrt_sigma": 7.71,
+   "err": 0.09,
+   "M_over_Delta": 2.2643,
+   "below_2Delta": false,
+   "J": 3,
+   "multiplicity": 7,
+   "id_quality": "*"
+  },
+  {
+   "JPC": "1+-",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 7.82,
+   "err": 0.06,
+   "M_over_Delta": 2.2966,
+   "below_2Delta": false,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": ""
+  },
+  {
+   "JPC": "2--",
+   "level": "gs",
+   "M_over_sqrt_sigma": 8.08,
+   "err": 0.15,
+   "M_over_Delta": 2.373,
+   "below_2Delta": false,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": ""
+  },
+  {
+   "JPC": "2-+",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 8.18,
+   "err": 0.08,
+   "M_over_Delta": 2.4023,
+   "below_2Delta": false,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": ""
+  },
+  {
+   "JPC": "1--",
+   "level": "gs",
+   "M_over_sqrt_sigma": 8.31,
+   "err": 0.1,
+   "M_over_Delta": 2.4405,
+   "below_2Delta": false,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": ""
+  },
+  {
+   "JPC": "1-+",
+   "level": "gs",
+   "M_over_sqrt_sigma": 8.48,
+   "err": 0.12,
+   "M_over_Delta": 2.4905,
+   "below_2Delta": false,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": ""
+  },
+  {
+   "JPC": "1-+",
+   "level": "ex1",
+   "M_over_sqrt_sigma": 8.57,
+   "err": 0.13,
+   "M_over_Delta": 2.5169,
+   "below_2Delta": false,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": "*"
+  },
+  {
+   "JPC": "1-+",
+   "level": "ex2",
+   "M_over_sqrt_sigma": 8.66,
+   "err": 0.15,
+   "M_over_Delta": 2.5433,
+   "below_2Delta": false,
+   "J": 1,
+   "multiplicity": 3,
+   "id_quality": "*"
+  },
+  {
+   "JPC": "2+-",
+   "level": "gs",
+   "M_over_sqrt_sigma": 8.74,
+   "err": 0.12,
+   "M_over_Delta": 2.5668,
+   "below_2Delta": false,
+   "J": 2,
+   "multiplicity": 5,
+   "id_quality": "*"
+  },
+  {
+   "JPC": "4+-",
+   "level": "gs",
+   "M_over_sqrt_sigma": 9.02,
+   "err": 0.1,
+   "M_over_Delta": 2.649,
+   "below_2Delta": false,
+   "J": 4,
+   "multiplicity": 9,
+   "id_quality": "**"
+  }
+ ]
+}

@@ -13,10 +13,10 @@ sheet is geometry pretending to be maths.
 .venv/bin/python scripts/render_candidate.py studio/attention-weaving/rounds/r02/piece.py \
   --fn attention_weaving --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_mechanism_v20.png
+  --out gallery/studio/attention_weaving/current/pp_attention_weaving_mechanism_v20.png
 ```
 
-**Final render:** `~/Downloads/pp_attention_weaving_mechanism_v20.png`
+**Final render:** `gallery/studio/attention_weaving/current/pp_attention_weaving_mechanism_v20.png`
 (+ `…v20.gcode`, provenance header written by `render_candidate.py`).
 
 `--paper 24x30` was accepted (`PaperConfig.from_size` reads it as centimetres →

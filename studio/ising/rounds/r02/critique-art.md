@@ -1,5 +1,5 @@
 # Art critique — ising r02 · canon: UNDECLARED (judged as science_poster; evident order = Nees *Schotter*, order→disorder across the sheet) · 2026-09-28
-render: ~/Downloads/pp_ising_COOLING_STRIP_v9.png (a4 landscape, cream, 2 pens)
+render: gallery/studio/ising/current/pp_ising_COOLING_STRIP_v9.png (a4 landscape, cream, 2 pens)
 
 HANDOFF carries no `canon:` and no `lineage:` line (LINEAGE rule). No encoding.md; brief = `studio/physics/ising.md`. This round implements DESCRIPTION "Next versions #2 COOLING STRIP", not the brief's hero+deck layout.
 

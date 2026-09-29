@@ -13,10 +13,10 @@ directory was touched.
 .venv/bin/python scripts/render_candidate.py studio/cnn-passes/rounds/r01/piece.py \
   --fn cnn_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_cnn_passes_faithful_v10.png
+  --out gallery/studio/cnn_passes/current/pp_cnn_passes_faithful_v10.png
 ```
 
-Final render: `~/Downloads/pp_cnn_passes_faithful_v10.png` (+ `.gcode` beside it).
+Final render: `gallery/studio/cnn_passes/current/pp_cnn_passes_faithful_v10.png` (+ `.gcode` beside it).
 v1…v10 are all kept; nothing was overwritten.
 
 ## Pens

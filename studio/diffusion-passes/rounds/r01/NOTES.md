@@ -10,11 +10,11 @@ the middle, denoising back along the bottom.
 .venv/bin/python scripts/render_candidate.py studio/diffusion-passes/rounds/r01/piece.py \
   --fn diffusion_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,mediumpurple,palevioletred,crimson \
-  --out ~/Downloads/pp_diffusion_passes_faithful_v11.png
+  --out gallery/studio/diffusion_passes/current/pp_diffusion_passes_faithful_v11.png
 ```
 
 `--colors` defaults to the palette length, so the piece is called with 5 pens.
-Final render: `~/Downloads/pp_diffusion_passes_faithful_v11.png`
+Final render: `gallery/studio/diffusion_passes/current/pp_diffusion_passes_faithful_v11.png`
 (+ `.gcode` beside it).
 
 ## Pen assignment

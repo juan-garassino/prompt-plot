@@ -1,5 +1,5 @@
 # Science critique — ising r03 · statistical physics (2D Ising at Tc) · 2026-09-28
-render: ~/Downloads/pp_ising_COASTLINE_v8.png (gcode ~/Downloads/pp_ising_COASTLINE_v8.gcode, 28118 cmds, a4 portrait)
+render: gallery/studio/ising/current/pp_ising_COASTLINE_v8.png (gcode gallery/studio/ising/current/pp_ising_COASTLINE_v8.gcode, 28118 cmds, a4 portrait)
 
 **Missing inputs (finding):** `studio/ising/dossier.md`, `encoding.md` and `LEDGER.md` do not exist.
 There are no §7 check numbers, no §4 lies list and no §5 misconception. Checks below use the brief

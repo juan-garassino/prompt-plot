@@ -5,14 +5,14 @@ Exact recreation of `studio/interference-annotated/ref/reference.png`
 
 - Piece: `piece.py`, `attention_interference(rng, bounds, colors=5)`.
   **Nothing under `promptplot/` was modified** (and nothing there was reverted).
-- Final render: `~/Downloads/pp_interf_annot_v8.png` (+ `.gcode`). Eight renders,
+- Final render: `gallery/studio/interf_annot/current/pp_interf_annot_v8.png` (+ `.gcode`). Eight renders,
   seven real iteration rounds.
 - Command:
   ```
   .venv/bin/python scripts/render_candidate.py studio/interference-annotated/rounds/r01/piece.py \
     --fn attention_interference --seed 7 --colors 5 --paper a4 --orientation portrait \
     --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-    --out ~/Downloads/pp_interf_annot_v8.png
+    --out gallery/studio/interf_annot/current/pp_interf_annot_v8.png
   ```
 - Pens: 0 red (Q) · 1 blue (K) · 2 ochre (V) · 3 green (Z) · 4 black.
 

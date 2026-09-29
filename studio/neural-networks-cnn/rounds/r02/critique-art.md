@@ -1,5 +1,5 @@
 # Art critique — neural-networks-cnn r02 · canon: none declared (lineage: Nees, *Schotter*) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_one-valley_v12.png
+render: gallery/neural-networks/cnn/current/pp_neural_networks_cnn_one-valley_v12.png
 
 No `encoding.md` or `BRIEF.md` in the slug. The plate is judged against the HANDOFF thesis and lineage, `studio/nets/cnn.md` and DESIGN_RUBRIC. The HANDOFF names no STYLES.md canon, so the plate is judged as an answer to *Schotter*. Coordinates below are sheet mm (x right, y up), as in the preview axes. The drawable margin is 10 mm (x 10–200, y 10–287).
 

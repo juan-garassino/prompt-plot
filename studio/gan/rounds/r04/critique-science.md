@@ -1,5 +1,5 @@
 # Science critique — gan r04 · machine learning (GAN training dynamics, game theory) · 2026-09-28
-render: ~/Downloads/pp_gan_iterate_v16.png (gcode `~/Downloads/pp_gan_iterate_v16.gcode`: 13,962 cmds, 1,987 pen-down strokes, pens black/crimson/dodgerblue)
+render: gallery/studio/gan/trials/pp_gan_iterate_v16.png (gcode `gallery/studio/gan/trials/pp_gan_iterate_v16.gcode`: 13,962 cmds, 1,987 pen-down strokes, pens black/crimson/dodgerblue)
 
 Pass 2. `studio/gan/dossier.md` and `encoding.md` still do not exist, so every number below was recomputed from
 first principles. Model: Dirac-GAN (Mescheder et al. 2018), f(t) = −log(1+e^−t), f′(t) = 1/(1+e^t),

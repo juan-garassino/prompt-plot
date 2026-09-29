@@ -1,5 +1,5 @@
-render: ~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.png
-gcode: ~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.gcode
+render: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.png
+gcode: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.gcode
 paper: a4 portrait, cream
 pens: 0 black = lattices + card edges · 1 crimson = receptive field (top unit, its exact footprint on every map, dotted corner rails) · 2 black = type
 compare-to: gallery/neural-networks/cnn/promoted/pp_cnn_dashes.png | reference: none

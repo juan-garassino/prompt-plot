@@ -1,5 +1,5 @@
 # Science critique — ising r02 · statistical physics (2D Ising, critical phenomena) · 2026-09-28
-render: ~/Downloads/pp_ising_COOLING_STRIP_v9.png (gcode ~/Downloads/pp_ising_COOLING_STRIP_v9.gcode, 49001 cmds, 5958 strokes: pen 0 black 5944, pen 1 crimson 14)
+render: gallery/studio/ising/current/pp_ising_COOLING_STRIP_v9.png (gcode gallery/studio/ising/current/pp_ising_COOLING_STRIP_v9.gcode, 49001 cmds, 5958 strokes: pen 0 black 5944, pen 1 crimson 14)
 
 **Missing inputs (a finding in itself):** `studio/ising/dossier.md`, `encoding.md` and `LEDGER.md` do not exist,
 so there are no §7 check numbers, §4 lies list or §5 misconception to grade against. The checks below

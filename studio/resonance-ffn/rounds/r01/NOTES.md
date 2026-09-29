@@ -11,7 +11,7 @@ pen plot. Reproduction, not design — nothing invented or substituted.
 .venv/bin/python scripts/render_candidate.py studio/resonance-ffn/rounds/r01/piece.py \
   --fn attention_as_resonance_ffn --seed 7 --colors 6 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,darkviolet,black \
-  --out ~/Downloads/pp_res_ffn_v9.png
+  --out gallery/studio/res_ffn/current/pp_res_ffn_v9.png
 ```
 
 `--colors 6` is required; the script's default would fold six pens onto the palette length.

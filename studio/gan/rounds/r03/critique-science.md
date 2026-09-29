@@ -1,5 +1,5 @@
 # Science critique — gan r03 · machine learning (GAN training dynamics, game theory) · 2026-09-28
-render: ~/Downloads/pp_gan_two-players-interlaced_v10.png (gcode alongside; 33735 cmds, pens black/crimson/dodgerblue)
+render: gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.png (gcode alongside; 33735 cmds, pens black/crimson/dodgerblue)
 
 Pass 1 (cold). `studio/gan/dossier.md`, `encoding.md` and `LEDGER.md` do not exist. **Finding:** there are
 no §7 check numbers to verify and no written channel mapping beyond HANDOFF. Everything below was recomputed

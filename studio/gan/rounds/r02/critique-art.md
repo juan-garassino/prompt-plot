@@ -1,5 +1,5 @@
 # Art critique — gan r02 · canon: none declared (lineage: Kandinsky, Point and Line to Plane) · 2026-09-28
-render: ~/Downloads/pp_gan_escape-spiral_v8.png
+render: gallery/studio/gan/current/pp_gan_escape-spiral_v8.png
 
 No `encoding.md` and no `studio/gan/BRIEF.md`. The only brief on file is `studio/nets/gan.md` (twin opposing terrains), and this round leaves it behind on purpose. Checks below come from the HANDOFF's lineage claim and the rubric.
 

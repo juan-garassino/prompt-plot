@@ -1,5 +1,5 @@
 # Science critique — ising r04 · statistical physics (2D Ising, critical phenomena) · 2026-09-28
-render: ~/Downloads/pp_ising_r04_iterate_v5.png (gcode ~/Downloads/pp_ising_r04_iterate_v5.gcode, 12821 cmds, 684 strokes: pen 0 black 673, pen 1 crimson 11). Seed sweep ~/Downloads/pp_ising_r04_iterate_v4_s3/_s13 parsed the same way.
+render: gallery/studio/ising/current/pp_ising_r04_iterate_v5.png (gcode gallery/studio/ising/current/pp_ising_r04_iterate_v5.gcode, 12821 cmds, 684 strokes: pen 0 black 673, pen 1 crimson 11). Seed sweep ~/Downloads/pp_ising_r04_iterate_v4_s3/_s13 parsed the same way.
 
 **Missing inputs (third round running):** `studio/ising/dossier.md` and `encoding.md` still do not exist, so there are no §7 check numbers, no §4 lies list and no §5 misconception. The checks below use the brief (`studio/physics/ising.md`), the HANDOFF, the claims the sheet prints, and an **independent Swendsen–Wang simulation of the declared setup**:
 - geometry: 212 × 137, T/Tc = 0.70 + 1.10(i+½)/212, periodic in y, left edge bonded to a fixed + wall, right edge free;

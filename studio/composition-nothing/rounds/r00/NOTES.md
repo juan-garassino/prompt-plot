@@ -38,7 +38,7 @@ no edit was missed, and Write + 373 is exactly v2.
 ```
 
 This is the same seed, paper and palette as the original v2 call. The original wrote to
-`~/Downloads/pp_composition_nothing_v2.png`.
+`gallery/studio/composition_nothing/current/pp_composition_nothing_v2.png`.
 
 ## Comparison with the gallery v2 PNG (both 2283 × 1703)
 

@@ -9,10 +9,10 @@ Schotter's gradient.
 ```
 .venv/bin/python scripts/render_candidate.py studio/neural-networks-cnn/rounds/r02/piece.py \
   --fn cnn_one_valley --seed 7 --paper a4 --palette black,crimson \
-  --out ~/Downloads/pp_neural_networks_cnn_one-valley_v12.png
+  --out gallery/neural-networks/cnn/current/pp_neural_networks_cnn_one-valley_v12.png
 ```
 
-- Final: `~/Downloads/pp_neural_networks_cnn_one-valley_v12.png` + `.gcode` (identical to v11 apart from the header timestamp)
+- Final: `gallery/neural-networks/cnn/current/pp_neural_networks_cnn_one-valley_v12.png` + `.gcode` (identical to v11 apart from the header timestamp)
 - a4 portrait, drawable 10–200 × 10–287 mm, cream. Pens: 0 black, 1 crimson.
 - The seed does nothing, because the piece has no randomness at all: every coordinate comes from the network. Seeds 2, 7 and 11 give byte-identical output (sha1 `65596811b611`, 24,142 raw commands).
 - Files in this round: `piece.py` (the plate), `compute_maps.py` (the torch forward/backward pass, run once), `maps.npz` (374 KB, the cached arrays the plate reads).

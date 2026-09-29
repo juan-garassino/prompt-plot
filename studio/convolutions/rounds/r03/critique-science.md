@@ -1,6 +1,6 @@
 # Science critique — convolutions r03 · machine learning (convolutional networks) · 2026-09-28
-render: ~/Downloads/pp_convolutions_sliding-window_v10.png
-gcode:  ~/Downloads/pp_convolutions_sliding-window_v10.gcode (48,505 cmds, 750 strokes: pen0 489 / pen1 136 / pen2 125)
+render: gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.png
+gcode:  gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.gcode (48,505 cmds, 750 strokes: pen0 489 / pen1 136 / pen2 125)
 pass: 1 (cold). `studio/convolutions/LEDGER.md` does not exist.
 
 **Finding 0 — there is no dossier.md and no encoding.md for this slug.** No §7 check numbers, no §4

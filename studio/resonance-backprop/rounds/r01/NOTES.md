@@ -11,10 +11,10 @@ EXACT-RECREATION round for `studio/resonance-backprop/ref/reference.png`
 .venv/bin/python scripts/render_candidate.py studio/resonance-backprop/rounds/r01/piece.py \
   --fn attention_as_resonance --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_res_backprop_v1.png
+  --out gallery/studio/res_backprop/trials/pp_res_backprop_v1.png
 ```
 
-`~/Downloads/pp_res_backprop_v1.png` (+ `.gcode`).
+`gallery/studio/res_backprop/trials/pp_res_backprop_v1.png` (+ `.gcode`).
 **55,178 commands · 34,910 draw moves · 4,054 pen cycles · draw 11,389 mm ·
 travel 11,904 mm · 0 bounds violations.** Siblings landed 21k–59k.
 

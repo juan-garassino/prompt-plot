@@ -9,7 +9,7 @@ continuous, not to remove the waves". So this round is v13 byte for byte except 
 .venv/bin/python scripts/render_candidate.py studio/resonance/rounds/r10/piece.py \
   --fn attention_as_resonance --seed 7 --colors 6 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,darkviolet,black \
-  --out ~/Downloads/pp_resonance_continuous-dots_v1.png
+  --out gallery/studio/resonance/current/pp_resonance_continuous-dots_v1.png
 ```
 
 ## The one change

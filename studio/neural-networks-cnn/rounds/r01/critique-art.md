@@ -1,5 +1,5 @@
 # Art critique — neural-networks-cnn r01 · canon: none declared (lineage: early computer art, Molnár *(Dés)Ordres*) · 2026-09-28
-render: ~/Downloads/pp_neural_networks_cnn_pooling-cascade_v11.png
+render: gallery/neural-networks/cnn/trials/pp_neural_networks_cnn_pooling-cascade_v11.png
 
 No `encoding.md` or `BRIEF.md` in the slug. Judged against the HANDOFF thesis and lineage, `studio/nets/cnn.md` and DESIGN_RUBRIC. HANDOFF names no STYLES.md canon, so the plate is judged as a Molnár answer.
 

@@ -6,10 +6,10 @@
 .venv/bin/python scripts/render_candidate.py studio/attention-weaving/rounds/r04/piece.py \
   --fn attention_weaving_mirror_drain --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_mirror-drain_v13.png
+  --out gallery/studio/attention_weaving/current/pp_attention_weaving_mirror-drain_v13.png
 ```
 
-- final: `~/Downloads/pp_attention_weaving_mirror-drain_v13.png` / `.gcode`, seed 7
+- final: `gallery/studio/attention_weaving/current/pp_attention_weaving_mirror-drain_v13.png` / `.gcode`, seed 7
   (v10 is byte-identical to v13 apart from the timestamp header)
 - trail: v1–v10 seed 7 (v1 ψ-bend, v2 conformal fold (rejected), v3–v10 pitch-limited bend
   with orthogonal-trajectory V), v11 = seed 3, v12 = seed 11

@@ -7,7 +7,7 @@ scores are a long rail, softmax is the vanishing point that cuts that rail down
 to one, and the gradient is the same rays continued out the far side of the
 apex.*
 
-Final render: `~/Downloads/pp_attention_passes_abstract_v9.png`
+Final render: `gallery/studio/attention_passes/current/pp_attention_passes_abstract_v9.png`
 (+ `.gcode` beside it, with the provenance header).
 
 ---
@@ -115,7 +115,7 @@ Read first, then ruled out:
   studio/attention-passes/rounds/r03/piece.py \
   --fn attention_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_attention_passes_abstract_v9.png
+  --out gallery/studio/attention_passes/current/pp_attention_passes_abstract_v9.png
 ```
 
 **Paper: A3 landscape.** The order demands it. The raw rail has to be long

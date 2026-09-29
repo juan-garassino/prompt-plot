@@ -1,6 +1,6 @@
 # Science critique — convolutions r04 · machine learning (convolutional networks) · 2026-09-28
-render: ~/Downloads/pp_convolutions_iterate_v9.png
-gcode:  ~/Downloads/pp_convolutions_iterate_v9.gcode (48,372 cmds, 823 strokes: pen0 692 / pen1 70 / pen2 61; draw 11,074 mm = 9,293 black + 796 crimson + 986 blue)
+render: gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.png
+gcode:  gallery/studio/convolutions/trials/pp_convolutions_iterate_v9.gcode (48,372 cmds, 823 strokes: pen0 692 / pen1 70 / pen2 61; draw 11,074 mm = 9,293 black + 796 crimson + 986 blue)
 pass: 2 (LEDGER.md read after the cold pass).
 
 **Finding 0 (still open, S5) — there is no `dossier.md` and no `encoding.md` for this slug.** No §7

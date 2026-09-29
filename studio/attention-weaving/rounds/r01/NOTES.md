@@ -4,7 +4,7 @@ Faithful recreation of `studio/attention-weaving/ref/reference.png` (1122×1402,
 ratio 0.800), with the brief's explicit licence to fix the reference's crowding.
 
 - **Piece**: `studio/attention-weaving/rounds/r01/piece.py`, entry `attention_weaving`
-- **Render**: `~/Downloads/pp_attention_weaving_faithful_v15.png` (+ `.gcode` beside it)
+- **Render**: `gallery/studio/attention_weaving/current/pp_attention_weaving_faithful_v15.png` (+ `.gcode` beside it)
 - **Paper**: `--paper 24x30` portrait. `PaperConfig.from_size` accepts it and reads
   it as centimetres → **240 × 300 mm**, drawable 220 × 280 mm, i.e. exactly 0.800.
   No fallback to A3 was needed.
@@ -13,7 +13,7 @@ ratio 0.800), with the brief's explicit licence to fix the reference's crowding.
 .venv/bin/python scripts/render_candidate.py studio/attention-weaving/rounds/r01/piece.py \
   --fn attention_weaving --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_faithful_v15.png
+  --out gallery/studio/attention_weaving/current/pp_attention_weaving_faithful_v15.png
 ```
 
 `--colors` defaults to the palette length, so the piece is called with 5 pens.

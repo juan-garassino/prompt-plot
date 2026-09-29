@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import logging
+import re
 from datetime import datetime
 import sys
 from pathlib import Path
@@ -23,6 +24,32 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 logger = logging.getLogger(__name__)
+
+
+GALLERY = REPO / "gallery"
+_VERSION = re.compile(r"^(?P<stem>.+?)_v(?P<n>\d+)$")
+
+
+def name_taken(out: Path) -> tuple[Path | None, str | None]:
+    """Where a render of this name already lives (Downloads or the gallery archive), and the next free version.
+
+    Renders are staged in ~/Downloads and later MOVED into gallery/, so a designer that
+    picks its next _vN by listing Downloads alone would restart at v1 and clobber the
+    archived v1 on the next sync. Refusing here makes that impossible for every caller.
+    """
+    names = {out.name, out.with_suffix(".gcode").name}
+    hits = [out] if out.exists() else []
+    if GALLERY.is_dir():
+        hits += [q for q in GALLERY.rglob("pp_*") if q.name in names]
+    m = _VERSION.match(out.stem)
+    nxt = None
+    if m:
+        pat = re.compile(re.escape(m["stem"]) + r"_v(\d+)$")
+        seen = [int(g[1]) for q in list(out.parent.glob(m["stem"] + "_v*"))
+                + (list(GALLERY.rglob(m["stem"] + "_v*")) if GALLERY.is_dir() else [])
+                if (g := pat.match(q.stem))]
+        nxt = f"{m['stem']}_v{max(seen, default=0) + 1}{out.suffix}"
+    return (hits[0] if hits else None), nxt
 
 
 def main() -> int:
@@ -63,6 +90,12 @@ def main() -> int:
         "visualizer fall back to its own cycle and every pen looks wrong.",
     )
     args = ap.parse_args()
+    taken, nxt = name_taken(Path(args.out).expanduser())
+    if taken is not None:
+        # never overwrite a render: Downloads is staging, gallery/ is the archive
+        print(f"refusing: {Path(args.out).name} already exists at {taken}. "
+              f"Use the next free version: {nxt or 'a new _vN'}", file=sys.stderr)
+        return 2
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 

@@ -6,10 +6,10 @@
 .venv/bin/python scripts/render_candidate.py studio/attention-weaving/rounds/r06/piece.py \
   --fn attention_weaving_iterate --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_iterate_v16.png
+  --out gallery/studio/attention_weaving/trials/pp_attention_weaving_iterate_v16.png
 ```
 
-- final: `~/Downloads/pp_attention_weaving_iterate_v16.png` / `.gcode`, seed 7. v13 is geometrically
+- final: `gallery/studio/attention_weaving/trials/pp_attention_weaving_iterate_v16.png` / `.gcode`, seed 7. v13 is geometrically
   identical; v16 was re-rendered after the docstring edit so the shipped code is the code that drew it.
 - other seeds: v14 = seed 3, v15 = seed 11.
 - trail (all seed 7): v1 first topology · v2 κ-free DP, bend BR 1.0 (lanes through the title) ·

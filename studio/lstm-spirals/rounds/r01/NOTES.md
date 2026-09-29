@@ -4,12 +4,12 @@ Recreation of `studio/lstm-spirals/ref/reference.png` with one correction:
 **both spiral centres sit exactly on the central vertical axis.**
 
 - Piece: `piece.py`, `lstm_spirals(rng, bounds, colors=2)` — nothing under `promptplot/` was modified.
-- Final render: `~/Downloads/pp_lstm_spirals_v10.png` (+ `.gcode`). Ten renders, six real iteration rounds.
+- Final render: `gallery/studio/lstm_spirals/current/pp_lstm_spirals_v10.png` (+ `.gcode`). Ten renders, six real iteration rounds.
 - Command:
   ```
   .venv/bin/python scripts/render_candidate.py studio/lstm-spirals/rounds/r01/piece.py \
     --fn lstm_spirals --seed 7 --colors 2 --paper a4 --orientation portrait \
-    --palette black,crimson --out ~/Downloads/pp_lstm_spirals_v10.png
+    --palette black,crimson --out gallery/studio/lstm_spirals/current/pp_lstm_spirals_v10.png
   ```
 
 ## The field that was integrated

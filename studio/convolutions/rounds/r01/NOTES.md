@@ -4,12 +4,12 @@ Recreation of `studio/convolutions/ref/reference.png` (1536×1024) with an expli
 licence to fix the reference's crowding.
 
 - **Piece**: `studio/convolutions/rounds/r01/piece.py`, entry point `convolutions`.
-- **Render**: `~/Downloads/pp_convolutions_v1.png`
+- **Render**: `gallery/studio/convolutions/current/pp_convolutions_v1.png`
 - **Command**:
   ```
   .venv/bin/python scripts/render_candidate.py studio/convolutions/rounds/r01/piece.py \
     --fn convolutions --seed 7 --colors 4 --paper a4 --orientation landscape \
-    --palette black,crimson,dodgerblue,olive --out ~/Downloads/pp_convolutions_v1.png
+    --palette black,crimson,dodgerblue,olive --out gallery/studio/convolutions/current/pp_convolutions_v1.png
   ```
 - **Pens**: 0 black · 1 red · 2 blue · 3 olive. A4 landscape, cream.
 

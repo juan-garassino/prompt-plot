@@ -4,10 +4,10 @@
 ```
 .venv/bin/python scripts/render_candidate.py studio/gan/rounds/r03/piece.py \
   --fn gan_darn --seed 7 --paper a4 --palette black,crimson,dodgerblue \
-  --out ~/Downloads/pp_gan_two-players-interlaced_v10.png
+  --out gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.png
 ```
-- final PNG: `~/Downloads/pp_gan_two-players-interlaced_v10.png`
-- final GCODE: `~/Downloads/pp_gan_two-players-interlaced_v10.gcode`
+- final PNG: `gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.png`
+- final GCODE: `gallery/studio/gan/current/pp_gan_two-players-interlaced_v10.gcode`
 - seed 7, A4 portrait, white/cream. (v9 has identical geometry; v10 is the one
   rendered from the final source after a docstring/import tidy.)
 - self-rounds: v1 → v10 (v1 first weave · v2 run continues until it leaves the sheet, display title ·

@@ -1,5 +1,5 @@
 # Science critique — convolutions r02 · machine learning (convolutional networks) · 2026-09-28
-render: ~/Downloads/pp_convolutions_real-kernel_v9.png (gcode: ~/Downloads/pp_convolutions_real-kernel_v9.gcode, 47,743 cmds, 1,446 pen-down strokes: c0 682 · c1 382 · c2 318 · c3 64)
+render: gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.png (gcode: gallery/studio/convolutions/current/pp_convolutions_real-kernel_v9.gcode, 47,743 cmds, 1,446 pen-down strokes: c0 682 · c1 382 · c2 318 · c3 64)
 
 **Process finding:** `studio/convolutions/` has **no `dossier.md`, no `encoding.md`, no `LEDGER.md`**.
 There is no §7 check-number list and no §4 lies list to grade against. Every check number below

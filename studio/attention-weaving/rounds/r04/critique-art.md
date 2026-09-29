@@ -1,5 +1,5 @@
 # Art critique — attention-weaving r04 · canon: deco (inferred; HANDOFF declares no canon and no `lineage:` line) · 2026-09-28
-render: ~/Downloads/pp_attention_weaving_mirror-drain_v13.png (24x30 portrait, cream, 5 pens)
+render: gallery/studio/attention_weaving/current/pp_attention_weaving_mirror-drain_v13.png (24x30 portrait, cream, 5 pens)
 
 ## Scores
 

@@ -6,11 +6,11 @@
 .venv/bin/python scripts/render_candidate.py studio/convolutions/rounds/r03/piece.py \
   --fn convolutions_sliding_window --seed 7 --paper a4 --orientation landscape \
   --palette black,crimson,dodgerblue \
-  --out ~/Downloads/pp_convolutions_sliding-window_v10.png
+  --out gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.png
 ```
 
-- final PNG: `~/Downloads/pp_convolutions_sliding-window_v10.png`
-- final GCODE: `~/Downloads/pp_convolutions_sliding-window_v10.gcode`
+- final PNG: `gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.png`
+- final GCODE: `gallery/studio/convolutions/current/pp_convolutions_sliding-window_v10.gcode`
 - seed 7. Seeds 3 and 11 were also rendered (`_v8_s3`, `_v8_s11`). The seed only moves the
   ±0.12-pitch fbm wobble in the thumbprint rings, and the three renders look the same at
   sheet scale. Every number on the plate is deterministic and does not depend on the seed.

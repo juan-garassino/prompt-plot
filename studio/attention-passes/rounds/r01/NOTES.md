@@ -13,10 +13,10 @@ Entry point: `attention_passes(rng, bounds, colors=3)` in `piece.py`.
 .venv/bin/python scripts/render_candidate.py studio/attention-passes/rounds/r01/piece.py \
   --fn attention_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_attention_passes_faithful_v12.png
+  --out gallery/studio/attention_passes/current/pp_attention_passes_faithful_v12.png
 ```
 
-Final render: `~/Downloads/pp_attention_passes_faithful_v12.png`
+Final render: `gallery/studio/attention_passes/current/pp_attention_passes_faithful_v12.png`
 (+ `.gcode` beside it). Versions v1…v12 are all kept; nothing was overwritten.
 
 Deterministic: two runs at seed 7 produce a byte-identical GCode body

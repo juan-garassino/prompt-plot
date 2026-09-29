@@ -1,5 +1,5 @@
 # Science critique — attention-weaving r06 · machine learning (transformer attention, softmax) · 2026-09-28
-render: ~/Downloads/pp_attention_weaving_iterate_v16.png (gcode: ~/Downloads/pp_attention_weaving_iterate_v16.gcode, seed 7, 24x30 portrait, 15 693 cmds, 5 pens)
+render: gallery/studio/attention_weaving/trials/pp_attention_weaving_iterate_v16.png (gcode: gallery/studio/attention_weaving/trials/pp_attention_weaving_iterate_v16.gcode, seed 7, 24x30 portrait, 15 693 cmds, 5 pens)
 
 Pass 2. There is still **no `dossier.md` and no `encoding.md`** (S5), so there are no §7 check numbers and no §4 lies list to grade against. The check numbers below are the claims printed in the footer, each recomputed from the geometry the sheet itself draws. The lies list is the BRIEF "What must be TRUE" list plus the open S mandates.
 

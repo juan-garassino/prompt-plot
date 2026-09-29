@@ -4,7 +4,7 @@ Piece: `studio/reaction-diffusion/rounds/r01/piece.py`, entry
 `studio_reaction_diffusion(rng, bounds, colors=3)`.
 Brief: `studio/physics/reaction-diffusion.md`.
 Render:
-`.venv/bin/python scripts/render_candidate.py studio/reaction-diffusion/rounds/r01/piece.py --fn studio_reaction_diffusion --seed 7 --paper a4 --out ~/Downloads/pp_reaction_diffusion_v8.png`
+`.venv/bin/python scripts/render_candidate.py studio/reaction-diffusion/rounds/r01/piece.py --fn studio_reaction_diffusion --seed 7 --paper a4 --out gallery/studio/reaction_diffusion/current/pp_reaction_diffusion_v8.png`
 Nothing under `promptplot/` was modified.
 
 ---

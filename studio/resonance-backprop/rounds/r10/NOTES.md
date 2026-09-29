@@ -14,7 +14,7 @@ The old helper sampled every 0.30 mm and DROPPED every one-sample run, so dot-si
 .venv/bin/python scripts/render_candidate.py studio/resonance-backprop/rounds/r10/piece.py \
   --fn attention_as_resonance --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_res_backprop_continuous-dots_v1.png
+  --out gallery/studio/res_backprop/current/pp_res_backprop_continuous-dots_v1.png
 ```
 
 ## Plot budget (vs r01)

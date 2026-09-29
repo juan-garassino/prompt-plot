@@ -9,7 +9,7 @@ Render:
 .venv/bin/python scripts/render_candidate.py studio/orrery/rounds/r01/piece.py \
   --fn orrery_attention --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_orrery_v6.png
+  --out gallery/studio/orrery/current/pp_orrery_v6.png
 ```
 
 Plot cost: **21 425 commands · draw 7 683.7 mm · travel 7 449.5 mm · 1 887 pen

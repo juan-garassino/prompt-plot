@@ -1,5 +1,5 @@
 # Science critique — attention-weaving r05 · machine learning (transformer attention, softmax) · 2026-09-28
-render: ~/Downloads/pp_attention_weaving_area-smooth_v7.png (gcode: ~/Downloads/pp_attention_weaving_area-smooth_v7.gcode, 17 302 cmds, 5 pens)
+render: gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.png (gcode: gallery/studio/attention_weaving/current/pp_attention_weaving_area-smooth_v7.gcode, 17 302 cmds, 5 pens)
 
 **Missing inputs (finding):** there is no `studio/attention-weaving/dossier.md`, `encoding.md`, or `LEDGER.md`,
 so there are no §7 check numbers, no §4 lies list, and no §5 misconception to grade against. The check numbers below
