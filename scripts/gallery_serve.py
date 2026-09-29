@@ -163,6 +163,7 @@ def main() -> int:
     # from the network.
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     logger.info("gallery on %s", url)
+    logger.info("directions board on %s", url.rsplit("/", 1)[0] + "/board.html")
     logger.info("feedback -> studio/feedback.jsonl, studio/<slug>/FEEDBACK.md, "
                 "studio/DIRECTIONS.md, studio/QUEUE.md")
     if args.allow_plot:

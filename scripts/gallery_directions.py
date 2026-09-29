@@ -64,6 +64,33 @@ _CANON_WORDS: tuple[tuple[str, str], ...] = (
 )
 
 
+# order free text -> DESIGN_RUBRIC's twelve non-circular orders, or "circular" (the studio's old
+# default: rings, spirals, orbits, radial bursts) — so the board can count the circle share
+_ORDER_WORDS: tuple[tuple[str, str], ...] = (
+    ("ruled field", r"ruled|rulings?\b|line field"),
+    ("ridge stack", r"ridge|joy division|unknown pleasures|profiles?"),
+    ("orthogonal partition", r"partition|mondrian|orthogonal subdivision|belts?"),
+    ("tessellation", r"tessellat|voronoi|truchet|lattice|tiling|stitch"),
+    ("branching", r"branch|tree|delta|dendrit"),
+    ("folding", r"fold|crease|origami|pleat"),
+    ("straight-line moiré", r"moir"),
+    ("network", r"network|graph\b|lewitt"),
+    ("scatter gradient", r"scatter|schotter|stipple"),
+    ("interlacing", r"interlac|weav|braid|knot"),
+    ("projective", r"projective|axonometr|vanishing|proun|perspective"),
+    ("typographic", r"typograph|glyph"),
+    ("circular", r"radial|concentric|spiral|orbit|ring|whorl|vortex|sunburst|nested|circle|helix"),
+)
+
+
+def order_norm(text: str) -> str:
+    low = (text or "").lower()
+    for name, pat in _ORDER_WORDS:
+        if re.search(pat, low):
+            return name
+    return ""
+
+
 # ---------------------------------------------------------------------------
 # small text helpers
 # ---------------------------------------------------------------------------
@@ -382,6 +409,7 @@ def _classify(slug: str, rows: list[dict], handoffs: dict[str, dict[str, str]]
             "canon": meta["canon"],
             "canon_norm": canon_norm(meta["canon"]),
             "order": meta["order"],
+            "order_norm": order_norm(meta["order"]),
             "lineage": meta["lineage"],
             "best": _best([by_round[x] for x in rounds]),
         }

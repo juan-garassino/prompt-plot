@@ -412,11 +412,35 @@ gitignored and would lose them):
 exact render Juan was looking at, what he wants changed, and any other plates he referenced
 with `@`. Treat a REWORK note the same way you would treat a brief.
 
-Verdicts, mapping to `promptplot/generative/CURATION.md`'s vocabulary:
+Render verdicts (keys 1–5 in the viewer; save at once and jump to the next undecided render),
+mapped to `promptplot/generative/CURATION.md`'s vocabulary:
 
-- **PROMOTE** (= KEEP) — this is the final version of that drawing
+- **PROMOTE** (= CURATION's KEEP) — this is the final version of that drawing
+- **KEEP** (= FLAVOUR) — good, keep it as a flavour; *not* CURATION's KEEP
 - **REWORK** (= REWORK) — good bones, fix what the note says
-- **CUT** (= KILL) — drop it
+- **ARCHIVE** (= PARKED) — not now: `gallery_apply` moves it to `archive/`, hidden unless
+  "show archived"; a later KEEP/REWORK restores it
+- **CUT** (= KILL) — drop it (`cut/`, never deleted)
+
+**Direction verdicts** judge the approach behind a set of renders — a direction is keyed by its
+root round (`r02`, `original`, a wildcard's round, or `x-<variant>` without a ledger), parsed from
+the LEDGERs by `scripts/gallery_directions.py` (`--audit` prints them): **WORKS / MAYBE / DEAD
+END** (keys `w`/`m`/`d`). They are stored as their own scope (target
+`<subject>/@direction/<key>`), never clear NEW, open each `studio/<slug>/FEEDBACK.md` as a
+Directions table with "rounds not to fork from", roll up in `studio/DIRECTIONS.md`, and **steer
+the studio**: `studio_descriptions.py --json` drops dead-end theses and lists `avoid_parents`,
+the workflow refuses a dead-end/archived/cut parent, and the lead and designer agents obey them.
+
+Viewer keys: `1–5` verdict · `w m d` direction · `z` back to the last judged · `n` next NEW ·
+`s` **swipe mode** (a full-screen card deck of undecided renders, newest first: → keep ·
+← archive · ↑ promote · ↓ rework + note · `x` cut · space skip · `z` undo · Esc back);
+Cmd/Ctrl/Alt never record anything. Filters: status, direction verdict, series, NEW, show
+archived; `#p=<path>` deep links. **`gallery/board.html`** is the directions board: a row per
+plate, a card per direction (latest render, canon/order/lineage chips, best critic scores,
+verdict tallies, W/M/D), and a patterns strip counting WORKS/DEAD END by canon and by order
+(`order_norm`: the twelve non-circular orders or "circular"). `python scripts/gallery_index.py`
+reuses cached hashes/stats (seconds; `--full` recomputes, `--views-only` rewrites only the two
+pages).
 
 To review: `python scripts/gallery_serve.py` opens the viewer on localhost and saves feedback
 straight to disk. The viewer's **Plot** panel can also send the plate on screen to the machine
@@ -448,10 +472,11 @@ process* (`promptplot plot frame` in another terminal does not satisfy it). Endp
 bare interpreter. Opened as a plain `file://` page it still browses, but a `file://` page
 cannot write, so saving there falls back to the clipboard.
 
-PROMOTE and CUT only *record* a decision — nothing moves until
-`python scripts/gallery_apply.py --dry-run` is checked and re-run without the flag. CUT moves
-a plate to a `cut/` tier and **never deletes**; every move is appended to `MOVES.tsv` and is
-reversible.
+Verdicts only *record* a decision — nothing moves until
+`python scripts/gallery_apply.py --dry-run` is checked and re-run without the flag. PROMOTE,
+ARCHIVE and CUT move files (`current`/`promoted`, `archive/`, `cut/`), KEEP/REWORK restore a
+parked one; nothing is ever deleted, every move is appended to `MOVES.tsv` and is reversible,
+and studio notes are repointed to the new paths. `studio_sync` never resurrects a parked render.
 
 ## Authored scenes — how a reference picture becomes a plotted drawing
 
