@@ -431,9 +431,16 @@ Directions table with "rounds not to fork from", roll up in `studio/DIRECTIONS.m
 the studio**: `studio_descriptions.py --json` drops dead-end theses and lists `avoid_parents`,
 the workflow refuses a dead-end/archived/cut parent, and the lead and designer agents obey them.
 
-Viewer keys: `1–5` verdict · `w m d` direction · `z` back to the last judged · `n` next NEW ·
+**Publish verdicts** pick the plates that go to Juan's portfolio site: **PUBLISH / UNPUBLISH**
+(the "Publish to site" toggle or `p`; only a render with its gcode beside it). Their own scope,
+target `<subject>/@publish/<basename>`, field `basename`; `gallery_feedback.latest_published()`
+(newest per plate, an unpublish removes it) is what the site exporter reads. They never move a
+file, never clear NEW and never appear in the markdown views. Status filter "published"; a
+magenta rail dot marks a published render.
+
+Viewer keys: `1–5` verdict · `w m d` direction · `p` publish · `z` back to the last judged · `n` next NEW ·
 `s` **swipe mode** (a full-screen card deck of undecided renders, newest first: → keep ·
-← archive · ↑ promote · ↓ rework + note · `x` cut · space skip · `z` undo · Esc back);
+← archive · ↑ promote · ↓ rework + note · `x` cut · space skip · `z` undo · `p` publish · Esc back);
 Cmd/Ctrl/Alt never record anything. Filters: status, direction verdict, series, NEW, show
 archived; `#p=<path>` deep links. **`gallery/board.html`** is the directions board: a row per
 plate, a card per direction (latest render, canon/order/lineage chips, best critic scores,

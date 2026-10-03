@@ -39,8 +39,13 @@ LOG = STUDIO / "feedback.jsonl"
 # family of renders (see gallery_directions.py) and steer future studio runs.
 RENDER_VERDICTS = ("promote", "keep", "rework", "archive", "cut")
 DIRECTION_VERDICTS = ("works", "maybe", "dead_end")
-VERDICTS = RENDER_VERDICTS + DIRECTION_VERDICTS  # compat: every verdict the log may hold
-SCOPES = {"render": RENDER_VERDICTS, "direction": DIRECTION_VERDICTS}
+# Publish verdicts pick the plates that go to Juan's portfolio site (read by the
+# site exporter through latest_published). They never move a file.
+PUBLISH_VERDICTS = ("publish", "unpublish")
+VERDICTS = RENDER_VERDICTS + DIRECTION_VERDICTS + PUBLISH_VERDICTS  # every verdict the log may hold
+SCOPES = {"render": RENDER_VERDICTS, "direction": DIRECTION_VERDICTS,
+          "publish": PUBLISH_VERDICTS}
+PUBLISH_EXT = (".png", ".jpg", ".jpeg", ".webp")
 # CURATION.md's vocabulary, so the two ledgers read alike. KEEP here is a
 # *flavour worth keeping*; CURATION.md's KEEP (the final) is PROMOTE.
 CURATION_EQUIV = {"promote": "KEEP", "keep": "FLAVOUR", "rework": "REWORK",
@@ -147,10 +152,11 @@ def resolve_piece(subject: str) -> Optional[str]:
 def append(record: Dict[str, Any]) -> Dict[str, Any]:
     """Append one judgement. Append-only: the log is history, not a ledger.
 
-    ``scope`` is ``render`` (default — every pre-scope record is one) or
-    ``direction``. A direction record's target is the virtual path
-    ``<subject>/@direction/<key>`` — inside gallery/, never a file — so
-    ``latest_by_target`` keeps the two kinds apart with no schema change.
+    ``scope`` is ``render`` (default — every pre-scope record is one),
+    ``direction`` or ``publish``. A direction record's target is the virtual path
+    ``<subject>/@direction/<key>`` and a publish record's is
+    ``<subject>/@publish/<basename>`` — inside gallery/, never a file — so
+    ``latest_by_target`` keeps the kinds apart with no schema change.
     """
     scope = str(record.get("scope") or "render").lower()
     if scope not in SCOPES:
@@ -166,6 +172,17 @@ def append(record: Dict[str, Any]) -> Dict[str, Any]:
         if any(seg.startswith("@") for seg in target.split("/")):
             raise ValueError(f"a render target cannot contain an @ segment: {target!r}")
         subject = record.get("subject") or "/".join(target.split("/")[:-2])
+    elif scope == "publish":
+        subject = str(record.get("subject") or "").strip("/")
+        basename = str(record.get("basename") or "")
+        if not subject or ".." in subject or "@" in subject:
+            raise ValueError(f"a publish record needs a plain subject, got {subject!r}")
+        if not basename or "/" in basename or not basename.lower().endswith(PUBLISH_EXT):
+            raise ValueError(f"publish basename must be an image file name {PUBLISH_EXT}, "
+                             f"got {basename!r}")
+        if target != f"{subject}/@publish/{basename}":
+            raise ValueError(f"publish target must be {subject}/@publish/{basename}, got {target!r}")
+        extra = {"basename": basename}
     else:
         subject = str(record.get("subject") or "").strip("/")
         key = str(record.get("direction") or "")
@@ -241,6 +258,20 @@ def latest_directions(records: Optional[List[Dict]] = None) -> Dict[Tuple[str, s
         if scope_of(r) == "direction" and r.get("direction"):
             out[(slug_for(r["subject"]), r["direction"])] = r
     return out
+
+
+def latest_published(records: Optional[List[Dict]] = None) -> Dict[Tuple[str, str], Dict]:
+    """Plates currently published to the site: (subject, basename) -> newest record.
+
+    The newest publish-scope record per plate decides, so an ``unpublish``
+    after a ``publish`` removes the plate. Render verdicts on the same file
+    never touch it.
+    """
+    out: Dict[Tuple[str, str], Dict] = {}
+    for r in records if records is not None else load():
+        if scope_of(r) == "publish" and r.get("basename"):
+            out[(r["subject"], r["basename"])] = r
+    return {k: r for k, r in out.items() if r["verdict"] == "publish"}
 
 
 def _fmt_refs(refs: List[str]) -> str:

@@ -455,6 +455,17 @@ def direction_snapshot() -> dict:
     return out
 
 
+def publish_snapshot() -> dict:
+    """{"<subject>|<basename>": {v, w}} -- the plates currently published to the site."""
+    out: dict[str, dict] = {}
+    for (subject, name), r in fb.latest_published().items():
+        w = _epoch(r.get("when", ""))
+        if w is None:
+            continue
+        out[f"{subject}|{name}"] = {"v": r["verdict"], "w": w}
+    return out
+
+
 def ledger_rows(subject: str) -> dict[str, dict]:
     """render basename -> {round, thesis, scores} from studio/<slug>/LEDGER.md.
 
@@ -622,6 +633,7 @@ def write_viewer(groups: list[dict]) -> None:
         "DATA": _inline(groups),
         "FEEDBACK": _inline(feedback_snapshot()),
         "DIRV": _inline(direction_snapshot()),
+        "PUBV": _inline(publish_snapshot()),
         "SERIES": _series_options(groups),
     })
     (GALLERY / "viewer.html").write_text(page)
@@ -693,10 +705,10 @@ TEMPLATE = """<!doctype html>
 <style>
 :root{--bg:#e6e7ea;--card:#fafafa;--ink:#15181e;--dim:#69707c;--line:#c9ced6;
 --ring:#2f6df6;--keep:#1b7038;--rework:#b26a00;--cut:#9a1b2f;--sheet:#f1eee5;--new:#7c3aed;
---flavour:#1f6f8b;--archive:#5f6773}
+--flavour:#1f6f8b;--archive:#5f6773;--pub:#b0197e}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b21;--ink:#e5e8ec;
 --dim:#828b98;--line:#272d36;--ring:#5c9cff;--keep:#4fbe77;--rework:#e0a33c;--cut:#ff7089;
---new:#b196ff;--flavour:#5bbcd8;--archive:#9aa3ae}}
+--new:#b196ff;--flavour:#5bbcd8;--archive:#9aa3ae;--pub:#f07ccf}}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
@@ -807,6 +819,9 @@ background:var(--new);color:#fff}
 .fb{min-width:0;height:100%;display:flex;flex-direction:column;gap:8px;
 background:var(--card);border:1px solid var(--line);border-radius:5px;padding:10px}
 .fb h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin:0}
+.pub{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:5px 0;font-weight:600;
+background:transparent;border:1px solid var(--pub);color:var(--pub)}
+.pub[aria-pressed=true]{background:var(--pub);color:#fff;border-color:transparent}
 .verdicts{display:flex;gap:4px}
 .verdicts button{flex:1;min-width:0;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;
 padding:6px 0;position:relative}
@@ -895,6 +910,7 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumb .dot{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%}
 .dot.promote{background:var(--keep)}.dot.keep{background:var(--flavour)}
 .dot.rework{background:var(--rework)}.dot.archive{background:var(--archive)}.dot.cut{background:var(--cut)}
+.thumb .dot.pub{top:14px;background:var(--pub)}
 .thumb.shelved img{opacity:.5}
 dialog{border:0;padding:0;background:transparent;max-width:99vw;max-height:99vh}
 dialog::backdrop{background:rgba(5,7,10,.92)}
@@ -914,7 +930,7 @@ dialog p{color:#ddd;font-size:12px;text-align:center;margin:6px 0 0}
     <option value="">every verdict</option><option value="undecided">undecided</option>
     <option value="promote">promote</option><option value="keep">keep</option>
     <option value="rework">rework</option><option value="archive">archive</option>
-    <option value="cut">cut</option></select>
+    <option value="cut">cut</option><option value="published">published</option></select>
   <select id="dirv" title="Verdict on the render's direction">
     <option value="">any direction</option><option value="works">works</option>
     <option value="maybe">maybe</option><option value="dead_end">dead end</option>
@@ -941,6 +957,8 @@ dialog p{color:#ddd;font-size:12px;text-align:center;margin:6px 0 0}
   </div>
   <div class="fb">
     <h2>Feedback</h2>
+    <button id="pub" class="pub" aria-pressed="false"
+      title="Publish this plate to the portfolio site, or take it down (p)">Publish to site</button>
     <div class="verdicts" id="verdicts"></div>
     <div class="dir" id="dir"></div>
     <div class="noteWrap">
@@ -1003,13 +1021,15 @@ dialog p{color:#ddd;font-size:12px;text-align:center;margin:6px 0 0}
     placeholder="rework — what should change? Enter saves · Esc cancels"></div>
   <div class="swbot"><span class="swtally" id="swtally"></span>
     <span class="swkeys">&#8594; keep &#183; &#8592; archive &#183; &#8593; promote &#183;
-      &#8595; rework &#183; x cut &#183; space skip &#183; z undo &#183; w m d direction</span></div>
+      &#8595; rework &#183; x cut &#183; space skip &#183; z undo &#183; w m d direction &#183;
+      p publish</span></div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const GROUPS = __DATA__;
 const FEED0 = __FEEDBACK__;   // render-verdict snapshot from index time, so file:// works
 const DIRV0 = __DIRV__;       // direction verdicts at index time: {subject: {key: {v, note, w}}}
+const PUBV0 = __PUBV__;       // plates published to the site at index time: {"subject|name": {v, w}}
 const KEY = 'ppgallery.v3';
 const SEEN_KEY = 'ppgallery.seen.v1';
 const RVERDICTS = ['promote', 'keep', 'rework', 'archive', 'cut'];   // keys 1..5
@@ -1023,6 +1043,7 @@ let BASE = FEED0.global || 0;  // Juan's last review; frozen once the page has l
 let newOnly = false, NEWN = 0, seenTimer = null;
 let SEEN = {};      // path -> 1 once shown in the hero >1 s; styling only, never clears NEW
 let RV = {}, RN = {}, DV = {};  // render verdict by path / by subject|name; direction verdicts
+let PV = {};        // "subject|name" -> {v, w} for every plate published to the site
 let judged = [];    // paths judged in this session, for z (back)
 try { SEEN = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}') || {}; } catch (_) {}
 
@@ -1087,6 +1108,24 @@ function verdicts() {   // RENDER scope only: snapshot + disk/browser records, n
   return Object.values(by);
 }
 
+/* PUBLISH-RULE — pure, so a test can run this block in node. The index-time
+   snapshot, then the live publish-scope records, newest per plate; an unpublish
+   removes the plate. Render and direction records are never looked at. */
+function publishIndex(base, fb) {
+  const pv = Object.assign({}, base);
+  for (const t in fb) {
+    const r = fb[t];
+    if (!r || r.scope !== 'publish' || !r.basename) continue;
+    let w = Date.parse(r.when) / 1000;
+    if (!isFinite(w)) w = Infinity;
+    const k = (r.subject || '') + '|' + r.basename, old = pv[k];
+    if (old && old.w > w) continue;
+    if (r.verdict === 'publish') pv[k] = { v: 'publish', w }; else delete pv[k];
+  }
+  return pv;
+}
+/* /PUBLISH-RULE */
+
 /* Verdict lookup. RV: by path. RN: by subject|basename, so a verdict survives
    gallery_apply moving the file to another tier. DV: direction verdicts. */
 function reindex() {
@@ -1111,10 +1150,12 @@ function reindex() {
     const s = r.subject || '', w = epochOf(r), old = (DV[s] || {})[r.direction];
     if (!old || w >= old.w) (DV[s] = DV[s] || {})[r.direction] = { v: r.verdict, note: r.note || '', w };
   }
+  PV = publishIndex(PUBV0, FB);
 }
 const recOf = (g, s) => RV[s.p] || RN[g.s + '|' + s.n] || null;
 const verdictOf = (g, s) => (recOf(g, s) || {}).v || null;
 const dirOf = (g, s) => (s.dk && (DV[g.s] || {})[s.dk]) || null;
+const isPublished = (g, s) => !!PV[g.s + '|' + s.n];
 
 function fmtTime(ts) {
   if (!ts) return '';
@@ -1298,6 +1339,21 @@ function recordDirection(v, g, s) {
   toast((info.label || s.dk) + ' — ' + DLABEL[v] + (online ? '' : ' (this browser only)'));
 }
 
+/* p / "Publish to site": toggle whether this plate goes to the portfolio site.
+   The exporter ships the render with its gcode, so a render without one cannot. */
+function recordPublish(g, s) {
+  if (!s) { s = cur(); if (!s) return; g = view[gi]; }
+  if (!s.g) { toast('no gcode beside this render — nothing to export'); return; }
+  const target = g.s + '/@publish/' + s.n, verdict = isPublished(g, s) ? 'unpublish' : 'publish';
+  const body = { scope: 'publish', target, subject: g.s, basename: s.n, verdict, note: '' };
+  const redraw = () => { reindex(); if (SW.on) swShow(); else rebuild(true); };
+  commit(target, body, e => { redraw();
+    toast('publish NOT saved — ' + s.n + ': ' + e.message); });
+  redraw();
+  toast(s.n + (verdict === 'publish' ? ' — published to site' : ' — taken off the site')
+        + (online ? '' : ' (this browser only)'));
+}
+
 /* ---------- @ autocomplete ---------- */
 let acItems = [], acSel = 0;
 function acHide() { $('ac').className = 'ac'; acItems = []; }
@@ -1331,7 +1387,8 @@ function acPick(i) {
 function shotOk(g, s, st, dv) {
   if (!$('arch').checked && shelved(s.t)) return false;
   if (newOnly && !s.fresh) return false;
-  if (st) {
+  if (st === 'published') { if (!isPublished(g, s)) return false; }
+  else if (st) {
     const v = verdictOf(g, s);
     if (st === 'undecided' ? (v || g.ref) : v !== st) return false;
   }
@@ -1504,7 +1561,7 @@ function draw() {
     ? '←→ drawing  ·  ↓ versions'
     : '←→ version  ·  ↑ drawings')
     + '  ·  1–5 promote/keep/rework/archive/cut  ·  w m d direction'
-    + '  ·  z back  ·  n new';
+    + '  ·  p publish  ·  z back  ·  n new';
 
   if (!view.length) {
     $('title').textContent = newOnly ? 'nothing new — every render has a verdict after it'
@@ -1532,10 +1589,16 @@ function draw() {
   $('sub').textContent = ''; $('sub').append(sub);
   $('stats').textContent = statline(s);
   $('round').textContent = roundline(s);
-  $('pos').textContent = (gi + 1) + ' / ' + view.length;
+  $('pos').textContent = (gi + 1) + ' / ' + view.length
+                       + ' · ' + Object.keys(PV).length + ' published';
 
   const saved = recOf(g, s), d = draft[s.p] || {};
   const verdict = d.verdict || (saved || {}).v || null;
+  const pub = isPublished(g, s);
+  $('pub').setAttribute('aria-pressed', pub);
+  $('pub').title = (pub ? 'Published — take this plate off the portfolio site'
+                        : 'Publish this plate to the portfolio site')
+                 + (s.g ? '' : ' (no gcode beside this render: cannot export)') + ' (p)';
   const vs = $('verdicts'); vs.textContent = '';
   RVERDICTS.forEach((k, i) => {
     const b = el('button', null, k); b.dataset.v = k;
@@ -1569,6 +1632,7 @@ function draw() {
     if (sh.fresh) t.append(el('div', 'nw' + (SEEN[sh.p] ? ' seen' : ''), 'NEW'));
     const v = verdictOf(g, sh);
     if (v) { const dot = el('div', 'dot ' + v); dot.title = v; t.append(dot); }
+    if (isPublished(g, sh)) { const pd = el('div', 'dot pub'); pd.title = 'published to site'; t.append(pd); }
     t.onclick = () => { si = k; focus = 'strip'; draw(); };
     rail.append(t);
   });
@@ -1586,6 +1650,7 @@ function shot(d) { if (!view.length) return;
 $('prev').onclick = () => { focus = 'hero'; step(-1); };
 $('next') && ($('next').onclick = () => { focus = 'hero'; step(1); });
 $('save').onclick = () => recordRender(null, false);
+$('pub').onclick = () => recordPublish();
 $('note').addEventListener('input', () => {
   const s = cur(); if (s) draft[s.p] = Object.assign({}, draft[s.p], { note: $('note').value });
   acUpdate();
@@ -1620,10 +1685,11 @@ document.addEventListener('keydown', e => {
     w:          () => recordDirection('works'),
     m:          () => recordDirection('maybe'),
     d:          () => recordDirection('dead_end'),
+    p:          () => recordPublish(),
   };
   RVERDICTS.forEach((v, i) => { map[String(i + 1)] = () => recordRender(v, true); });
   const fn = map[e.key];
-  if (!fn || e.repeat && /^[1-5wmd]$/.test(e.key)) return;   // a held key records once
+  if (!fn || e.repeat && /^[1-5wmdp]$/.test(e.key)) return;   // a held key records once
   // Without preventDefault the page scrolls and a focused button eats the key.
   e.preventDefault();
   fn();
@@ -1852,6 +1918,7 @@ function swipeKey(e) {
     w: () => { const c = SW.deck[SW.i]; if (c) recordDirection('works', c[0], c[1]); },
     m: () => { const c = SW.deck[SW.i]; if (c) recordDirection('maybe', c[0], c[1]); },
     d: () => { const c = SW.deck[SW.i]; if (c) recordDirection('dead_end', c[0], c[1]); },
+    p: () => { const c = SW.deck[SW.i]; if (c) recordPublish(c[0], c[1]); },
     Escape:     leaveSwipe,
     s:          leaveSwipe,
   };

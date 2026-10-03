@@ -66,7 +66,8 @@ def direction(verdict: str, key: str, **kw) -> dict:
 def test_verdict_vocabularies():
     assert fb.RENDER_VERDICTS == ("promote", "keep", "rework", "archive", "cut")
     assert fb.DIRECTION_VERDICTS == ("works", "maybe", "dead_end")
-    assert set(fb.VERDICTS) == set(fb.RENDER_VERDICTS) | set(fb.DIRECTION_VERDICTS)
+    assert set(fb.VERDICTS) == (set(fb.RENDER_VERDICTS) | set(fb.DIRECTION_VERDICTS)
+                                | set(fb.PUBLISH_VERDICTS))
     assert fb.CURATION_EQUIV == {"promote": "KEEP", "keep": "FLAVOUR", "rework": "REWORK",
                                  "archive": "PARKED", "cut": "KILL"}
 
