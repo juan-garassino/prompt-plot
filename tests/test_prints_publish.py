@@ -184,6 +184,17 @@ def test_publish_records_never_reach_the_markdown_views(env):
     assert "pp_ising_COASTLINE_v8.png" in (env / "ising" / "FEEDBACK.md").read_text()
 
 
+def test_a_publish_only_plate_writes_no_feedback_stub(env):
+    # a gallery-only subject (no studio/ folder) that is only ever published:
+    # write_views used to give it a studio/<slug>/FEEDBACK.md reading
+    # "_no render verdicts yet_"
+    fb.append(publish(subject="physics/big-bang", basename="pp_big_bang_v2.png"))
+    stats = fb.write_views()
+    assert stats["subjects"] == 0 and stats["plates"] == 0
+    assert not (env / "physics-big-bang").exists()
+    assert not (env / "ising" / "FEEDBACK.md").exists()
+
+
 # ---------------------------------------------------------------------------
 # gallery_apply: a publish record moves nothing
 # ---------------------------------------------------------------------------

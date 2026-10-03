@@ -390,6 +390,10 @@ def write_views() -> Dict[str, int]:
 
     by_slug: Dict[str, Dict[str, Any]] = {}
     for r in current.values():
+        # A publish verdict says nothing to an agent working on the piece: a
+        # publish-only plate must not get a FEEDBACK.md stub of its own.
+        if scope_of(r) not in ("render", "direction"):
+            continue
         g = by_slug.setdefault(slug_for(r["subject"]),
                                {"subjects": [], "renders": [], "dirs": {}, "piece": None})
         if r["subject"] not in g["subjects"]:
