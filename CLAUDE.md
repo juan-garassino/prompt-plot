@@ -438,6 +438,13 @@ target `<subject>/@publish/<basename>`, field `basename`; `gallery_feedback.late
 file, never clear NEW and never appear in the markdown views. Status filter "published"; a
 magenta rail dot marks a published render.
 
+`scripts/prints_render.py` turns a published plate's gcode into site renders — pure
+functions, no gallery globals: `parse_header` (the `; promptplot render` provenance block),
+`parse_polylines` (pen → polylines), `write_svg` (clean vector sheet, one `<path>` per pen, no
+background — the site supplies cream paper), `write_thumb`/`write_raster` (anti-aliased WebP on
+cream), `write_technical` (1:1 mm plate: mm axes + legend with the real pen colours, none of the
+preview's title/stats/travel chrome), `write_photo`. Deterministic, so outputs compare byte-exact.
+
 Viewer keys: `1–5` verdict · `w m d` direction · `p` publish · `z` back to the last judged · `n` next NEW ·
 `s` **swipe mode** (a full-screen card deck of undecided renders, newest first: → keep ·
 ← archive · ↑ promote · ↓ rework + note · `x` cut · space skip · `z` undo · `p` publish · Esc back);
