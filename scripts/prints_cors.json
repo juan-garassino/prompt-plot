@@ -1,0 +1,15 @@
+[
+ {
+  "origin": [
+   "https://artificial-artifacts.com",
+   "https://www.artificial-artifacts.com",
+   "https://artificial-artifacts.web.app",
+   "https://artificial-artifacts-staging.web.app",
+   "http://localhost:8081",
+   "http://127.0.0.1:8081"
+  ],
+  "method": ["GET"],
+  "responseHeader": ["Content-Type"],
+  "maxAgeSeconds": 3600
+ }
+]
