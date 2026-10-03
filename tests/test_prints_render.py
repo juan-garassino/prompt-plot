@@ -105,6 +105,21 @@ def test_parse_header_without_provenance_is_none(tmp_path):
     assert pr.parse_header(_write(tmp_path, "M5\nG0 X1 Y2\n")) is None
 
 
+def test_parse_header_accepts_the_round_local_wrapper_line(tmp_path):
+    # studio/millennium-p-vs-np round-local wrappers annotate the magic line and
+    # add a `; feed` key; both must parse, the unknown key is ignored.
+    text = HEADER.format(paper="a3 portrait, margin 15").replace(
+        "; promptplot render\n",
+        "; promptplot render (round-local wrapper: F600, G4 P1.0 pen dwells)\n",
+    )
+    text = text.replace("; colors", "; feed      600\n; colors")
+    head = pr.parse_header(_write(tmp_path, text + "M5\n"))
+    assert head is not None
+    assert head["paper"] == {"size": "a3", "orientation": "portrait", "margin_mm": 15}
+    assert head["seed"] == 7 and head["commands"] == 96753
+    assert "feed" not in head
+
+
 def test_paper_mm_uses_paper_config():
     assert pr.paper_mm("a4", "portrait") == (210.0, 297.0)
     assert pr.paper_mm("a3", "landscape") == (420.0, 297.0)
@@ -121,6 +136,26 @@ def test_parse_polylines_two_pens(tmp_path):
 def test_parse_polylines_defaults_to_pen_zero(tmp_path):
     g = "G0 X1 Y2\nM3\nG1 X3 Y4\nM5\n"
     assert pr.parse_polylines(_write(tmp_path, g)) == {0: [[(1.0, 2.0), (3.0, 4.0)]]}
+
+
+def test_fit_sheet_keeps_a_sheet_the_strokes_fit():
+    polys = {0: [[(10.0, 10.0), (400.0, 230.0)]], 1: [[(0.0, 0.0), (420.0, 240.0)]]}
+    assert pr.fit_sheet(polys, 420.0, 240.0) == (420.0, 240.0)
+
+
+def test_fit_sheet_transposes_a_pre_normalisation_plate(caplog):
+    # Plates rendered before PaperConfig.from_size normalised custom sizes
+    # (e.g. "42x24 landscape" drawn on a 240x420 sheet): bbox x 10-240, y 10-374.
+    polys = {0: [[(10.0, 10.0), (240.0, 374.0)]]}
+    with caplog.at_level(logging.WARNING, logger="prints_render"):
+        assert pr.fit_sheet(polys, 420.0, 240.0) == (240.0, 420.0)
+    assert "transpos" in caplog.text
+
+
+def test_fit_sheet_leaves_an_overflow_that_fits_neither_way():
+    polys = {0: [[(0.0, 0.0), (500.0, 500.0)]]}
+    assert pr.fit_sheet(polys, 420.0, 240.0) == (420.0, 240.0)
+    assert pr.fit_sheet({}, 420.0, 240.0) == (420.0, 240.0)
 
 
 # --------------------------------------------------------------------- pen_css
@@ -171,6 +206,14 @@ def test_write_thumb_keeps_aspect_and_draws_on_cream(tmp_path):
     assert all(abs(a - b) <= 4 for a, b in zip(corner, CREAM))  # webp is lossy
 
 
+def test_out_of_range_pen_index_warns_and_draws_black(tmp_path, caplog):
+    out = tmp_path / "p.svg"
+    with caplog.at_level(logging.WARNING, logger="prints_render"):
+        pr.write_svg({3: [[(0.0, 0.0), (1.0, 1.0)]]}, ["red"], 10.0, 10.0, {}, out)
+    assert 'stroke="#000000"' in out.read_text()
+    assert "pen index 3" in caplog.text
+
+
 def test_write_raster_is_the_large_thumb(tmp_path):
     out = tmp_path / "r.webp"
     size = pr.write_raster(TINY_POLYS, ["black", "gold"], 100.0, 50.0, {}, out, long_edge=80)
@@ -197,3 +240,19 @@ def test_write_photo_transposes_and_resizes(tmp_path):
     assert pr.write_photo(src, out, long_edge=100) == (100, 50)
     with Image.open(out) as im:
         assert im.format == "WEBP" and im.size == (100, 50)
+
+
+def test_write_photo_never_upscales(tmp_path):
+    src = tmp_path / "small.jpg"
+    Image.new("RGB", (80, 40), (120, 30, 30)).save(src, "JPEG")
+    assert pr.write_photo(src, tmp_path / "s.webp", long_edge=1600) == (80, 40)
+
+
+def test_write_photo_flattens_alpha_on_white(tmp_path):
+    src = tmp_path / "clear.png"
+    Image.new("RGBA", (40, 20), (0, 0, 0, 0)).save(src, "PNG")
+    out = tmp_path / "clear.webp"
+    pr.write_photo(src, out, long_edge=40)
+    with Image.open(out) as im:
+        px = im.convert("RGB").getpixel((5, 5))
+    assert all(c >= 250 for c in px)  # transparent -> white, not black

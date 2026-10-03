@@ -13,6 +13,11 @@ gcode itself:
   with the real pen names and colours.
 
 Pure functions, no gallery globals: scripts/prints_export.py orchestrates.
+The sheet for a plate is ``paper_mm(size, orientation)`` from its header,
+then ``fit_sheet(polys, w, h)``: plates rendered before
+``PaperConfig.from_size`` normalised custom sizes (2026-09-21) were drawn on
+the transposed sheet (``42x24 landscape`` on 240x420), and ``fit_sheet``
+swaps the sheet back when only the transposed one holds the strokes.
 Outputs are deterministic (sorted pens, fixed float formatting) so the tests
 can compare bytes.
 
@@ -42,6 +47,7 @@ CREAM = (244, 239, 228)
 DEFAULT_WIDTH_MM = 0.35
 DEFAULT_MARGIN_MM = 10
 TECH_MARGIN_MM = 12.0
+SHEET_TOLERANCE_MM = 0.01
 
 Polylines = dict[int, list[list[tuple[float, float]]]]
 
@@ -76,7 +82,9 @@ def parse_header(path: Path) -> dict | None:
     """The provenance header, or ``None`` when the file does not carry one."""
     fields: dict[str, str] = {}
     with open(path, encoding="utf-8", errors="replace") as fh:
-        if fh.readline().strip() != MAGIC:
+        # round-local wrappers annotate the magic line:
+        # "; promptplot render (round-local wrapper: F600, G4 P1.0 pen dwells)"
+        if not fh.readline().startswith(MAGIC):
             return None
         for line in fh:
             if not line.startswith(";"):
@@ -99,6 +107,31 @@ def paper_mm(size: str, orientation: str) -> tuple[float, float]:
     """(width, height) of the sheet in mm."""
     paper = PaperConfig.from_size(size, orientation)
     return (float(paper.width), float(paper.height))
+
+
+def fit_sheet(polys: Polylines, w_mm: float, h_mm: float) -> tuple[float, float]:
+    """The sheet the strokes were actually drawn on: (w, h), or (h, w) when the
+    strokes overflow (w, h) but fit the transposed sheet — a plate rendered
+    before ``PaperConfig.from_size`` normalised custom sizes. Logs a warning
+    when it transposes; a plate that fits neither way keeps (w, h)."""
+    pts = [pt for lines in polys.values() for poly in lines for pt in poly]
+    if not pts:
+        return (w_mm, h_mm)
+    eps = SHEET_TOLERANCE_MM
+    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+
+    def fits(w: float, h: float) -> bool:
+        return x0 >= -eps and y0 >= -eps and x1 <= w + eps and y1 <= h + eps
+
+    if not fits(w_mm, h_mm) and fits(h_mm, w_mm):
+        logger.warning(
+            "strokes (x %.1f-%.1f, y %.1f-%.1f) overflow the %gx%g sheet but fit "
+            "%gx%g: transposing (plate predates the paper-size normalisation)",
+            x0, x1, y0, y1, w_mm, h_mm, h_mm, w_mm,
+        )
+        return (h_mm, w_mm)
+    return (w_mm, h_mm)
 
 
 def parse_polylines(path: Path) -> Polylines:
@@ -167,7 +200,10 @@ def pen_css(name: str) -> str:
 
 
 def _pen_name(pens: list[str], idx: int) -> str:
-    return pens[idx] if 0 <= idx < len(pens) else "black"
+    if 0 <= idx < len(pens):
+        return pens[idx]
+    logger.warning("pen index %d outside the %d header pens — drawing it black", idx, len(pens))
+    return "black"
 
 
 def _fmt(v: float) -> str:
@@ -338,10 +374,20 @@ def write_technical(
 
 
 def write_photo(src: Path, out: Path, long_edge: int = 1600) -> tuple[int, int]:
-    """A photo of the physical plot: EXIF-upright, resized to ``long_edge``, WebP."""
+    """A photo of the physical plot: EXIF-upright, downscaled (never upscaled) to
+    ``long_edge``, transparency flattened on white, WebP."""
     with Image.open(src) as raw:
-        im = ImageOps.exif_transpose(raw).convert("RGB")
-    scale = long_edge / max(im.size)
+        im = ImageOps.exif_transpose(raw)
+    if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
+        rgba = im.convert("RGBA")
+        flat = Image.new("RGB", rgba.size, (255, 255, 255))
+        flat.paste(rgba, mask=rgba.getchannel("A"))
+        im = flat
+    else:
+        im = im.convert("RGB")
+    scale = min(1.0, long_edge / max(im.size))
     size = (max(1, round(im.width * scale)), max(1, round(im.height * scale)))
-    im.resize(size, Image.LANCZOS).save(out, "WEBP", quality=85)
+    if size != im.size:
+        im = im.resize(size, Image.LANCZOS)
+    im.save(out, "WEBP", quality=85)
     return size
