@@ -42,8 +42,12 @@ The machine reads these one line at a time and moves accordingly.
 ## Commands
 - `make dev` — install editable with dev+viz extras (`uv pip install -e ".[dev,viz]"`). Optional extras: `uv pip install -e ".[openai,anthropic,gemini,vision,io]"` (`io` = svgpathtools+ezdxf for full-fidelity SVG/DXF import).
 - `make check` — **the gate: `test-ci` + `studio-check`.** Run it before calling
-  anything done. `studio-check` (`scripts/studio_regression.py`) fingerprints the 51
-  studio pieces, which live outside the package and which no test imports.
+  anything done. `studio-check` (`scripts/studio_regression.py`) re-renders every
+  `studio/*/rounds/*/piece.py` (129 today; 51 have a baseline in `studio/REGRESSION.json`, the
+  rest have nothing to compare against until `--write`) — they live outside the package and no
+  test imports them.
+- `make prints-export` — publish Juan's published plates to the portfolio site's bucket (see
+  "Publishing to the site").
 - `make test` — runs the full suite (~630 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted. One pre-existing failure (`test_refinement.py::test_batch_refinement_prefers_improved_result`, a stub-queue exhaustion) predates the v3.1 work; `make test-ci` deselects it.
 - Single test: `python3 -m pytest tests/test_primitives.py::test_name -v`. By marker: `-m "not requires_hardware and not requires_llm"` to skip hardware/LLM-gated tests.
 - `make lint` (ruff) / `make format` (black + isort). Line length 100.
@@ -374,7 +378,7 @@ Header **New · N** filters to NEW only, `n` jumps to the next one, and the page
 
 ### Don't break the studio pieces
 
-The 51 candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` live OUTSIDE the package
+The candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` (129 today) live OUTSIDE the package
 and are not in `GENERATOR_REGISTRY`, so `make test` never touches them — yet they import
 `engine.geometry`, `engine.kit`, `engine.policies` and the private helpers `_poly`, `_dot`,
 `_stroke_text`, `_text_width`, `_chain_segments` from `generators.py`. An edit to any of
@@ -433,17 +437,11 @@ the workflow refuses a dead-end/archived/cut parent, and the lead and designer a
 
 **Publish verdicts** pick the plates that go to Juan's portfolio site: **PUBLISH / UNPUBLISH**
 (the "Publish to site" toggle or `p`; only a render with its gcode beside it). Their own scope,
-target `<subject>/@publish/<basename>`, field `basename`; `gallery_feedback.latest_published()`
-(newest per plate, an unpublish removes it) is what the site exporter reads. They never move a
-file, never clear NEW and never appear in the markdown views. Status filter "published"; a
-magenta rail dot marks a published render.
-
-`scripts/prints_render.py` turns a published plate's gcode into site renders — pure
-functions, no gallery globals: `parse_header` (the `; promptplot render` provenance block),
-`parse_polylines` (pen → polylines), `write_svg` (clean vector sheet, one `<path>` per pen, no
-background — the site supplies cream paper), `write_thumb`/`write_raster` (anti-aliased WebP on
-cream), `write_technical` (1:1 mm plate: mm axes + legend with the real pen colours, none of the
-preview's title/stats/travel chrome), `write_photo`. Deterministic, so outputs compare byte-exact.
+virtual target `<subject>/@publish/<basename>`, field `basename`; the newest one per plate
+decides, so an unpublish removes it (`gallery_feedback.latest_published()`). They never move a
+file, never clear NEW and are not agent instructions: they appear in no markdown view and a
+plate that is only published gets no `FEEDBACK.md`. Status filter "published"; a magenta rail
+dot marks a published render. What happens next is § "Publishing to the site" below.
 
 Viewer keys: `1–5` verdict · `w m d` direction · `p` publish · `z` back to the last judged · `n` next NEW ·
 `s` **swipe mode** (a full-screen card deck of undecided renders, newest first: → keep ·
@@ -491,6 +489,70 @@ Verdicts only *record* a decision — nothing moves until
 ARCHIVE and CUT move files (`current`/`promoted`, `archive/`, `cut/`), KEEP/REWORK restore a
 parked one; nothing is ever deleted, every move is appended to `MOVES.tsv` and is reversible,
 and studio notes are repointed to the new paths. `studio_sync` never resurrects a parked render.
+
+### Publishing to the site
+
+`make prints-export` (= `scripts/prints_export.py --push`) turns the published plates into the
+**Prints** section of Juan's site (career-navigator, `artificial-artifacts.com`), which reads
+`catalog.json` v1 + its assets from the public bucket **`gs://garassino-ai-prints`**:
+
+1. `latest_published()` gives the plates; each resolves through `gallery/<subject>/manifest.json`
+   to its render + gcode at the best tier (so the id survives a move between `current/` and
+   `trials/`). No gcode, no manifest entry, or no provenance header and no override → warned
+   and skipped.
+2. `scripts/prints_render.py` (pure functions, deterministic, byte-comparable) draws the assets
+   from the gcode: `write_svg` (clean vector sheet, one `<path>` per pen, no background — the
+   site supplies cream paper), `write_thumb` (640 px WebP on cream), `write_technical` (1:1 mm
+   plate: mm axes + a legend with the real pen colours, none of the preview's title/stats/travel
+   chrome), `write_raster` (2600 px fallback, only when the SVG exceeds 3 MB), `write_photo`.
+   `parse_header` reads the `; promptplot render` block, `parse_polylines` the toolpath, and
+   `fit_sheet` transposes the declared sheet for old plates whose strokes only fit it turned;
+   a bbox that overflows either way is warned about.
+3. Each catalog entry carries, in this order: `id subject basename slug family title one_line
+   sections paper pens pen_count stats seed piece rendered published_at order size plotted assets
+   bytes` — `pens[]` is per layer index (`black,black` stays two), `pen_count` counts unique
+   names, `plotted` is null or an object, `assets.sheet_raster` is null unless the SVG tripped
+   the size guard. The site's Prints section is built against exactly this shape.
+   Title, one-liner, "What is on the sheet" and "The science it encodes" come from
+   `studio/<slug>/DESCRIPTION.md`; paper, pens, seed and piece from the gcode header; stats and
+   the plot-time estimate from the manifest.
+4. `build/prints/catalog.json` + `build/prints/assets/<id>/` are written (asset paths in the
+   catalog are relative to it); `--push` uploads assets first (`max-age=31536000, immutable`),
+   then the catalog (`max-age=300`, so the site sees a change within 5 minutes).
+
+Assets are **content-addressed** — `<gcode sha16>-r<RENDER_VERSION>.{svg,thumb.webp,tech.webp}`
+— and never re-rendered while the file exists, so a re-run only stats files; a changed gcode
+gets new names, and bumping `prints_render.RENDER_VERSION` re-renders everything.
+
+```
+python scripts/prints_export.py --list      # the published set, resolved paths, header status
+python scripts/prints_export.py --dry-run   # ids, cached vs would-render; writes nothing
+python scripts/prints_export.py --only attention-dag-landscape --force   # re-render one (no --push)
+make prints-export                          # build + push
+```
+
+Exit 0 on success, 1 when nothing is published or none of it could be exported (nothing is
+pushed), 2 when the push fails.
+`--only` writes a partial catalog, so it refuses `--push`. Pass `--gallery` to export from
+another checkout's gallery (a worktree has none).
+
+**`studio/prints.json`** (tracked) adjusts a plate on the site; key `<subject>/<basename>`,
+every field optional; `paper`/`pens` are used only when the gcode has no header, and keys that
+are not published or not on disk are warned about:
+
+```json
+{"studio/attention_DAG/pp_attention_DAG_landscape.png": {
+  "id": "attention-as-topography", "title": "Attention as Topography", "order": 10, "size": "l",
+  "paper": "a4 landscape", "pens": ["dodgerblue","crimson","gold","black"], "pen_widths_mm": [0.3,0.3,0.3,0.5],
+  "plotted": {"date":"2026-09-13","paper":"A3 Fabriano 200g cream","pens":["Staedtler 0.3 black","Sakura gold"],"photo":"gallery/studio/attention_DAG/plotted/IMG_2231.jpg"}}}
+```
+
+`order` sorts ascending (default 1000; ties newest-published first); `size` (`s`/`m`/`l`, default
+`s`; anything else warns and falls back to `s`) sizes the plate's tile in the site's mosaic and
+is copied into every catalog entry; `plotted.photo` is exported
+as a WebP and rewritten to its asset path. The bucket (europe-west1, uniform access, public
+read, CORS for the site's origins in `scripts/prints_cors.json`) was made by
+`scripts/setup_prints_bucket.sh` — idempotent, re-run it to rebuild or re-apply CORS.
 
 ## Authored scenes — how a reference picture becomes a plotted drawing
 
@@ -566,6 +628,7 @@ Core flat modules:
 - `logger.py` — Rich-based terminal output
 - `__init__.py` — Public API exports (the stable surface for the `orchestrate`/`compose_and_stream` controller path)
 - `scripts/` — standalone Claude-Code controller scripts (`cc_draw_*.py`, `cc_colors_test.py`, `cc_brush_test.py`, `cc_llm_stream.py`) using the `orchestrate` API directly against hardware
+- `scripts/prints_render.py` (gcode → site SVG/WebP renders), `scripts/prints_export.py` (publish verdicts → `catalog.json` + assets → `gs://garassino-ai-prints`), `scripts/setup_prints_bucket.sh` + `scripts/prints_cors.json` (the bucket's bootstrap and CORS policy), `studio/prints.json` (per-plate site overrides) — see "Publishing to the site"
 
 ## Serial port
 - macOS: `/dev/cu.usbserial-*` (e.g. `/dev/cu.usbserial-1420`)
