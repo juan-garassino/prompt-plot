@@ -25,5 +25,7 @@ gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" \
 gcloud storage buckets update "gs://$BUCKET" --cors-file="$(dirname "$0")/prints_cors.json"
 
 # Acceptance: the catalog answers a cross-origin GET with CORS + cache headers.
+# A fresh bucket has no catalog yet — that must not fail the script (pipefail).
 curl -sI -H "Origin: https://artificial-artifacts.com" \
-  "https://storage.googleapis.com/$BUCKET/catalog.json" | grep -iE 'access-control|cache-control'
+  "https://storage.googleapis.com/$BUCKET/catalog.json" | grep -iE 'access-control|cache-control' \
+  || echo "no catalog yet — run make prints-export, then re-run this to check the headers"

@@ -240,6 +240,39 @@ def test_describe_falls_back_when_there_is_no_description(env):
     assert d["title"] == "THE WAVE FAMILY" and d["one_line"] == "A wave drawn as two pens."
 
 
+def test_a_missing_description_warns_and_humanises_the_title(env, caplog, capsys):
+    plate(env["gallery"], subject="studio/res_backprop", stem="pp_res_backprop_v3")
+    index(env["gallery"], subject="studio/res_backprop")
+    write_log(env["log"], pub(), pub(subject="studio/res_backprop", name="pp_res_backprop_v3.png"))
+    with caplog.at_level(logging.WARNING, logger="prints_export"):
+        cat = export(env)
+    p = next(x for x in cat["prints"] if x["family"] == "res_backprop")
+    assert p["title"] == "res backprop" and p["one_line"] == "" and p["sections"] == []
+    assert "no studio/resonance-backprop/DESCRIPTION.md" in caplog.text
+    assert "set title in prints.json" in caplog.text
+    assert pe.main(["--gallery", str(env["gallery"]), "--out", str(env["out"]), "--list"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    gcode_lines = [l for l in lines if "gcode" in l]
+    assert any("res_backprop" in l and "no description" in l for l in gcode_lines)
+    assert any("studio/fam/" in l and "no description" not in l for l in gcode_lines)
+
+
+def test_piece_drops_the_plate_writer_annotation():
+    head = {"piece": "/x/repo/studio/resonance-backprop/rounds/r04/piece.py (plate.py)",
+            "function": "attention_as_resonance"}
+    assert pe._piece(head) == \
+        "studio/resonance-backprop/rounds/r04/piece.py::attention_as_resonance"
+
+
+def test_a_plate_magic_header_is_exported_as_headered(env):
+    g = env["gallery"] / SUBJECT / "current" / f"{STEM}.gcode"
+    g.write_text(GCODE.format(pens="crimson,black").replace(
+        "; promptplot render", "; promptplot PLATE (stream order kept)"))
+    index(env["gallery"])
+    (p,) = export(env)["prints"]
+    assert p["seed"] == 7 and p["paper"]["size"] == "a6"
+
+
 def test_one_line_falls_back_to_the_first_sentence_of_the_title(env):
     (env["studio"] / "fam-slug" / "DESCRIPTION.md").write_text(
         "# THE WAVE. A FAMILY — description\n\n## What is on the sheet\nwaves\n")
@@ -515,7 +548,7 @@ def test_push_runs_assets_first_then_catalog(tmp_path, monkeypatch):
     (tmp_path / "assets" / "x" / "a.svg").write_text("<svg/>")
     pe.push(tmp_path, "my-bucket")
     assert calls == [
-        (["gcloud", "storage", "cp", "-r", "--gzip-local=svg,json",
+        (["gcloud", "storage", "cp", "-r", "--no-clobber", "--gzip-local=svg,json",
           "--cache-control=public, max-age=31536000, immutable",
           str(tmp_path / "assets"), "gs://my-bucket/"], True),
         (["gcloud", "storage", "cp", "--gzip-local=json",

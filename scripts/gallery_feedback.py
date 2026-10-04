@@ -177,7 +177,8 @@ def append(record: Dict[str, Any]) -> Dict[str, Any]:
         basename = str(record.get("basename") or "")
         if not subject or ".." in subject or "@" in subject:
             raise ValueError(f"a publish record needs a plain subject, got {subject!r}")
-        if not basename or "/" in basename or not basename.lower().endswith(PUBLISH_EXT):
+        if (not basename or "/" in basename or not basename.lower().endswith(PUBLISH_EXT)
+                or not Path(basename).stem or basename.startswith(".")):
             raise ValueError(f"publish basename must be an image file name {PUBLISH_EXT}, "
                              f"got {basename!r}")
         if target != f"{subject}/@publish/{basename}":

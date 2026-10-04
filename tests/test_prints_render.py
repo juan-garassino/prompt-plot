@@ -120,6 +120,32 @@ def test_parse_header_accepts_the_round_local_wrapper_line(tmp_path):
     assert "feed" not in head
 
 
+@pytest.mark.parametrize("magic", [
+    "; promptplot render",
+    "; promptplot PLATE (stream order kept: pens light->dark, serpentine cells per layer)",
+])
+def test_parse_header_accepts_render_and_plate_magic(tmp_path, magic):
+    # the PLATE line is written by studio/resonance-backprop/rounds/r04/plate.py:142
+    text = HEADER.format(paper="a4 portrait").replace("; promptplot render", magic)
+    head = pr.parse_header(_write(tmp_path, text + "M5\n"))
+    assert head is not None and head["function"] == "demo" and head["seed"] == 7
+    assert head["paper"] == {"size": "a4", "orientation": "portrait", "margin_mm": 10}
+
+
+@pytest.mark.parametrize("text", [
+    "; promptplot PLATE (stream order kept)\nM5\nG0 X1 Y2\n",
+    "; promptplot render\n; just a comment\nM5\n",
+])
+def test_a_magic_line_without_a_header_block_is_none(tmp_path, text):
+    assert pr.parse_header(_write(tmp_path, text)) is None
+
+
+def test_parse_paper_is_public_with_a_private_alias():
+    assert pr.parse_paper("a3 portrait, margin 15") == {
+        "size": "a3", "orientation": "portrait", "margin_mm": 15}
+    assert pr._parse_paper is pr.parse_paper
+
+
 def test_paper_mm_uses_paper_config():
     assert pr.paper_mm("a4", "portrait") == (210.0, 297.0)
     assert pr.paper_mm("a3", "landscape") == (420.0, 297.0)

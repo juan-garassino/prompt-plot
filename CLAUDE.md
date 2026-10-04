@@ -507,7 +507,9 @@ and studio notes are repointed to the new paths. `studio_sync` never resurrects 
    site supplies cream paper), `write_thumb` (640 px WebP on cream), `write_technical` (1:1 mm
    plate: mm axes + a legend with the real pen colours, none of the preview's title/stats/travel
    chrome), `write_raster` (2600 px fallback, only when the SVG exceeds 3 MB), `write_photo`.
-   `parse_header` reads the `; promptplot render` block, `parse_polylines` the toolpath, and
+   `parse_header` reads the provenance block — first line `; promptplot render` (annotated by
+   round-local wrappers) or `; promptplot PLATE (...)` (studio plate writers), then `; key value`
+   lines; a magic line with no such block is header-less — `parse_polylines` the toolpath, and
    `fit_sheet` transposes the declared sheet for old plates whose strokes only fit it turned;
    a bbox that overflows either way is warned about.
 3. Each catalog entry carries, in this order: `id subject basename slug family title one_line
@@ -517,10 +519,13 @@ and studio notes are repointed to the new paths. `studio_sync` never resurrects 
    the size guard. The site's Prints section is built against exactly this shape.
    Title, one-liner, "What is on the sheet" and "The science it encodes" come from
    `studio/<slug>/DESCRIPTION.md`; paper, pens, seed and piece from the gcode header; stats and
-   the plot-time estimate from the manifest.
+   the plot-time estimate from the manifest. A plate with no DESCRIPTION.md is warned about, gets
+   its family name as title (underscores → spaces) and no prose, and `--list`/`--dry-run` mark it
+   `no description` — give it a `title` in `prints.json` (or write the description).
 4. `build/prints/catalog.json` + `build/prints/assets/<id>/` are written (asset paths in the
-   catalog are relative to it); `--push` uploads assets first (`max-age=31536000, immutable`),
-   then the catalog (`max-age=300`, so the site sees a change within 5 minutes).
+   catalog are relative to it); `--push` uploads assets first (`--no-clobber`,
+   `max-age=31536000, immutable` — names are content-addressed, so a re-push uploads only new
+   ones), then the catalog (`max-age=300`, so the site sees a change within 5 minutes).
 
 Assets are **content-addressed** — `<gcode sha16>-r<RENDER_VERSION>-<inp6>.{svg,thumb.webp,tech.webp}`,
 `inp6` = the first 6 hex of a sha256 over the other render inputs (pen names, per-index widths,
@@ -543,8 +548,9 @@ Exit codes: **0** ok · **1** nothing published / nothing exportable (no push) �
 With `--push`, a published plate that could not be exported is listed and blocks the push
 (the site would silently lose it) unless `--allow-skips`; an empty result is refused unless
 `--allow-empty`, which uploads a `count: 0` catalog so the site shows its empty state.
-`--only` writes a partial catalog, so it refuses `--push`. Pass `--gallery` to export from
-another checkout's gallery (a worktree has none).
+`--only` writes a partial catalog, so it refuses `--push`. **Curate and export from the main
+checkout**: `--gallery` redirects only the gallery — `studio/feedback.jsonl` (the publish
+verdicts) and `studio/prints.json` are always read from the checkout the script runs in.
 
 **`studio/prints.json`** (tracked) adjusts a plate on the site; key `<subject>/<basename>`,
 every field optional; `paper`/`pens` are used only when the gcode has no header, and keys that

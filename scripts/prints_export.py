@@ -165,7 +165,10 @@ def describe(slug: str, family: Optional[str] = None) -> Dict[str, Any]:
     """{title, one_line, sections} from ``studio/<slug>/DESCRIPTION.md``."""
     path = STUDIO / slug / "DESCRIPTION.md"
     if not path.is_file():
-        return {"title": family or slug, "one_line": "", "sections": []}
+        title = (family or slug).replace("_", " ")
+        logger.warning("%s: no studio/%s/DESCRIPTION.md — title falls back to %r; "
+                       "set title in prints.json", family or slug, slug, title)
+        return {"title": title, "one_line": "", "sections": []}
     text = path.read_text()
     m = _TITLE.search(text)
     title = m.group(1).strip() if m else (family or slug)
@@ -182,7 +185,8 @@ def _piece(header: dict) -> str:
 
     Anchored at the innermost ``studio/`` or ``promptplot/`` segment; a path with
     neither is reduced to its file name rather than leaking a local path."""
-    raw = header.get("piece") or ""
+    # plate writers annotate the path: ".../rounds/r04/piece.py (plate.py)"
+    raw = re.sub(r"\s+\([^()]*\)\s*$", "", header.get("piece") or "")
     if not raw:
         return ""
     parts = Path(raw).parts
@@ -264,7 +268,7 @@ def _inputs(key: str, gcode_rec: dict, override: Dict[str, Any],
     if header is not None:
         paper, pens = header["paper"], header["pens"] or list(override.get("pens") or [])
     elif override.get("paper") and override.get("pens"):
-        paper, pens = pr._parse_paper(str(override["paper"])), list(override["pens"])
+        paper, pens = pr.parse_paper(str(override["paper"])), list(override["pens"])
     else:
         logger.warning("skip %s: %s has no provenance header and prints.json gives no "
                        "paper + pens", key, gcode_rec["rel"])
@@ -457,9 +461,10 @@ def build_catalog(out_dir: Path, gallery: Path, only: Optional[Iterable[str]] = 
 
 def push(out_dir: Path, bucket: str) -> None:
     """Upload assets first (immutable), then the catalog (5 min) — never a catalog
-    that points at assets not yet in the bucket."""
+    that points at assets not yet in the bucket. Asset names are content-addressed,
+    so ``--no-clobber`` makes a re-push upload only the new ones."""
     cmds = [
-        ["gcloud", "storage", "cp", "-r", "--gzip-local=svg,json",
+        ["gcloud", "storage", "cp", "-r", "--no-clobber", "--gzip-local=svg,json",
          f"--cache-control={ASSET_CACHE}", str(out_dir / "assets"), f"gs://{bucket}/"],
         ["gcloud", "storage", "cp", "--gzip-local=json", f"--cache-control={CATALOG_CACHE}",
          str(out_dir / "catalog.json"), f"gs://{bucket}/catalog.json"],
@@ -493,10 +498,12 @@ def _report(gallery: Path, out_dir: Path, published: List[Tuple[str, str, dict]]
         hstat = ("header ok" if header else
                  "no header, prints.json paper+pens" if ov.get("paper") and ov.get("pens")
                  else "NO HEADER — would skip")
+        note = ("" if (STUDIO / fb.slug_for(subject) / "DESCRIPTION.md").is_file()
+                else ", no description")
         if not dry_run:
             print(f"{key}  [{rec.get('when', '')}]\n"
                   f"      render {subject}/{render['rel']}\n"
-                  f"      gcode  {subject}/{gcode['rel']}  ({hstat})")
+                  f"      gcode  {subject}/{gcode['rel']}  ({hstat}{note})")
             continue
         try:
             inp = _inputs(key, gcode, ov, gallery, subject) if "skip" not in hstat else None
@@ -504,7 +511,7 @@ def _report(gallery: Path, out_dir: Path, published: List[Tuple[str, str, dict]]
             inp, hstat = None, f"would skip: {type(exc).__name__}: {exc}"
         svg = out_dir / "assets" / pid / f"{inp['base']}.svg" if inp else None
         state = "cached" if svg is not None and svg.exists() else "would render"
-        print(f"{'SKIP' if 'skip' in hstat else 'OK  '}  {pid:40} {state:13} {key}  ({hstat})")
+        print(f"{'SKIP' if 'skip' in hstat else 'OK  '}  {pid:40} {state:13} {key}  ({hstat}{note})")
 
 
 def main(argv: Optional[List[str]] = None) -> int:

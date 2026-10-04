@@ -150,6 +150,8 @@ def test_publish_accepts_every_image_extension_case_insensitively(env):
     publish(basename="pp_ising_v6.gcode"),
     publish(basename="pp_ising_v6"),
     publish(basename=""),
+    publish(basename=".png"),
+    publish(basename=".JPG"),
     publish(target="studio/ising/@publish/pp_other.png"),
     publish(target=f"studio/ising/current/{NAME}"),
     publish(subject="studio/@ising"),
@@ -157,7 +159,7 @@ def test_publish_accepts_every_image_extension_case_insensitively(env):
     publish(subject=""),
     publish("keep"),
     publish("works"),
-], ids=["slash", "gcode", "noext", "empty-basename", "target-mismatch", "render-target",
+], ids=["slash", "gcode", "noext", "empty-basename", "bare-ext", "bare-ext-upper", "target-mismatch", "render-target",
         "at-subject", "dotdot-subject", "empty-subject", "render-verdict", "direction-verdict"])
 def test_invalid_publish_records(env, rec):
     with pytest.raises(ValueError):

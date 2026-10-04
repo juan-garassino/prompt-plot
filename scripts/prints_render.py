@@ -42,7 +42,8 @@ logger = logging.getLogger(__name__)
 
 RENDER_VERSION = 1
 
-MAGIC = "; promptplot render"
+MAGIC = "; promptplot "  # "; promptplot render" and studio plate writers' "; promptplot PLATE (...)"
+_HEADER_KEYS = ("piece", "function", "seed", "paper", "pens", "colors", "rendered", "commands")
 CREAM = (244, 239, 228)
 DEFAULT_WIDTH_MM = 0.35
 DEFAULT_MARGIN_MM = 10
@@ -63,7 +64,7 @@ def _num(text: str) -> int | float:
     return int(v) if v.is_integer() else v
 
 
-def _parse_paper(value: str) -> dict:
+def parse_paper(value: str) -> dict:
     """``a4 portrait`` / ``24x30 portrait`` / ``a3 portrait, margin 15``."""
     main, _, rest = value.partition(",")
     size, _, orientation = main.strip().partition(" ")
@@ -78,12 +79,20 @@ def _parse_paper(value: str) -> dict:
     }
 
 
+_parse_paper = parse_paper  # the pre-promotion name
+
+
 def parse_header(path: Path) -> dict | None:
-    """The provenance header, or ``None`` when the file does not carry one."""
+    """The provenance header, or ``None`` when the file does not carry one.
+
+    The first line is ``; promptplot render`` (render_candidate.py), annotated
+    by round-local wrappers ("; promptplot render (round-local wrapper: ...)"),
+    or ``; promptplot PLATE (...)`` (studio plate writers such as
+    studio/resonance-backprop/rounds/r04/plate.py). A magic line with no
+    ``; key value`` block of known keys after it is not a header.
+    """
     fields: dict[str, str] = {}
     with open(path, encoding="utf-8", errors="replace") as fh:
-        # round-local wrappers annotate the magic line:
-        # "; promptplot render (round-local wrapper: F600, G4 P1.0 pen dwells)"
         if not fh.readline().startswith(MAGIC):
             return None
         for line in fh:
@@ -91,11 +100,13 @@ def parse_header(path: Path) -> dict | None:
                 break
             key, _, value = line[1:].strip().partition(" ")
             fields[key] = value.strip()
+    if not any(k in fields for k in _HEADER_KEYS):
+        return None
     return {
         "piece": fields.get("piece", ""),
         "function": fields.get("function", ""),
         "seed": int(fields["seed"]) if fields.get("seed") else None,
-        "paper": _parse_paper(fields.get("paper", "a4 portrait")),
+        "paper": parse_paper(fields.get("paper", "a4 portrait")),
         "pens": [p.strip() for p in fields.get("pens", "").split(",") if p.strip()],
         "colors": int(fields["colors"]) if fields.get("colors") else None,
         "rendered": fields.get("rendered", ""),
