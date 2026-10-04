@@ -16,9 +16,15 @@ v1, plus the assets it points at, from the public bucket
 5. ``catalog.json`` is written beside ``assets/``, and ``--push`` uploads
    assets first, catalog last.
 
-Assets are content-addressed — ``<gcode sha16>-r<RENDER_VERSION>`` — and never
-re-rendered while the file exists, so a re-run costs a few stats and the bucket
-can cache them forever. Bump ``prints_render.RENDER_VERSION`` to re-render all.
+Assets are content-addressed — ``<gcode sha16>-r<RENDER_VERSION>-<inp6>``, inp6
+hashing pens, widths and sheet — and never re-rendered while the file exists, so
+a re-run costs a few stats and the bucket can cache them forever. A changed gcode
+or render input gets new names; bump ``prints_render.RENDER_VERSION`` to re-render
+all. ``--force`` rebuilds local files under the SAME names: it does not refresh
+the site (the bucket serves those names as immutable).
+
+Exit: 0 ok · 1 nothing published / nothing exportable · 2 push failed (or an
+argparse usage error) · 3 ``--push`` refused because published plates were skipped.
 
     python scripts/prints_export.py --list         # what is published, resolved
     python scripts/prints_export.py --dry-run      # what would be exported
@@ -29,6 +35,7 @@ can cache them forever. Bump ``prints_render.RENDER_VERSION`` to re-render all.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import re
@@ -109,9 +116,10 @@ def load_overrides(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
 
 def _manifest(gallery: Path, subject: str) -> Optional[dict]:
     try:
-        return json.loads((gallery / subject / "manifest.json").read_text())
+        m = json.loads((gallery / subject / "manifest.json").read_text())
     except (OSError, ValueError):
         return None
+    return m if isinstance(m, dict) else None
 
 
 def _resolve(gallery: Path, subject: str, basename: str) -> Tuple[Optional[dict],
@@ -170,12 +178,15 @@ def describe(slug: str, family: Optional[str] = None) -> Dict[str, Any]:
 
 
 def _piece(header: dict) -> str:
-    """The header's absolute piece path made repo-relative, plus ``::function``."""
+    """The header's absolute piece path made repo-relative, plus ``::function``.
+
+    Anchored at the innermost ``studio/`` or ``promptplot/`` segment; a path with
+    neither is reduced to its file name rather than leaking a local path."""
     raw = header.get("piece") or ""
     if not raw:
         return ""
     parts = Path(raw).parts
-    rel = raw
+    rel = Path(raw).name  # never ship an absolute local path to the site
     for anchor in ("studio", "promptplot"):
         if anchor in parts:
             i = len(parts) - 1 - parts[::-1].index(anchor)  # innermost: the repo's own
@@ -238,11 +249,16 @@ def _render_if_missing(path: Path, force: bool, draw) -> bool:
     return True
 
 
-def build_print(subject: str, basename: str, render_rec: dict, gcode_rec: dict,
-                override: Dict[str, Any], out_dir: Path, gallery: Path, force: bool = False,
-                published_at: str = "") -> Optional[Dict[str, Any]]:
-    """One catalog entry, rendering whichever of its assets are missing. None = skipped."""
-    key = f"{subject}/{basename}"
+def _inputs(key: str, gcode_rec: dict, override: Dict[str, Any],
+            gallery: Path, subject: str) -> Optional[Dict[str, Any]]:
+    """Everything the assets are drawn from, and the asset basename it hashes to.
+
+    ``<gcode sha16>-r<RENDER_VERSION>-<inp6>``: inp6 is the first 6 hex of a
+    sha256 over the other render inputs (pen names, per-index widths, the final
+    sheet), so a ``pen_widths_mm`` or header-less ``paper``/``pens`` edit gets a
+    new name instead of rewriting an object the bucket serves as immutable.
+    None (logged) when there is neither a header nor override paper + pens.
+    """
     gpath = gallery / subject / gcode_rec["rel"]
     header = pr.parse_header(gpath)
     if header is not None:
@@ -253,17 +269,36 @@ def build_print(subject: str, basename: str, render_rec: dict, gcode_rec: dict,
         logger.warning("skip %s: %s has no provenance header and prints.json gives no "
                        "paper + pens", key, gcode_rec["rel"])
         return None
-    header = header or {}
     st = gcode_rec.get("stats") or gi.gcode_stats(gpath)
     w_mm, h_mm, orientation = _sheet(key, paper, st.get("bbox_mm"))
-    widths_list = list(override.get("pen_widths_mm") or [])
-    widths = {i: float(w) for i, w in enumerate(widths_list)}
+    widths_list = [float(w) for w in override.get("pen_widths_mm") or []]
+    widths = dict(enumerate(widths_list))
+    per_index = [widths.get(i, pr.DEFAULT_WIDTH_MM)
+                 for i in range(max(len(pens), len(widths_list)))]
+    inp = json.dumps({"pens": pens, "widths": per_index, "w_mm": w_mm, "h_mm": h_mm},
+                     sort_keys=True)
+    sha = gcode_rec.get("sha256") or gi.sha256(gpath)
+    base = f"{sha}-r{pr.RENDER_VERSION}-{hashlib.sha256(inp.encode()).hexdigest()[:6]}"
+    return {"gpath": gpath, "header": header or {}, "paper": paper, "pens": pens,
+            "widths": widths, "w_mm": w_mm, "h_mm": h_mm, "orientation": orientation,
+            "stats": st, "base": base}
+
+
+def build_print(subject: str, basename: str, render_rec: dict, gcode_rec: dict,
+                override: Dict[str, Any], out_dir: Path, gallery: Path, force: bool = False,
+                published_at: str = "") -> Optional[Dict[str, Any]]:
+    """One catalog entry, rendering whichever of its assets are missing. None = skipped."""
+    key = f"{subject}/{basename}"
+    inp = _inputs(key, gcode_rec, override, gallery, subject)
+    if inp is None:
+        return None
+    gpath, header, paper, pens = inp["gpath"], inp["header"], inp["paper"], inp["pens"]
+    widths, w_mm, h_mm, orientation = inp["widths"], inp["w_mm"], inp["h_mm"], inp["orientation"]
+    st, base = inp["stats"], inp["base"]
 
     family = subject.rsplit("/", 1)[-1]
     slug = fb.slug_for(subject)
     pid = override.get("id") or print_id(family, basename)
-    sha = gcode_rec.get("sha256") or gi.sha256(gpath)
-    base = f"{sha}-r{pr.RENDER_VERSION}"
     adir = out_dir / "assets" / pid
     adir.mkdir(parents=True, exist_ok=True)
     names = {"sheet": f"{base}.svg", "sheet_raster": f"{base}.raster.webp",
@@ -367,9 +402,15 @@ def _sort(prints: List[dict]) -> List[dict]:
 
 
 def build_catalog(out_dir: Path, gallery: Path, only: Optional[Iterable[str]] = None,
-                  force: bool = False,
-                  overrides: Optional[dict] = None) -> Dict[str, Any]:
-    """Export every published plate (or just ``only`` ids) and write ``catalog.json``."""
+                  force: bool = False, overrides: Optional[dict] = None,
+                  skipped: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Export every published plate (or just ``only`` ids) and write ``catalog.json``.
+
+    Each published plate that could not be exported is logged and its key is
+    appended to ``skipped`` (when given) — the caller decides whether a catalog
+    missing it may go live. One broken plate never aborts the rest.
+    """
+    skipped = [] if skipped is None else skipped
     overrides = load_overrides() if overrides is None else overrides
     published = _published()
     _check_overrides(overrides, published, gallery)
@@ -385,15 +426,23 @@ def build_catalog(out_dir: Path, gallery: Path, only: Optional[Iterable[str]] = 
         render, gcode, why = _resolve(gallery, subject, basename)
         if gcode is None:
             logger.warning("skip %s: %s", key, why)
+            skipped.append(key)
             continue
         if pid in seen:
             logger.warning("skip %s: id %r is taken — give it an id in prints.json", key, pid)
+            skipped.append(key)
             continue
-        entry = build_print(subject, basename, render, gcode, ov, out_dir, gallery,
-                            force=force, published_at=rec.get("when", ""))
-        if entry is not None:
-            seen.add(pid)
-            prints.append(entry)
+        try:
+            entry = build_print(subject, basename, render, gcode, ov, out_dir, gallery,
+                                force=force, published_at=rec.get("when", ""))
+        except Exception:  # one corrupt gcode/override must not sink the export
+            logger.exception("skip %s: export failed", key)
+            entry = None
+        if entry is None:
+            skipped.append(key)
+            continue
+        seen.add(pid)
+        prints.append(entry)
     catalog = {
         "version": CATALOG_VERSION,
         "generated": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -415,6 +464,9 @@ def push(out_dir: Path, bucket: str) -> None:
         ["gcloud", "storage", "cp", "--gzip-local=json", f"--cache-control={CATALOG_CACHE}",
          str(out_dir / "catalog.json"), f"gs://{bucket}/catalog.json"],
     ]
+    assets = out_dir / "assets"
+    if not (assets.is_dir() and any(p.is_file() for p in assets.rglob("*"))):
+        cmds = cmds[1:]  # an empty catalog: nothing to upload but the catalog itself
     for cmd in cmds:
         logger.info("$ %s", " ".join(f"'{c}'" if " " in c else c for c in cmd))
         subprocess.run(cmd, check=True)
@@ -446,9 +498,12 @@ def _report(gallery: Path, out_dir: Path, published: List[Tuple[str, str, dict]]
                   f"      render {subject}/{render['rel']}\n"
                   f"      gcode  {subject}/{gcode['rel']}  ({hstat})")
             continue
-        sha = gcode.get("sha256") or gi.sha256(gpath)
-        svg = out_dir / "assets" / pid / f"{sha}-r{pr.RENDER_VERSION}.svg"
-        state = "cached" if svg.exists() else "would render"
+        try:
+            inp = _inputs(key, gcode, ov, gallery, subject) if "skip" not in hstat else None
+        except Exception as exc:  # report it, as the export would skip it
+            inp, hstat = None, f"would skip: {type(exc).__name__}: {exc}"
+        svg = out_dir / "assets" / pid / f"{inp['base']}.svg" if inp else None
+        state = "cached" if svg is not None and svg.exists() else "would render"
         print(f"{'SKIP' if 'skip' in hstat else 'OK  '}  {pid:40} {state:13} {key}  ({hstat})")
 
 
@@ -465,9 +520,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="list what would be exported; render nothing, write nothing")
     ap.add_argument("--only", help="comma-separated print ids to export (not with --push)")
-    ap.add_argument("--force", action="store_true", help="re-render assets that already exist")
+    ap.add_argument("--force", action="store_true",
+                    help="rebuild local asset files under the same names (does not refresh "
+                         "the site; changed inputs or a RENDER_VERSION bump do)")
     ap.add_argument("--list", action="store_true",
                     help="print the published set with resolved paths and header status")
+    ap.add_argument("--allow-skips", action="store_true",
+                    help="push even when some published plates could not be exported")
+    ap.add_argument("--allow-empty", action="store_true",
+                    help="write (and with --push upload) an empty catalog when nothing is "
+                         "exportable, so the site shows its empty state")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
     if args.only and args.push:
@@ -478,18 +540,31 @@ def main(argv: Optional[List[str]] = None) -> int:
     gallery = args.gallery or fb.GALLERY
     want = {x.strip() for x in args.only.split(",") if x.strip()} if args.only else None
     published = _published()
-    if not published:
+    if not published and (args.list or args.dry_run or not args.allow_empty):
         logger.error("nothing is published — mark plates with `p` in the gallery viewer "
-                     "(%s holds no current publish verdict); nothing exported", fb.LOG)
+                     "(%s holds no current publish verdict); nothing exported%s", fb.LOG,
+                     "" if args.list or args.dry_run else
+                     " (--allow-empty publishes an empty catalog)")
         return 1
     overrides = load_overrides()
     if args.list or args.dry_run:
         _report(gallery, args.out, published, overrides, want, dry_run=args.dry_run)
         return 0
 
-    catalog = build_catalog(args.out, gallery, only=want, force=args.force, overrides=overrides)
-    if not catalog["prints"]:
-        logger.error("no published plate could be exported (see the warnings above)")
+    skipped: List[str] = []
+    catalog = build_catalog(args.out, gallery, only=want, force=args.force, overrides=overrides,
+                            skipped=skipped)
+    if skipped:
+        print(f"{len(skipped)} published plate(s) NOT in the catalog:")
+        for key in skipped:
+            print(f"  {key}")
+        if args.push and not args.allow_skips:
+            logger.error("not pushing: the site would silently lose them — fix them, unpublish "
+                         "them, or pass --allow-skips")
+            return 3
+    if not catalog["prints"] and not args.allow_empty:
+        logger.error("no published plate could be exported (see the warnings above); "
+                     "--allow-empty writes an empty catalog")
         return 1
     if args.push:
         try:

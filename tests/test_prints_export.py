@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -177,8 +178,11 @@ def test_catalog_matches_the_v1_contract(env):
     assert p["order"] == 1000 and p["size"] == "s" and p["plotted"] is None
 
     sha = gi.sha256(env["gallery"] / SUBJECT / "current" / f"{STEM}.gcode")
-    base = f"assets/fam-wave-v3/{sha}-r{pr.RENDER_VERSION}"
     a = p["assets"]
+    m = re.fullmatch(rf"assets/fam-wave-v3/({sha}-r{pr.RENDER_VERSION}-[0-9a-f]{{6}})\.svg",
+                     a["sheet"])
+    assert m, a["sheet"]
+    base = f"assets/fam-wave-v3/{m.group(1)}"
     assert list(a) == ["sheet", "sheet_raster", "thumb", "technical", "photo", "thumb_px"]
     assert a["sheet"] == f"{base}.svg" and a["sheet_raster"] is None
     assert a["thumb"] == f"{base}.thumb.webp" and a["technical"] == f"{base}.tech.webp"
@@ -409,6 +413,60 @@ def test_a_changed_gcode_gets_new_asset_names(env):
     assert new != old and (env["out"] / new).is_file()
 
 
+def _override(env, **fields) -> None:
+    env["studio"].joinpath("prints.json").write_text(json.dumps({f"{SUBJECT}/{NAME}": fields}))
+
+
+def test_a_width_edit_gets_new_asset_names_and_leaves_the_old_ones(env):
+    _override(env, pen_widths_mm=[0.3, 0.5])
+    old = export(env)["prints"][0]["assets"]
+    before = asset_mtimes(env["out"])
+    _override(env, pen_widths_mm=[0.3, 0.8])
+    new = export(env)["prints"][0]["assets"]
+    for k in ("sheet", "thumb", "technical"):
+        assert new[k] != old[k] and (env["out"] / new[k]).is_file()
+        assert new[k].split("-r")[0] == old[k].split("-r")[0]  # same gcode sha
+    assert 'stroke-width="0.8"' in (env["out"] / new["sheet"]).read_text()
+    # the old objects are immutable on the bucket: never rewritten
+    assert {p: m for p, m in asset_mtimes(env["out"]).items() if p in before} == before
+
+
+def test_a_headerless_pens_edit_gets_new_asset_names(env):
+    g = env["gallery"] / SUBJECT / "current" / f"{STEM}.gcode"
+    g.write_text("M5\nG0 X10 Y20\nM3 S1000 ; color=0\nG1 X30 Y20 ; color=0\nM5\n")
+    index(env["gallery"])
+    _override(env, paper="a6 landscape", pens=["gold", "black"])
+    a = export(env)["prints"][0]["assets"]["sheet"]
+    _override(env, paper="a6 landscape", pens=["crimson", "black"])
+    b = export(env)["prints"][0]["assets"]["sheet"]
+    assert a != b and "#dc143c" in (env["out"] / b).read_text()
+
+
+def test_one_broken_plate_is_skipped_not_fatal(env, caplog):
+    plate(env["gallery"], stem="pp_fam_two_v1")
+    index(env["gallery"])
+    write_log(env["log"], pub(), pub(name="pp_fam_two_v1.png"))
+    _override(env, pen_widths_mm=["fat"])
+    skipped: list = []
+    with caplog.at_level(logging.ERROR, logger="prints_export"):
+        cat = pe.build_catalog(env["out"], env["gallery"], skipped=skipped)
+    assert [p["id"] for p in cat["prints"]] == ["fam-two-v1"]
+    assert skipped == [f"{SUBJECT}/{NAME}"] and "export failed" in caplog.text
+
+
+def test_a_manifest_that_is_not_an_object_resolves_to_nothing(env):
+    (env["gallery"] / SUBJECT / "manifest.json").write_text("[1, 2]")
+    assert pe.resolve_render(env["gallery"], SUBJECT, NAME) is None
+
+
+def test_piece_never_leaks_an_absolute_path():
+    assert pe._piece({"piece": "/Users/me/tmp/scratch/thing.py", "function": "f"}) == \
+        "thing.py::f"
+    assert pe._piece({"piece": "/x/repo/studio/a/rounds/r01/piece.py", "function": "f"}) == \
+        "studio/a/rounds/r01/piece.py::f"
+    assert pe._piece({}) == ""
+
+
 def test_unpublish_removes_the_print(env):
     plate(env["gallery"], stem="pp_fam_two_v1")
     index(env["gallery"])
@@ -453,6 +511,8 @@ def test_push_runs_assets_first_then_catalog(tmp_path, monkeypatch):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(pe.subprocess, "run", run)
+    (tmp_path / "assets" / "x").mkdir(parents=True)
+    (tmp_path / "assets" / "x" / "a.svg").write_text("<svg/>")
     pe.push(tmp_path, "my-bucket")
     assert calls == [
         (["gcloud", "storage", "cp", "-r", "--gzip-local=svg,json",
@@ -462,6 +522,13 @@ def test_push_runs_assets_first_then_catalog(tmp_path, monkeypatch):
           "--cache-control=public, max-age=300",
           str(tmp_path / "catalog.json"), "gs://my-bucket/catalog.json"], True),
     ]
+
+
+def test_push_with_no_assets_uploads_only_the_catalog(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(pe.subprocess, "run", lambda cmd, check: calls.append(cmd))
+    pe.push(tmp_path, "b")
+    assert [c[-1] for c in calls] == ["gs://b/catalog.json"]
 
 
 # -------------------------------------------------------------------- CLI
@@ -510,6 +577,42 @@ def test_main_pushes_and_exit_2_on_push_failure(env, monkeypatch):
 
     monkeypatch.setattr(pe.subprocess, "run", fail)
     assert pe.main(argv) == 2
+
+
+def _recorder(monkeypatch) -> list:
+    calls: list = []
+
+    def run(cmd, check):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(pe.subprocess, "run", run)
+    return calls
+
+
+def test_push_refuses_with_skipped_plates_unless_allowed(env, monkeypatch, capsys):
+    calls = _recorder(monkeypatch)
+    write_log(env["log"], pub(), pub(name="pp_fam_gone.png"))
+    argv = ["--out", str(env["out"]), "--gallery", str(env["gallery"]), "--push"]
+    assert pe.main(argv) == 3
+    assert calls == []
+    assert f"{SUBJECT}/pp_fam_gone.png" in capsys.readouterr().out
+    assert pe.main(argv + ["--allow-skips"]) == 0
+    assert [c[-1] for c in calls] == ["gs://garassino-ai-prints/",
+                                      "gs://garassino-ai-prints/catalog.json"]
+    # without --push the skip is reported, not fatal
+    assert pe.main(argv[:-1]) == 0
+
+
+def test_push_refuses_an_empty_catalog_unless_allowed(env, monkeypatch):
+    calls = _recorder(monkeypatch)
+    write_log(env["log"], pub(), pub("unpublish"))
+    argv = ["--out", str(env["out"]), "--gallery", str(env["gallery"]), "--push"]
+    assert pe.main(argv) == 1 and calls == []
+    assert pe.main(argv + ["--allow-empty"]) == 0
+    assert [c[-1] for c in calls] == ["gs://garassino-ai-prints/catalog.json"]
+    cat = json.loads((env["out"] / "catalog.json").read_text())
+    assert cat["count"] == 0 and cat["prints"] == []
 
 
 def test_only_and_push_together_are_refused(env):
