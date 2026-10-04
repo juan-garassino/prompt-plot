@@ -564,10 +564,9 @@ are not published or not on disk are warned about:
 ```
 
 `order` sorts ascending (default 1000; ties newest-published first); `size` (`s`/`m`/`l`, default
-`s`; anything else warns and falls back to `s`) steps the plate's tile in the site's mosaic up from
-its real paper size — the site sizes tiles on an A-series ladder (A5 < A4 < A3 < A2) from the
-catalog `paper`, so `s` is the sheet's own size, `m` one rung larger, `l` two — and is copied
-into every catalog entry; `plotted.photo` is exported
+`s`; anything else warns and falls back to `s`) is copied into every catalog entry and reserved
+for the site: the current Prints stage is a one-plate-at-a-time carousel that ignores it (it
+sized tiles when the stage was a mosaic); `plotted.photo` is exported
 as a WebP and rewritten to its asset path. The bucket (europe-west1, uniform access, public
 read, CORS for the site's origins in `scripts/prints_cors.json`) was made by
 `scripts/setup_prints_bucket.sh` — idempotent, re-run it to rebuild or re-apply CORS.

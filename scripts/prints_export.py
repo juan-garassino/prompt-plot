@@ -65,7 +65,7 @@ DEFAULT_OUT = REPO / "build" / "prints"
 DEFAULT_BUCKET = "garassino-ai-prints"
 CATALOG_VERSION = 1
 DEFAULT_ORDER = 1000
-TILE_SIZES = ("s", "m", "l")  # mosaic tile step above the sheet's own A-size (s = as printed), from prints.json "size"
+TILE_SIZES = ("s", "m", "l")  # reserved site hint from prints.json "size" (the carousel stage ignores it)
 SVG_LIMIT = 3_000_000  # bytes; above it the site gets sheet_raster as well
 SECTIONS = ("What is on the sheet", "The science it encodes")
 ASSET_CACHE = "public, max-age=31536000, immutable"  # content-addressed names
