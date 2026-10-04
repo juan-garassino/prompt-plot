@@ -498,8 +498,10 @@ and studio notes are repointed to the new paths. `studio_sync` never resurrects 
 
 1. `latest_published()` gives the plates; each resolves through `gallery/<subject>/manifest.json`
    to its render + gcode at the best tier (so the id survives a move between `current/` and
-   `trials/`). No gcode, no manifest entry, or no provenance header and no override → warned
-   and skipped.
+   `trials/`). No gcode, no manifest entry, no provenance header and no override, or any error
+   while exporting it → warned and skipped (one broken plate never aborts the rest). The id is
+   `prints.json`'s `id`, else family + stem slugged with `pp_` and a repeated family dropped
+   (`attention_DAG` + `pp_attention_DAG_landscape.png` → `attention-dag-landscape`).
 2. `scripts/prints_render.py` (pure functions, deterministic, byte-comparable) draws the assets
    from the gcode: `write_svg` (clean vector sheet, one `<path>` per pen, no background — the
    site supplies cream paper), `write_thumb` (640 px WebP on cream), `write_technical` (1:1 mm
@@ -520,19 +522,27 @@ and studio notes are repointed to the new paths. `studio_sync` never resurrects 
    catalog are relative to it); `--push` uploads assets first (`max-age=31536000, immutable`),
    then the catalog (`max-age=300`, so the site sees a change within 5 minutes).
 
-Assets are **content-addressed** — `<gcode sha16>-r<RENDER_VERSION>.{svg,thumb.webp,tech.webp}`
-— and never re-rendered while the file exists, so a re-run only stats files; a changed gcode
-gets new names, and bumping `prints_render.RENDER_VERSION` re-renders everything.
+Assets are **content-addressed** — `<gcode sha16>-r<RENDER_VERSION>-<inp6>.{svg,thumb.webp,tech.webp}`,
+`inp6` = the first 6 hex of a sha256 over the other render inputs (pen names, per-index widths,
+the final sheet w/h) — and never re-rendered while the file exists, so a re-run only stats files.
+**The site refreshes when the inputs change**: a new gcode, a `pen_widths_mm` edit or a
+header-less `paper`/`pens` edit gets new names (the old objects are left alone — the bucket
+serves them as immutable), and bumping `prints_render.RENDER_VERSION` re-renders everything.
+`--force` only rebuilds local files under the *same* names; it is **not** a way to refresh the
+site (those objects are cached for a year).
 
 ```
 python scripts/prints_export.py --list      # the published set, resolved paths, header status
 python scripts/prints_export.py --dry-run   # ids, cached vs would-render; writes nothing
-python scripts/prints_export.py --only attention-dag-landscape --force   # re-render one (no --push)
+python scripts/prints_export.py --only attention-dag-landscape --force   # rebuild one locally
 make prints-export                          # build + push
 ```
 
-Exit 0 on success, 1 when nothing is published or none of it could be exported (nothing is
-pushed), 2 when the push fails.
+Exit codes: **0** ok · **1** nothing published / nothing exportable (no push) · **2** push failed
+(also argparse's usage error) · **3** `--push` refused because a published plate was skipped.
+With `--push`, a published plate that could not be exported is listed and blocks the push
+(the site would silently lose it) unless `--allow-skips`; an empty result is refused unless
+`--allow-empty`, which uploads a `count: 0` catalog so the site shows its empty state.
 `--only` writes a partial catalog, so it refuses `--push`. Pass `--gallery` to export from
 another checkout's gallery (a worktree has none).
 
