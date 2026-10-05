@@ -21,7 +21,7 @@ Attention and its gradient drawn as **interfering waves folded about a horizonta
 Crimson query and blue key wave packets sit top left and top right, feeding a black two-bullseye interference figure in the upper centre. A black softmax row of peaks lies beneath it, with ochre value rows at mid-left and a green output packet in the middle. The lower half repeats these forms as gradients, and a vertical rail at the left labels the forward and backward passes.
 
 ## The science
-The interference pattern is real geometry: crest circles of two point sources, cos(k r₁)/√r₁ + cos(k r₂)/√r₂. The wave packets are traced from a reference diagram, not computed from attention weights. The softmax peaks and the backward layout are drawn illustration; the gradient arrows mark direction only, and the equations appear as text labels.
+The interference pattern is real geometry: rings of wave crests spreading from two point sources, fading as they travel, and adding up where they cross. The wave packets are traced from a reference diagram, not computed from attention weights. The softmax peaks and the backward layout are drawn illustration; the gradient arrows mark direction only, and the equations appear as text labels.
 
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.

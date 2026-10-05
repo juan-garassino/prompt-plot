@@ -21,7 +21,7 @@ Attention drawn as **resonance between two wave families**, followed through a f
 The upper half shows crimson query and blue key wave packets converging on a black two-bullseye interference figure at the centre, with a softmax row below. Lower on the sheet an ochre value knot and a green output packet lead right into a bracketed feed-forward block of violet strokes. A smaller copy of the interference figure and stacked gradient labels run along the bottom.
 
 ## The science
-The interference figure is computed from crest circles of two point sources, cos(k r₁)/√r₁ + cos(k r₂)/√r₂. The feed-forward block is a fan of lines that flatten at the top like a tanh squash; going backward, each line gets the same notch, standing for the derivative. Wave packets and labels are traced from a reference, not model weights.
+The interference figure is computed from rings of wave crests spreading out from two point sources and adding up where they cross. The feed-forward block is a fan of lines that flatten at the top like a tanh squash; going backward, each line gets the same notch, standing for the derivative. Wave packets and labels are traced from a reference, not model weights.
 
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.

@@ -20,7 +20,7 @@ A variational autoencoder's learned posteriors, drawn as small ellipses inside t
 A green wireframe bowl fills most of the sheet. Inside it, a crescent of black ellipses, each with a small green plus at its centre, is speckled with short crimson darts. Bottom left, three dotted black rings hold a star-like scatter of crimson darts, the master noise set. Two dashed green lines climb from it to the bowl. The title sits top left; a rate readout runs along the bottom.
 
 ## The science
-The bowl is the prior's energy, and its rings are contours of cost in nats. Each ellipse is one data point's posterior, found by gradient descent on the real objective, with one fixed noise set reused for every point. The decoder and numbers are computed. The claim that one posterior carries zero bits is only stated in text, not visible.
+A variational autoencoder squeezes each example through a narrow channel and must describe it as a small cloud of likely positions. The bowl is the model's idea of where positions should sit; climbing its walls costs more. Each ellipse is one example's cloud, placed by the real training objective, and the one that collapsed to carrying no information at all is the hero. The numbers are computed; that claim is stated in text, not visible.
 
 ## What is on the sheet
 - **The prior bowl (dominant mass).** A green wireframe paraboloid seen from above-front, ~0.75 of sheet width, spanning u≈0.17–0.92, v≈0.30–0.57: 22 concentric rings × ~108 radials, the far rim a wide open ellipse (top at v≈0.30), the near side a deep curved wall dropping to the floor at u≈0.54, v≈0.57. The rim band's radials read as a picket fence; rings compress toward the front wall.

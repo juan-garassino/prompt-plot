@@ -25,7 +25,7 @@ One shape, read by a convolution: the sweep's frontier is a **staircase**, with 
 A black outline of a Y-shaped figure runs across the sheet, with a heavy card marking the kernel at its fork. Behind a black staircase, a lattice of black dots and chains of crimson and blue rings fill the lower left. The upper right holds pale black stripes running off the corner. A key and the title sit at lower right.
 
 ## The science
-This is a real two-dimensional convolution with a five-by-five Laplacian-of-Gaussian kernel and stride two. Dot size encodes the input, ring count encodes response strength, and crimson or blue gives its sign. The kernel responds only where the shape bends, so straight interiors stay blank. Three outputs hidden under the card are declared in the notes.
+A convolution slides one small window over a picture and asks the same question at every stop. Here the window is a real edge detector, moved two cells at a time. Dot size shows what it saw, the number of rings how strongly it answered, and crimson or blue whether the answer was positive or negative. It only speaks where the shape bends, so flat interiors stay blank. Three answers hidden under the card are listed in the notes.
 
 ## What is on the sheet
 Reading order:
