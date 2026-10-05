@@ -14,6 +14,15 @@
 ## In one line
 A GAN drawn as a **laminar** left-to-right pipeline — latent cloud → five generator blobs → x̂ → five discriminator blobs → a fork to D(x̂)/D(x) — a measured reproduction of a reference schematic in which each "layer" is a 3-lobed contour blob whose knot is threaded by coloured flow curves.
 
+## Lede
+A generative adversarial network drawn as a **single left-to-right pipeline**: noise passes through a generator, then a discriminator that judges generated samples against real ones.
+
+## On the sheet
+A horizontal chain of eleven lobed blobs crosses the middle of the sheet, in crimson, blue, gold, olive and black, threaded by woven flow curves. A round stipple of dots at far left is the latent noise. A large black blob below stands for real data and sends a curve bundle to the discriminator. Two loss formulas, a row of small kernel tiles and labels sit beneath.
+
+## The science
+The layout encodes the standard GAN structure: noise becomes a sample, and the discriminator scores fake against real, with the two usual loss functions printed in text. Nothing is computed from a trained network. Blob positions are traced from a reference schematic, and the flow curves, kernel tiles and corner words are decorative.
+
 ## What is on the sheet
 - **The main row (dominant mass).** A horizontal chain of 11 lobed blobs threaded on flow curves across v≈0.30–0.46, u≈0.07–0.86.
   - Far left, the **latent cloud**: a round stipple of ~300 black dots, ~0.07 of sheet width, centred u≈0.08, v≈0.40. Above it `z ~ p(z)` (u≈0.08–0.12, v≈0.27) with a dotted vertical tick below, beneath it `latent space` (v≈0.48).

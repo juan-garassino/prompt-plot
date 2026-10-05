@@ -15,6 +15,15 @@
 ## In one line
 Gray-Scott reaction-diffusion drawn as a **lattice-with-defects** (a labyrinth with one pitch and no grain) — the selected wavelength follows √D. MORPHOGENESIS states it as an exploded axonometric deck of three separate runs at D 0.4 / 1.0 / 2.0 plus a magnified relief; BACTERIO states it as one sheet-filling field whose D ramps ×7 left→right, overprinted with green rules spaced at the predicted local wavelength and red germ outlines at true scale, dressed as Sottsass's Memphis *Bacterio* laminate.
 
+## Lede
+Gray-Scott reaction-diffusion drawn as a labyrinth with one natural pitch: the **spacing of its stripes follows the square root of diffusion**.
+
+## On the sheet
+Both plates are dense black contour fields of a simulated pattern. One is a tilted deck of three plates and a large relief at upper right, with crimson scale bars at left. The other fills the sheet beneath a giant blue title, crossed by vertical green rules and outlined by crimson germ shapes. Captions run down the left side.
+
+## The science
+Both run the real Gray-Scott equations. Scaling the diffusion rates by s scales pattern spacing by the square root of s, and the printed measurements agree within a few percent. On the second plate the green rules are the predicted spacing, not measured. Counting stripes between rules by eye is hard, and the starting shapes leave visible traces.
+
 ## What is on the sheet
 
 ### MORPHOGENESIS (reaction_diffusion v8)

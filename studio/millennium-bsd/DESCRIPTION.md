@@ -11,6 +11,15 @@
 ## In one line
 Plate 7 of the Millennium series puts an elliptic curve and its L-function on one sheet at one scale: **a single gold point generates every rational point by drawing lines, and the L-function crosses zero once, in gold, exactly where the conjecture says it must.**
 
+## Lede
+Plate seven draws an elliptic curve beside its L-function: **one gold point generates every rational point**, and the L-function crosses zero once, at s equals one.
+
+## On the sheet
+A black elliptic curve fills the middle: a closed egg at the left and an open branch to its right, studded with small circles. A gold point sits on the egg, and three black chords pass through it. At the right, the L-function dips below a thin axis and crosses it in a short gold stretch. Text columns surround them.
+
+## The science
+The curve is y squared plus y equals x cubed minus x, drawn exactly, and every circle is a true multiple of the generator. The L-function is computed, and its slope at the crossing is shown as an angle. The conjecture itself, the leading-term identity and the proofs of Gross-Zagier and Kolyvagin are stated only in text.
+
 ## What is on the sheet
 - **Title block** (top-left): `BIRCH AND SWINNERTON-DYER` in spaced caps (u 0.05–0.78, v 0.05), above `GEOMETRY MEETS ANALYSIS: THE RANK OF E(Q) IS` / `THE ORDER OF THE ZERO OF L(E,S) AT S = 1.` (v 0.09–0.10). Top-right: `MILLENNIUM PRIZE PROBLEMS 7 / 7` / `CLAY MATHEMATICS INSTITUTE, 2000`.
 - **Curve key** (left, v 0.25–0.35): `E : Y² + Y = X³ - X`, then `CREMONA 37A1 · CONDUCTOR 37 · E(Q) = ZP`, then a six-line paragraph on the construction ending `ODD N FALL ON THE OVAL, EVEN N ON THE OPEN BRANCH.`

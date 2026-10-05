@@ -13,6 +13,15 @@
 ## In one line
 Message passing drawn as a **nested / terraced** order on the exact BFS hop-distance field of a seeded small-world graph — root = summit, one hop per terrace, the 3-hop receptive field in red — with a **laminar** footer of 12-layer mean-aggregation traces meant to collapse into one consensus line.
 
+## Lede
+Message passing in a graph network drawn as a **terraced mountain of hop distance**: one terrace per hop from a root node, with the three-hop reach in crimson.
+
+## On the sheet
+A black wireframe mountain spans the upper middle, its summit marked by a crimson disc labelled ROOT. Three nested crimson terrace rings step down its front slope, and two crimson arcs leap from the summit to other slopes. Below, in the lower third, about thirty-four green lines run left to right, gathering slightly toward a short crimson dash. Spaced capital type heads the page.
+
+## The science
+The terrain is the exact hop-distance field of a seeded small-world graph of 150 nodes, with a few long-range shortcuts; the crimson terraces are its one-, two- and three-hop reach. The green lines are twelve rounds of real mean aggregation, which slowly smooth toward consensus. No nodes or edges are drawn, and the split into islands is not clearly visible.
+
 ## What is on the sheet
 - **The terrain (dominant mass).** A black wireframe hidden-line mountain, ~0.86 of sheet width, spanning u≈0.07–0.93, v≈0.25–0.53. A broad ridge rises left-to-right: a lower left shoulder peaks at u≈0.28, v≈0.34, the summit is at u≈0.54, v≈0.28, and a long right flank runs down to a thin spit ending at u≈0.93, v≈0.41. The front face drops into a V-shaped keel whose point sits at u≈0.50, v≈0.53. Mesh is a crossed diagonal grid; it is densest (near solid black) on the front slope u≈0.30–0.70, v≈0.35–0.45 and on the right flank where the grid lines compress (u≈0.70–0.85, v≈0.37–0.40). A few thin elliptical contour loops are visible inside the mesh on the left shoulder and front face.
 - **The red receptive field.** Around the summit, a small filled crimson disc (root, u≈0.54, v≈0.28, ~0.02 of width) inside a crimson circle, then three nested ragged crimson terrace rings stepping down the front slope (widest ring spans u≈0.29–0.66, v≈0.29–0.42). Two long crimson arcs leave the summit area: one a high parabola that lands on the left shoulder at u≈0.28, v≈0.34 (apex u≈0.44, v≈0.23, above the terrain), the other a tall narrow loop (apex u≈0.50, v≈0.23) that drops straight down to u≈0.47, v≈0.38. A short crimson tick near `ARCHIPELAGO` at u≈0.78, v≈0.41. The "islands" the docstring promises are not identifiable as separate red regions.

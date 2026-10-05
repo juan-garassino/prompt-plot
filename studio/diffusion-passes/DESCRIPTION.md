@@ -16,6 +16,15 @@
 ## In one line
 Diffusion drawn as **a lattice-with-defects wrapped into a ring of time that fails to close** — the arc coordinate is t, the crystal melts to an isotropic bullseye at the antipode and recrystallises back to the seam at a 37.4° grain tilt, and one straight chord (the closed-form forward jump) crosses the void one way only. The faithful and mechanism variants keep the reference's **three laminar registers** (noising row, U-Net bowtie, denoising row) with colour as t; the mechanism's states are real DDPM particles.
 
+## Lede
+Diffusion drawn as **a ring of time that does not close**: an ordered crystal melts into noise along one arc and is rebuilt, slightly rotated, along the other.
+
+## On the sheet
+A wide ring takes up most of the sheet. Its texture runs from a black ruled lattice through blue, purple and pink to crimson scatter, with a small crimson bullseye of pure noise at the lower right. The return arc is stitched and tilted. One straight diagonal chord crosses the ring, and large stroke type stacks down the left.
+
+## The science
+The forward half follows the real DDPM noising equation under a cosine schedule: fine structure dies first, and each pen change marks a signal-to-noise threshold. The chord stands for the closed-form jump to noise in one evaluation. The reverse half's tilt means a new sample, not the original. The learned network is not drawn.
+
 ## What is on the sheet
 
 ### abstract v2 — THE LONG WAY BACK

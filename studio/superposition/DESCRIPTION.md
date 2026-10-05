@@ -14,6 +14,15 @@
 ## In one line
 Attention drawn as **superposed Gaussian bumps flowing down a central axis** — Q and K families (mirror images) pour dotted connector fans into a contoured two-eyed similarity field, which drops to a five-spike softmax row, fans out to a wide V family and converges into a nested green bell (Z = AV); an exact, measured recreation of an AI-made reference, with no redesign.
 
+## Lede
+Attention drawn as **overlapping bell curves flowing down one axis**, from queries and keys through a similarity map and softmax to the weighted values.
+
+## On the sheet
+Crimson Q bumps sit at upper left and mirrored blue K bumps at upper right, with dotted connectors funnelling into a black contoured map at the centre. Below it a row of five black spikes marks the softmax. A wide goldenrod family of V bumps spreads along the lower sheet and narrows into a nested green bell at the foot.
+
+## The science
+The bell curves are placed by measurement from a reference, not computed from real query, key or value vectors, and softmax and the output are not calculated from them. The one real computation is the central map: a two-dimensional field contoured by marching squares. Only the layout of attention is stated, not its numbers.
+
 ## What is on the sheet
 Reading order: the black contour map at the centre, the red and blue families above it, then down the axis through softmax, V and Z. There is no title.
 

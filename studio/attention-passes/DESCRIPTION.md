@@ -13,6 +13,15 @@
 ## In one line
 Attention as **convergent flow then the same flow run backward** — faithful and mechanism are two-register flow plates (three source wells → similarity lattice → softmax waist → Z, mirrored below for the gradient; mechanism drives every mark from real GPT-2 L1 H0 row 12), while abstract transposes it to a **projective pencil through one vanishing point** (a 336 mm raw-score rail cut by concurrent rays down to a 125 mm unit bar; the backward pass is the same rays continued past the apex).
 
+## Lede
+Attention drawn as flow that converges and then runs backward: the **forward pass and its gradient** share one set of weights.
+
+## On the sheet
+Two plates share a frame. In the flow versions, a forward band sits above a backward band, with Q in blue, K in black, V in crimson. Sources feed a dotted similarity lattice, a black comb of softmax bars and a final output node. The abstract version draws a pencil of black rays meeting at one point, with a blue axis across the top and a crimson hatched bar below.
+
+## The science
+The mechanism plate uses real GPT-2 attention (layer 1, head 0, one query row), where the weights sum to one and the largest is about 0.50. The backward pass is computed by hand and checked. Values are not GPT-2's own. The abstract plate shows softmax as ray geometry with assigned values; the flow-art plate is seeded, not measured.
+
 ## What is on the sheet
 
 ### faithful v12 (r01)

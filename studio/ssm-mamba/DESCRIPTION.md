@@ -13,6 +13,15 @@
 ## In one line
 A selective state-space (Mamba S6) scan drawn as a **laminar** order — a hidden-line corridor of 40 channel states along time above its own memory horizon, a 45° sawtooth that grows one token per token and is cut to zero wherever the learned step Δt fires — with both plates sharing one axonometric metric so a tooth's length on paper is its reach in tokens.
 
+## Lede
+A selective state-space (Mamba) scan drawn as **a corridor of memory above a receding horizon**, where each token chooses how far back it can still see.
+
+## On the sheet
+A black woven wireframe band descends across the sheet from upper left to centre right, crossed by four crimson seams. Beneath it a black rule carries clock ticks and hatched sawtooth teeth that end in crimson cliffs, lined up with the seams above. A short green line marks the deepest memory. Large spaced titles sit at the top and small labels run along the bottom.
+
+## The science
+The corridor comes from a real diagonal state-space model with 40 channels at different decay rates, a learned step size that spikes at topic boundaries, and exact discretisation. The horizon is the solved memory length in tokens: it grows one token per token, then drops to zero where the step fires. Both plates share one scale, so tooth length equals reach. The model inputs are seeded synthetic noise.
+
 ## What is on the sheet
 - **The state corridor (dominant mass).** A black woven wireframe band descending left-to-right across the sheet, bleeding off both side margins: at the left edge it spans v≈0.29–0.38, at the right edge v≈0.49–0.58; ~0.90 of sheet width. The far-left third is a tall, open, wavy surface with big folds and sparse mesh (u≈0.05–0.40, v≈0.29–0.45); toward the right it flattens into tightly hatched stacked folds with dark seams (u≈0.55–0.95, v≈0.40–0.58). Four crimson seams run across the corridor's folds (transverse profiles at the selection events) — at u≈0.07–0.14, v≈0.29–0.33; u≈0.07–0.28, v≈0.30–0.37; u≈0.37–0.48, v≈0.40–0.47; u≈0.64–0.86, v≈0.48–0.53.
 - **The horizon shadow (second mass).** Beneath and parallel to the corridor, a straight black rule descends from u≈0.05, v≈0.48 to u≈0.95, v≈0.69, carrying short black clock ticks of varying height above it (clustered in bursts of 3–5 at each selection event). Hanging below the rule are sawtooth teeth filled with parallel black hatching at ~1.6 mm: each tooth ramps down along the rule and ends in a vertical cliff edged in crimson. Five full teeth: cliffs at u≈0.13, 0.28, 0.52, 0.63, 0.87; the tooth after u≈0.63 is the deepest (to v≈0.79). Crimson dashed projection lines drop vertically from each corridor seam to its cliff (u≈0.13, 0.28, 0.52, 0.63); black and green dashed verticals at u≈0.84–0.88 connect the corridor's front edge to the rule.

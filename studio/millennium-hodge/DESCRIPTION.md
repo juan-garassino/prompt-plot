@@ -11,6 +11,15 @@
 ## In one line
 Plate 5 of the Millennium series draws the one place the Hodge conjecture can actually be seen: a curved surface built **only from two families of straight blue and gold strings**, on which every curve, even a perfect circle, has the same class as a sum of those strings. A row of five small copies shows the classes [A], [B], [A]+[B], [A]+2[B] and 2[A]+3[B] as real curves.
 
+## Lede
+Plate five shows a surface built only from straight lines, where **every curve on it is a sum of two kinds of string**, even a circle.
+
+## On the sheet
+A weave of crossing blue and gold strings forms a hyperboloid at the upper right, with a bare lens of paper at its middle and green curves lying across it. Black text sits down the left. Along the lower part, five small copies show a line, a second line, a conic, a twisted cubic and a quintic, with a green circle, an equals sign and blue and gold slashes beneath.
+
+## The science
+The surface is a quadric, and its two families of lines carry two classes, A and B. Every curve on it has class a times A plus b times B, which is a case where the Hodge conjecture is already a theorem, by Lefschetz in 1924. The drawing is exact. The Hodge decomposition is stated in text only.
+
 ## What is on the sheet
 - **Title (top-left).** `HODGE` / `CONJECTURE` in large spaced caps at u ≈ 0.07–0.42, v ≈ 0.05–0.11. Under it: `IN COHOMOLOGY A CIRCLE` / `IS TWO STRAIGHT LINES.` (v ≈ 0.14).
 - **Corner caption (top-right).** `REAL POINTS OF X²+Y²−Z²=1 · |Z| ≤ 2 · ORTHOGRAPHIC`, flush right at v ≈ 0.06.

@@ -13,6 +13,15 @@
 ## In one line
 Mixture-of-experts routing drawn as a **tessellated** order — the exact argmax partition of a 2-D token space by a 16-expert linear gate, lifted into faceted confidence tents by the routing margin, after a simulated rich-get-richer collapse — with the tokens as red dashes and every dead expert left as bare paper.
 
+## Lede
+Mixture-of-experts routing drawn as **faceted green tents over a speckle of red tokens**, showing a collapsed router in which most of sixteen experts never fire.
+
+## On the sheet
+A cluster of green terraced tents fills the upper centre and right, drawn as nested triangles and chevrons, some edges dashed. Hundreds of tiny crimson dashes speckle two of the tents. Spaced title letters sit top left, a small green bar chart of expert load bottom left, and an empty band between.
+
+## The science
+A 16-expert linear gate splits a flat token space into exact cells; height is the routing margin, with terraces as level lines. A simulated rich-get-richer update collapses it: five experts hold territory, eleven never fire, and the top one takes 46 percent. The figures are printed in text; nothing on the sheet marks the missing experts.
+
 ## What is on the sheet
 - **The terrain (dominant mass).** An isometric cluster of faceted tents, ~0.72 of sheet width, spanning u≈0.21–0.93, v≈0.15–0.67, drawn in green as nested terrace rings (polygon offsets) with no mesh fill.
   - **Upper chevron stack**: nested V-shaped terraces pointing down, apex column around u≈0.62, v≈0.15–0.36; its outer terraces are solid on the right face and broken into dashes and `>`/`<` chevrons on the left face.

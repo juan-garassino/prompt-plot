@@ -14,6 +14,15 @@
 ## In one line
 Kandinsky's diffusion poster recast as **one straight chord in, a nest of concentric orbits out** — a colour-block composition (the data) melts left→right into a field of shrinking coloured spirals, a single ruled chord jumps straight to a Gaussian ball at the centre, and 26 concentric orbits around it (one per denoising step, inked fraction = ᾱ_t) are the reverse chain that re-emerges as a sparser colour-block sample at the right edge.
 
+## Lede
+A diffusion model drawn as a Kandinsky poster: **one straight chord jumps from data to noise**, while twenty-six concentric orbits trace the slow denoising path back.
+
+## On the sheet
+A colour-block composition at the left melts rightward into scattered blue, crimson, gold and green spirals. At the centre sits a gold circle of dots, the noise, ringed by a black stack of orbits that thin toward the middle. A single black line crosses to it. A sparser composition appears at the right edge, with a time ruler along the bottom.
+
+## The science
+Each orbit is one denoising step of a cosine-schedule DDPM, with a thousand steps in total and every thirty-eighth drawn; the inked fraction of an orbit follows the signal that remains. Colour appears only where signal outweighs noise. The one-step formula is written in text. Some encodings, such as the orbit wobble, are too subtle to see.
+
 ## What is on the sheet
 Positions normalised to the sheet (u → right, v → down).
 

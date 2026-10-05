@@ -517,8 +517,11 @@ and studio notes are repointed to the new paths. `studio_sync` never resurrects 
    bytes` — `pens[]` is per layer index (`black,black` stays two), `pen_count` counts unique
    names, `plotted` is null or an object, `assets.sheet_raster` is null unless the SVG tripped
    the size guard. The site's Prints section is built against exactly this shape.
-   Title, one-liner, "What is on the sheet" and "The science it encodes" come from
-   `studio/<slug>/DESCRIPTION.md`; paper, pens, seed and piece from the gcode header; stats and
+   Title and texts come from `studio/<slug>/DESCRIPTION.md`: the one-liner is `## Lede`
+   (else the first paragraph of `## In one line`), the two prose sections are the **brief
+   site sections** `## On the sheet` and `## The science` (≤ 70 words each, written for a
+   visitor; they fall back to the long studio sections "What is on the sheet" / "The science
+   it encodes"); paper, pens, seed and piece from the gcode header; stats and
    the plot-time estimate from the manifest. A plate with no DESCRIPTION.md is warned about, gets
    its family name as title (underscores → spaces) and no prose, and `--list`/`--dry-run` mark it
    `no description` — give it a `title` in `prints.json` (or write the description).

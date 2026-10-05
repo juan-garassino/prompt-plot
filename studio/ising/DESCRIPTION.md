@@ -14,6 +14,15 @@
 ## In one line
 **COOLING STRIP.** One 212 × 129 Ising lattice with temperature running linearly from 0.70 Tc at the left edge to 2.30 Tc at the right edge. The Fortuin–Kasteleyn cluster held by a fixed + wall on the left is drawn as a ruled sea. Its hull is **one crimson coast**, at mean 1.02 Tc: Tc is a *place*. Free FK clusters are drawn as closed outlines, weighted by size. They shrink and thin to the right until heat is finer than the 13-site cut, and the sheet ends in bare paper.
 
+## Lede
+A strip of the Ising magnet cooled across its **critical temperature**, drawn so that the critical point appears as a place on the sheet: one ragged crimson coast.
+
+## On the sheet
+Giant spaced capitals spell CRITICAL up the left edge, with a thermometer ruler along the top. A dense black ruled sea fills the left, bounded by one ragged crimson coastline. Beyond it, black and then grey closed outlines of smaller clusters thin out to the right until bare paper remains. Footer text in three columns carries the numbers.
+
+## The science
+One lattice is simulated with temperature rising from left to right, using the Swendsen-Wang cluster method. Rule density in the sea is the magnetisation; outlines are random clusters, sized by pen weight. The crimson coast sits at about 1.02 times the exact critical temperature, and the measured magnetisation matches Onsager's exact result within simulation noise.
+
 ## What is on the sheet
 Reading order:
 1. CRITICAL up the left edge.

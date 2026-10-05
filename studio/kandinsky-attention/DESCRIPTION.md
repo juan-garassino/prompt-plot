@@ -13,6 +13,15 @@
 ## In one line
 Real GPT-2 attention (layer 4, head 7) drawn two ways — **corrected** is an **apportioned lattice** (a causal 8 × 8 grid where every query row spends exactly eight concentric rings and every output bar is one unit long, textured by the values it bought), **abstract** is a **radial walk of conserved length** (after Kandinsky's "a line is the track of a moving point": each of 15 query rows is a crimson track of 15 steps whose lengths are its weights, so every track is 80 mm and only its endpoint — the output — differs).
 
+## Lede
+Real GPT-2 attention drawn in Kandinsky's language: **every query spends exactly one unit of attention**, shown as rings in a grid and as a track of fixed length.
+
+## On the sheet
+One version is a large triangular grid of black spirals at the centre, with crimson bars down its left side, blue spirals along the top, gold hatched swatches and green bars beneath. The other is a big black dial with gold marks around the rim, a gold triangle across it, a tangle of crimson tracks at the middle and green discs at the track ends.
+
+## The science
+Both use attention weights from GPT-2 small, layer 4, head 7. Each row of weights sums to one, so what a query pays to each value is drawn as ring counts or step lengths. Crimson is queries, blue is keys, gold is values, green is outputs. The reading of Kandinsky is an analogy, not a derivation.
+
 ## What is on the sheet
 
 ### corrected v1 (r01) — `ATTENTION AS RESONANCE`

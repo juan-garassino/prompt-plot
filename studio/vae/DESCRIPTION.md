@@ -13,6 +13,15 @@
 ## In one line
 A VAE's converged posteriors drawn as a **nested / packed** order on the prior's exact energy bowl — each posterior an ellipse stamped with the one ε-constellation that trained it (z = μ + σ·ε), the constellation's master copy on a flat N(0,I) target below — meant to show the collapsed zero-bit posterior as the hero and the unvisited prior wedge as bare paper.
 
+## Lede
+A variational autoencoder's learned posteriors, drawn as small ellipses inside the **bowl of the prior** they are pulled toward.
+
+## On the sheet
+A green wireframe bowl fills most of the sheet. Inside it, a crescent of black ellipses, each with a small green plus at its centre, is speckled with short crimson darts. Bottom left, three dotted black rings hold a star-like scatter of crimson darts, the master noise set. Two dashed green lines climb from it to the bowl. The title sits top left; a rate readout runs along the bottom.
+
+## The science
+The bowl is the prior's energy, and its rings are contours of cost in nats. Each ellipse is one data point's posterior, found by gradient descent on the real objective, with one fixed noise set reused for every point. The decoder and numbers are computed. The claim that one posterior carries zero bits is only stated in text, not visible.
+
 ## What is on the sheet
 - **The prior bowl (dominant mass).** A green wireframe paraboloid seen from above-front, ~0.75 of sheet width, spanning u≈0.17–0.92, v≈0.30–0.57: 22 concentric rings × ~108 radials, the far rim a wide open ellipse (top at v≈0.30), the near side a deep curved wall dropping to the floor at u≈0.54, v≈0.57. The rim band's radials read as a picket fence; rings compress toward the front wall.
 - **The posteriors.** ~13 black ellipse outlines of broadly similar size (~0.10–0.20 of width) overlapping in a crescent inside the bowl, u≈0.26–0.81, v≈0.39–0.54: a clockwise sweep from lower-left (tilted, elongated, u≈0.26–0.45) through upright ellipses at the top centre (u≈0.45–0.68, v≈0.39–0.47) to very flat slivers bunched at the lower right (u≈0.62–0.80, v≈0.49–0.54). Each carries a small green `+` at its mean. Crimson darts (~0.5 mm) are scattered through the ellipses — at sheet scale a light red speckle.

@@ -11,6 +11,15 @@
 ## In one line
 A whirlpool drawn twice: flat, it is **only a target of closed black rings**; in three dimensions it becomes a blue inward spiral that repeats itself at half, quarter, eighth and sixteenth size down a diagonal, ending at an empty red circle where the Navier–Stokes question lives.
 
+## Lede
+A whirlpool drawn twice: flat, it is only closed rings; in three dimensions it is a **spiral that repeats at half size**, down to an empty red circle.
+
+## On the sheet
+A large royal-blue spiral winds inward at the upper left, its left side cut by the margin. At upper right sits a fine black target of concentric rings. Four ever-smaller blue copies of the spiral step down a diagonal to the lower right, ending at an empty crimson circle. Black captions label each form; the title runs across the top.
+
+## The science
+The black rings are the exact streamlines of a flat Lamb–Oseen vortex, which cannot blow up. The blue spiral is the Burgers vortex, a real 3D solution, whose inward curl comes from stretching along the axis. The ladder uses scaling symmetry: copies, not a simulated collapse. The geometry shows that symmetry only; the 2026 claim and the open question are stated in text.
+
 ## What is on the sheet
 - **Title** top-left: `N A V I E R - S T O K E S` spaced caps, u ≈ 0.07–0.93, v ≈ 0.08; statement at v ≈ 0.13: `FLAT, A WHIRLPOOL IS ONLY RINGS. THE SPIRAL IS THE THIRD DIMENSION, AND IT CAN KEEP SHRINKING.`
 - **Hero spiral (blue, dominant).** Evenly spaced streamlines winding inward to a small bare eye at (0.22, 0.35); radius ≈ 0.26 W, spanning v ≈ 0.18–0.54, sliced off by a straight vertical edge at the left margin (u ≈ 0.07). Outer lines run almost radially, then wrap into one tight coil of about two turns. Caption beneath at u 0.07, v ≈ 0.56–0.58: `IN SPACE: A SPIRAL` / `SEEN DOWN THE STRETCHING AXIS` / `THE FLUID LEAVES THROUGH THE PAGE`.

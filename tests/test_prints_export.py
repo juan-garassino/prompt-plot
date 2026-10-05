@@ -234,6 +234,16 @@ def test_slugify_strips_pp_and_the_repeated_family():
     assert pe.slugify("--Hello__World!!") == "hello-world"
 
 
+def test_describe_prefers_the_brief_site_sections(env):
+    d = env["studio"] / "fam-slug" / "DESCRIPTION.md"
+    d.write_text(d.read_text() + "\n## Lede\nTwo pens, one wave.\n\n## On the sheet\nCrests and troughs.\n\n"
+                 "## The science\nSuperposition, briefly.\n")
+    (p,) = export(env)["prints"]
+    assert p["one_line"] == "Two pens, one wave."
+    assert p["sections"] == [{"heading": "What is on the sheet", "md": "Crests and troughs."},
+                             {"heading": "The science it encodes", "md": "Superposition, briefly."}]
+
+
 def test_describe_falls_back_when_there_is_no_description(env):
     assert pe.describe("nope", family="fam") == {"title": "fam", "one_line": "", "sections": []}
     d = pe.describe("fam-slug")

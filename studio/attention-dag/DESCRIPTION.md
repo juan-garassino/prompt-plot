@@ -13,6 +13,15 @@
 ## In one line
 Scaled dot-product attention drawn as an **exploded axonometric stack of terrains** (nested/stratified planes on a vertical spine) — each stage (Q·Kᵀ, softmax, attention map, output) is a hidden-line height-field plate on a black spine, with Q, K and V as coloured terrains exploded sideways along world axes. The landscape and portrait renders are the same composition refit to the two orientations; portrait stretches the spine and leaves more air between stages.
 
+## Lede
+Scaled dot-product attention drawn as **an exploded stack of terrains**: each stage is a height-field plate on a vertical spine, with queries, keys and values entering from the sides.
+
+## On the sheet
+Four black rhombic plates stack down the centre, joined by dashed vertical rules: the query-key product with crimson peaks, an empty softmax plate, a gridded attention map with one needle spike, and a mesh output plate with gold and crimson patches. Crimson, blue and gold terrains float to the sides, tied in by dashed lines. Stage labels run down the left edge; the portrait version spreads the stages further apart.
+
+## The science
+Black marks the computation and colour marks what enters it, following attention's flow from query-key scores through softmax and the attention map to the output. Peak positions come from an attention row of a seeded synthetic head, not a trained model. The three coloured terrains are procedural shapes made to look distinct. That softmax rows sum to one is only stated in a text label.
+
 ## What is on the sheet
 
 ### Landscape (`pp_attention_DAG_landscape.png`, A4 297 × 210)

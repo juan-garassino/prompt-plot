@@ -13,6 +13,15 @@
 ## In one line
 The Dirac-GAN's simultaneous gradient descent-ascent drawn as an **orbital** order on an exact saddle — the objective V = f(ψθ) is the relief, each iteration is a generator leg plus a discriminator leg, and the Nash point is a hole of bare paper the orbit never reaches.
 
+## Lede
+A GAN's two players, generator and discriminator, drawn on an **exact saddle surface** where each step carries them further from the equilibrium they chase.
+
+## On the sheet
+A green wireframe saddle spans most of the sheet, its front lip curling down at lower left and its right side narrowing to a horn. In the middle sits an empty oval of bare paper marked with a small crimson cross. Black and crimson dashes are scattered over the left of the surface. Spaced capital type sits at top left and along the foot, over a quiet blank band.
+
+## The science
+This is the Dirac-GAN, a one-parameter toy model. The mesh height is its exact objective, a saddle. Each iteration is drawn as a generator leg and a discriminator leg, and the simultaneous update provably spirals outward, never reaching the hollow Nash point. The spiral itself is only stated in the text; the plotted dashes are too sparse to show it.
+
 ## What is on the sheet
 - **The saddle (dominant mass).** One draped wireframe surface, ~0.85 of sheet width, spanning u≈0.10–0.95, v≈0.39–0.80, all in green. It is a ring-and-radial polar mesh seen in axonometry: an elongated bowl whose front lip sweeps down-left into a deep curled trough (lowest point u≈0.18, v≈0.80) and whose right side pinches into a narrow horn that converges to a point at u≈0.94, v≈0.66. Radials are thinned in LOD steps, so the far (upper) half reads as broken fence-posts: short radial stubs of varying length at u≈0.35–0.65, v≈0.39–0.45. Ring spacing tightens hard along the front-lower band (v≈0.62–0.70) and in the two convergence zones (trough fold u≈0.25–0.35, v≈0.66–0.75; right horn u≈0.85–0.94, v≈0.60–0.66), where the green lines touch and nearly fill.
 - **The equilibrium hole.** An empty oval of bare paper, ~0.17 of sheet width, centred u≈0.55, v≈0.58, bounded by the innermost green ring. A small crimson `+` sits at its centre. A black dotted/dashed ring and a crimson dashed ring shadow the 3rd–6th mesh rings around it.

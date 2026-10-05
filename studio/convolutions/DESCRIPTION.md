@@ -18,6 +18,15 @@
 - A staircase is the frontier of the convolution's sweep. Below and left of it, X has been sampled into a Ben-Day dot lattice and turned into chains of crimson and blue targets (Y = K∗X).
 - Above and right of it, X is still a pale field of level-set stripes, running out through the top-right corner.
 
+## Lede
+One shape, read by a convolution: the sweep's frontier is a **staircase**, with sampled dots and response rings behind it and pale stripes ahead.
+
+## On the sheet
+A black outline of a Y-shaped figure runs across the sheet, with a heavy card marking the kernel at its fork. Behind a black staircase, a lattice of black dots and chains of crimson and blue rings fill the lower left. The upper right holds pale black stripes running off the corner. A key and the title sit at lower right.
+
+## The science
+This is a real two-dimensional convolution with a five-by-five Laplacian-of-Gaussian kernel and stride two. Dot size encodes the input, ring count encodes response strength, and crimson or blue gives its sign. The kernel responds only where the shape bends, so straight interiors stay blank. Three outputs hidden under the card are declared in the notes.
+
 ## What is on the sheet
 Reading order:
 1. The card.

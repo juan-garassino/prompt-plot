@@ -19,6 +19,15 @@
 ## In one line
 The double slit drawn as an **interfering lattice** — the cross term 2Re(ψ₁ψ₂*) is drawn nowhere; it is the bare paper where probability was taken from and the extra density where it was put, with the count conserved. r01 extrudes the two intensity laws as stacked oblique reliefs (dune vs. comb); r02 strings the same 24 equal-probability beads on two abacus wires; r03 lays 44 equal-probability rules on an oblique slab so spacing is the only variable; r04 doubles that ruling in two pens at a 7° offset, warped by the coherence envelope, carrying the display sentence ONE AND ONE MAKE NONE.
 
+## Lede
+The double slit drawn so that **interference moves probability rather than creating it**: the bare gaps and the extra density balance exactly.
+
+## On the sheet
+Four related plates. One stacks two oblique reliefs, a smooth single bell above a five-fringed comb, in black with crimson plumb lines at the nulls. Another strings equal beads on two wires, with crimson beads marking missing places. A third lays equal-spaced rules across a slab. The last weaves crimson and green rulings into a moiré around a giant black word.
+
+## The science
+All four share one calculation of light through two slits, using the exact aperture integral, with slit separation three times the width so the third fringe order vanishes. The cross term itself is never drawn; it appears as paper left bare and as extra density elsewhere. In the moiré plate the fringe structure is not readable.
+
 ## What is on the sheet
 
 ### double_slit v13 (r01) — a4 portrait

@@ -11,6 +11,15 @@
 ## In one line
 The complete backtracking search of a real 20-variable SAT puzzle, drawn as **one huge pruned tree with a single red thread to the only solution** — set against a short red comb of 91 ticks, the whole cost of checking that solution once it is found.
 
+## Lede
+The full search of a real 20-variable puzzle as **one pruned tree with a single red thread** to its only solution, beside a short comb that checks it.
+
+## On the sheet
+A great black tree fills the centre, forking in eight clean rows and then hanging as a fine curtain of hairlines, longer toward the right. One red line threads down the right side to the word SOLUTION. Bottom left, a small dense black tree; bottom right, a red rule bristling with ticks. Black captions fill the top left.
+
+## The science
+The tree is the complete search of a real SAT instance: 8,047 nodes, 4,023 dead ends, one solution, each node placed by its share of the million candidates. The red path is the answer; the red ticks check it clause by clause. Drawn exactly. That the tree measures this algorithm, not the problem, and what NP leaves open are stated in text.
+
 ## What is on the sheet
 - **Title block, top-left.** `P VS NP` in heavy spaced capitals (u ≈ 0.05–0.28, v ≈ 0.04–0.07); below, Clay's question (v ≈ 0.10–0.11): `IF IT IS EASY TO CHECK THAT A SOLUTION IS CORRECT, / IS IT ALSO EASY TO FIND ONE?`; then, smaller (v ≈ 0.13–0.14): `SATLIB UF20-03: 20 VARIABLES, 91 CLAUSES OF 3. / 2²⁰ = 1,048,576 CANDIDATES. ONE SATISFIES ALL 91.`
 - **Right column** (u ≈ 0.61, v ≈ 0.04–0.11): `MILLENNIUM PRIZE PROBLEMS 2 / 7`, `CLAY MATHEMATICS INSTITUTE, 2000`, then `P: ANSWERS FOUND IN POLYNOMIAL TIME. / NP: ANSWERS CHECKED IN POLYNOMIAL / TIME, GIVEN A CERTIFICATE. / P IS INSIDE NP. EQUAL? OPEN.`

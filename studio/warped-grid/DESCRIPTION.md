@@ -14,6 +14,15 @@
 ## In one line
 Attention drawn as **a lattice pinched by alignment** — Q and K spiral-contour clusters fan into a bow-tie-warped Q·Kᵀ grid, softmax lifts it into a perspective plane carrying five contour cones (A), and four black leads plus V's ochre bundle land on a green ridged landscape (Z = AV); a measured recreation of an AI-made reference poster.
 
+## Lede
+Self-attention drawn as a lattice **pinched by alignment**: queries and keys fan into a warped grid, which softmax lifts and blends with values.
+
+## On the sheet
+Crimson spiral clusters (queries) sit top left and blue ones (keys) top right. Below them a black dotted grid pinches into a bow-tie at the centre. Under that, a black perspective plane carries five contour cones. Four black leads and a goldenrod bundle of values drop to a green ridged landscape at lower left, labelled as the output. Small black marginal glyphs surround the main forms.
+
+## The science
+This is a measured copy of a reference poster, not a computation. Contour nests, the bow-tie warp and the cones are geometric constructions placed to match it. The mechanism, queries times keys transposed, softmax, then weights times values, is carried by the labels and the layout, not by any real attention data.
+
 ## What is on the sheet
 Reading order: the red and blue clusters at the top, the black lattice below them, the A plane, then Z lower left with V lower right. No title.
 

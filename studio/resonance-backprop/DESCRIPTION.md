@@ -14,6 +14,15 @@
 ## In one line
 Attention and its gradient drawn as **interfering waves folded about a horizontal mirror**: the forward pass (Q, K packets → two-source Huygens interference → softmax → Z = AV) fills the upper half, and the backward pass (∂L/∂Z → ∂L/∂A → ∂L/∂Q, ∂L/∂K, ∂L/∂V) re-draws the same packets inverted below, with a vertical rail at the left labelling "forward pass" down and "backward pass" up. The two current renders differ only in the hero's outer tonal field: **v5** has wide dotted ellipse halos and dense scatter, **v8** has a tight oval of dashed crest arcs.
 
+## Lede
+Attention and its gradient drawn as **interfering waves folded about a horizontal mirror**: the forward pass fills the upper half, the backward pass re-draws it inverted below.
+
+## On the sheet
+Crimson query and blue key wave packets sit top left and top right, feeding a black two-bullseye interference figure in the upper centre. A black softmax row of peaks lies beneath it, with ochre value rows at mid-left and a green output packet in the middle. The lower half repeats these forms as gradients, and a vertical rail at the left labels the forward and backward passes.
+
+## The science
+The interference pattern is real geometry: crest circles of two point sources, cos(k r₁)/√r₁ + cos(k r₂)/√r₂. The wave packets are traced from a reference diagram, not computed from attention weights. The softmax peaks and the backward layout are drawn illustration; the gradient arrows mark direction only, and the equations appear as text labels.
+
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.
 

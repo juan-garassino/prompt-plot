@@ -67,7 +67,12 @@ CATALOG_VERSION = 1
 DEFAULT_ORDER = 1000
 TILE_SIZES = ("s", "m", "l")  # reserved site hint from prints.json "size" (the carousel stage ignores it)
 SVG_LIMIT = 3_000_000  # bytes; above it the site gets sheet_raster as well
-SECTIONS = ("What is on the sheet", "The science it encodes")
+# site sections: display heading -> source headings in DESCRIPTION.md, first present wins.
+# The brief "On the sheet" / "The science" are written for the site; the long studio
+# sections are the fallback.
+SECTIONS = (("What is on the sheet", ("On the sheet", "What is on the sheet")),
+            ("The science it encodes", ("The science", "The science it encodes")))
+LEDE_HEADINGS = ("Lede", "In one line")
 ASSET_CACHE = "public, max-age=31536000, immutable"  # content-addressed names
 CATALOG_CACHE = "public, max-age=300"  # the catalog changes; 5 minutes
 
@@ -161,6 +166,13 @@ def resolve_render(gallery: Path, subject: str, basename: str) -> Optional[Tuple
     return (render, gcode) if render is not None and gcode is not None else None
 
 
+def _exact_section(text: str, heading: str) -> str:
+    """Like studio_descriptions._section but the heading must match whole — "The science"
+    must not pick up "The science it encodes"."""
+    m = re.search(rf"^## {re.escape(heading)}[ \t]*$\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    return m.group(1).strip() if m else ""
+
+
 def describe(slug: str, family: Optional[str] = None) -> Dict[str, Any]:
     """{title, one_line, sections} from ``studio/<slug>/DESCRIPTION.md``."""
     path = STUDIO / slug / "DESCRIPTION.md"
@@ -172,11 +184,15 @@ def describe(slug: str, family: Optional[str] = None) -> Dict[str, Any]:
     text = path.read_text()
     m = _TITLE.search(text)
     title = m.group(1).strip() if m else (family or slug)
-    one_line = _section(text, "In one line").split("\n\n")[0].strip()
+    one_line = next((b for h in LEDE_HEADINGS if (b := _exact_section(text, h).split("\n\n")[0].strip())), "")
     if not one_line:
         first = re.match(r".+?[.!?](?=\s|$)", title)
         one_line = first.group(0) if first else title
-    sections = [{"heading": h, "md": md} for h in SECTIONS if (md := _section(text, h))]
+    sections = []
+    for heading, sources in SECTIONS:
+        md = next((m for src in sources if (m := _exact_section(text, src))), "")
+        if md:
+            sections.append({"heading": heading, "md": md})
     return {"title": title, "one_line": one_line, "sections": sections}
 
 

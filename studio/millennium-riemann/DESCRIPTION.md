@@ -14,6 +14,15 @@
 ## In one line
 The X-ray of ζ: every curve where Re ζ(s) = 0 (black) and where Im ζ(s) = 0 (hairline), computed exactly on the upper half-plane at one isotropic scale. Every meeting above the real line is marked with a red cross, and all 28 fall on one vertical, Re s = ½, which is never drawn. The hypothesis is the column that nobody drew.
 
+## Lede
+An X-ray of the zeta function: where its real and imaginary parts vanish, with all 28 red crossings standing on **one vertical line that is never drawn**.
+
+## On the sheet
+Black tongues and fine hairline curves sweep in from the left edge, fanning down onto the horizontal real axis near the bottom. A column of 28 small red crosses rises just right of centre, unevenly spaced. To its right the field thins to quiet parallel rulings. Spaced black capitals head the sheet, with a short key and two captions.
+
+## The science
+The curves are computed exactly: black where the real part of zeta is zero, hairline where the imaginary part is zero. Red crosses mark where both vanish, the nontrivial zeros, and all lie on the half line, left undrawn. That is the hypothesis, which is verified far up but not proved; that claim is stated in text.
+
 ## What is on the sheet
 Sheet mm, x right, y up. One scale on both axes: 3.45 mm per unit. σ = ½ is at x = 180. The real axis is y = 32, and t runs 0 → 97.35 (top crop at y = 367.86, mid-gap between γ₂₈ and γ₂₉).
 

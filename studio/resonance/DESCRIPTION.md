@@ -14,6 +14,15 @@
 ## In one line
 A transformer block drawn as **interfering waves**: Q and K are rows of Gaussian wave packets whose dot product is shown as a real two-source Huygens interference figure (crest loci r = m·L, d = 35·L), then softmax peaks, Z = AV, a mixture-of-experts fork and a gradient band. Siblings: **backprop** replaces MoE with a full mirrored backward pass; **ffn** replaces MoE with an FFN stage and a single backward row; **clean** stops at Z.
 
+## Lede
+Attention drawn as **interference between two wave families**: queries and keys are wave packets meeting in a central ripple pattern, followed by a mixture-of-experts step.
+
+## On the sheet
+Crimson query packets sit top left and blue key packets top right, with dotted curves funnelling down into two black bullseyes of concentric rings at the centre. Below are a black softmax row of peaks, ochre value packets at mid-right, and a green output packet at lower left. Violet lanes fork through a router at lower right, and stacked gradient labels run along the bottom.
+
+## The science
+The central figure is computed: crest circles of two point sources, cos(k r₁)/√r₁ + cos(k r₂)/√r₂, with a spacing rule for where crests meet. The wave packets, softmax peaks, expert lanes and gradients are copied from a reference diagram rather than derived from a model, so they illustrate the idea instead of measuring it.
+
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet. The plate is bilaterally symmetric in its top half and reads top to bottom.
 

@@ -13,6 +13,15 @@
 ## In one line
 Attention as **everything forced through one constriction** — faithful and mechanism are **interlaced** braids (Q and K weave above a softmax bead waist, V is spun into a green rope below; mechanism routes every strand from real GPT-2 L2 H9), while aperture ("SUMS TO ONE") transposes it to **potential flow through a single slit** — Q streamlines and K spirals are the elliptic coordinate system of one hole in a black wall, and softmax is the clump widths at the slit plus the profile standing on it.
 
+## Lede
+Attention as everything forced through **one constriction**: queries and keys interlace, softmax narrows them, and values are woven into the output.
+
+## On the sheet
+Crimson query strands enter from one side and blue key strands from the other, crossing in a lens at the top. They pinch into a waist of black beads. Below, gold value strands join green output strands that braid or fan toward the right edge. One version shows a black wall with a single slit, with strands radiating above and a green cable beneath it.
+
+## The science
+The mechanism plate routes strands from a real GPT-2 attention head (layer 2, head 9) on a sample sentence, with weights summing to one and most mass on a few words. The slit version builds streamlines from elliptic coordinates, so passing through one opening is a property of the geometry. The faithful version is a seeded recreation.
+
 ## What is on the sheet
 
 ### aperture v19 — "SUMS TO ONE" (r03)

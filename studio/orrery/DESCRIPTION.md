@@ -14,6 +14,15 @@
 ## In one line
 Attention drawn as **an orbital system**: four planetary systems (Q, K, V, Z) circle a central Q·Kᵀ/softmax sun inside one big dotted orbit, and coloured bundles of curves carry Q, K and V into the central rings and Z out of them. It is an exact reproduction of an engraved orrery reference.
 
+## Lede
+Attention drawn as **a small planetary system**: query, key and value bodies orbit a central softmax sun, and their curves flow into it and out as the result.
+
+## On the sheet
+Concentric rings with scattered nodes form the central sun, labelled with the dot product and softmax, inside one large dotted orbit. Four smaller systems circle it: crimson Q at upper left, blue K at upper right, ochre V at lower right and green Z at the bottom. A coloured bundle of curves joins each to the centre. Moon discs and small marks fill the margins.
+
+## The science
+The mapping is a metaphor. Q, K and V feed the central score-and-softmax step and Z is the output, but no real weight or score sets any radius. The sheet is a measured recreation of an engraved reference, with every hub and orbit placed from it and only the small central nodes drawn at random.
+
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.
 
