@@ -56,21 +56,25 @@ class GCodeVisualizer:
         output_path: str = "preview.png",
         color_layers: Optional[bool] = None,
         palette: Optional[List[str]] = None,
+        pen_widths: Optional[Dict[int, float]] = None,
     ):
         """Render program to PNG file.
 
         When the program has multiple pen colors (or ``color_layers=True``), each
         color layer is drawn in its own color using ``palette`` (falling back to
-        a distinct color cycle) with a legend.
+        a distinct color cycle) with a legend. ``pen_widths`` maps a colour index
+        to its physical width in mm; each layer is then drawn at that footprint,
+        so a 4 mm brush underpainting reads as paint and not as a hairline. This
+        is what lets a vision critic judge brushwork at all.
         """
         lines, stats = self._trace(program)
         if palette is None and self.config is not None and getattr(self.config, "color", None):
             palette = list(self.config.color.palette)
         distinct = {l[5] for l in lines if l[4] and len(l) > 5 and l[5] is not None}
         if color_layers is None:
-            color_layers = len(distinct) > 1
+            color_layers = len(distinct) > 1 or bool(pen_widths)
         if color_layers and distinct:
-            self._render_color_layers(lines, stats, output_path, palette or [])
+            self._render_color_layers(lines, stats, output_path, palette or [], pen_widths or {})
         else:
             self._render(lines, stats, output_path)
 
@@ -474,13 +478,27 @@ class GCodeVisualizer:
                 return True
         return False
 
-    def _render_color_layers(self, lines, stats, output_path: str, palette: List[str]):
-        """Render a multi-color program with one color per pen layer + legend."""
+    def _render_color_layers(
+        self,
+        lines,
+        stats,
+        output_path: str,
+        palette: List[str],
+        pen_widths: Optional[Dict[int, float]] = None,
+    ):
+        """Render a multi-color program with one color per pen layer + legend.
+
+        ``pen_widths`` (colour index → mm) draws each layer at its physical
+        footprint; layers without an entry use the default hairline."""
+        pen_widths = pen_widths or {}
         fig, ax = plt.subplots(figsize=(self.fig_w, self.fig_h))
         self._apply_paper(fig, ax)
         paper_w = self.config.paper.x_extent if self.config else 210
         paper_h = self.config.paper.y_extent if self.config else 297
         margin = 10
+        # matplotlib linewidths are in points; the axes span paper_w + 2*margin mm
+        # across fig_w inches, so this converts a physical mm footprint to points.
+        pts_per_mm = (self.fig_w * 72.0) / float(paper_w + 2 * margin)
         dark = self._needs_dark_bg(palette)
         if dark:
             # Simulate dark paper so white/metallic pens are visible.
@@ -524,14 +542,22 @@ class GCodeVisualizer:
             ax.add_collection(
                 LineCollection(travel_segs, colors=self.travel_color, linewidths=0.4, alpha=0.25)
             )
-        for ci in sorted(by_color):
+        # broad passes first so fine passes sit on top, like paint
+        order = sorted(by_color, key=lambda c: (-pen_widths.get(c, 0.0), c))
+        for ci in order:
             color = self._color_for_index(ci, palette)
             label = palette[ci] if (palette and ci < len(palette)) else f"color {ci}"
+            w_mm = pen_widths.get(ci)
+            lw = max(self.line_width, w_mm * pts_per_mm) if w_mm else self.line_width
+            if w_mm:
+                label = f"{label} · {w_mm:g} mm"
             ax.add_collection(
                 LineCollection(
                     by_color[ci],
                     colors=color,
-                    linewidths=self.line_width,
+                    linewidths=lw,
+                    capstyle="round",
+                    joinstyle="round",
                     label=f"{ci}: {label}",
                 )
             )

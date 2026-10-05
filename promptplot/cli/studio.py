@@ -51,14 +51,19 @@ def studio_brief(slug, domain):
 @studio.command("design")
 @click.argument("slug")
 @click.option("--style", default="bauhaus", show_default=True, help="Style canon (STYLES.md)")
-@click.option("--mode", type=click.Choice(["params", "code"]), default="params", show_default=True)
+@click.option("--mode", type=click.Choice(["params", "code", "scene"]), default="params", show_default=True,
+              help="params = existing pieces · code = new Python piece · scene = authored Scene JSON (reconstructions)")
 @click.option("--rounds", default=3, show_default=True)
 @click.option("--provider", "provider_name", default=None, help="LLM provider (openai|anthropic|ollama|nvidia|...)")
 @click.option("--model", default=None, help="Model override")
 @click.option("--paper", default="a4", show_default=True)
 @click.option("--orientation", default="portrait", show_default=True)
+@click.option("--reference", type=click.Path(exists=True, dir_okay=False), default=None,
+              help="Reference image the designer sees and the critic compares against "
+                   "(default: studio/<slug>/ref/reference.png if present)")
+@click.option("--seed", default=7, show_default=True, help="Seed for code-mode pieces")
 @click.option("--out", "out_dir", default=None, help="Output dir (default: studio/<domain>/<slug>/)")
-def studio_design(slug, style, mode, rounds, provider_name, model, paper, orientation, out_dir):
+def studio_design(slug, style, mode, rounds, provider_name, model, paper, orientation, reference, seed, out_dir):
     """Run the native design loop for a brief: designer → render → critic → synth."""
     from pathlib import Path
 
@@ -75,6 +80,7 @@ def studio_design(slug, style, mode, rounds, provider_name, model, paper, orient
     console.print(
         f"[bold]studio design[/bold] {brief.title} — style={style} mode={mode} "
         f"rounds={rounds} provider={getattr(provider, 'provider_name', '?')}"
+        + (f" reference={reference}" if reference else "")
     )
     res = run_design_loop_sync(
         slug,
@@ -87,6 +93,8 @@ def studio_design(slug, style, mode, rounds, provider_name, model, paper, orient
         brief=brief,
         paper=paper,
         orientation=orientation,
+        reference=Path(reference) if reference else None,
+        seed=seed,
     )
     for r in res.rounds:
         mark = {"pass": "[green]PASS[/green]", "revise": "[yellow]REVISE[/yellow]"}.get(r.verdict, "[red]FAIL[/red]")

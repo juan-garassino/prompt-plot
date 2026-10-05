@@ -263,8 +263,13 @@ async def _t_studio_design(
     style: str = "bauhaus",
     mode: str = "params",
     rounds: int = 2,
+    reference: str = "",
 ) -> Dict[str, Any]:
-    """Run the native designer→render→critic→synth loop (needs an LLM provider)."""
+    """Run the native designer→render→critic→synth loop (needs an LLM provider).
+    ``mode`` is params | code | scene; ``reference`` is an optional image path the
+    designer sees and the critic compares against."""
+    from pathlib import Path as _Path
+
     from ..studio.loop import run_design_loop
 
     if ctx.provider is None:
@@ -273,6 +278,7 @@ async def _t_studio_design(
     res = await run_design_loop(
         slug, ctx.provider, style=style, mode=mode, rounds=rounds,
         out_dir=out_dir, config=ctx.config,
+        reference=_Path(reference) if reference else None,
     )
     best = res.best
     return {

@@ -151,6 +151,11 @@ class PaperConfig:
             pw, ph = float(m.group(1)), float(m.group(2))
             if max(pw, ph) < 60:  # given in centimetres
                 pw, ph = pw * 10.0, ph * 10.0
+            # Normalise to portrait (short side first) exactly as SIZES stores the
+            # named papers. Without this a custom size that is written wide-first
+            # ("42x24") inverts the orientation flag: portrait came back 420x240
+            # and landscape 240x420, so every custom-paper piece got the wrong sheet.
+            pw, ph = min(pw, ph), max(pw, ph)
         w, h = (ph, pw) if orientation == "landscape" else (pw, ph)
         return cls(width=w, height=h, margin_x=margin, margin_y=margin, orientation=orientation)
 
@@ -201,9 +206,16 @@ class PenConfig:
 
 @dataclass
 class BrushConfig:
-    """Brush/ink reload configuration."""
+    """Brush/ink reload configuration.
+
+    ``charge_position`` is the single well used when a colour has no entry in
+    ``charge_positions`` (colour index → well). A multi-paint acrylic plate puts
+    each paint's pot at its own coordinates, and the reload count restarts at
+    every colour swap because the brush comes back freshly loaded.
+    """
 
     charge_position: Tuple[float, float] = (10.0, 10.0)
+    charge_positions: Dict[int, Tuple[float, float]] = field(default_factory=dict)
     dip_height: float = 0.0
     dip_duration: float = 0.5  # seconds in ink
     drip_duration: float = 1.0  # seconds dripping
@@ -211,17 +223,27 @@ class BrushConfig:
     pause_after_move: float = 0.1  # seconds between moves in brush mode
     enabled: bool = False
 
+    def well_for(self, color: Optional[int]) -> Tuple[float, float]:
+        if color is not None and color in self.charge_positions:
+            return self.charge_positions[color]
+        return self.charge_position
+
+    @staticmethod
+    def _xy(pos, default=(10.0, 10.0)) -> Tuple[float, float]:
+        if isinstance(pos, dict) and "x" in pos and "y" in pos:
+            return (float(pos["x"]), float(pos["y"]))
+        if isinstance(pos, (list, tuple)) and len(pos) == 2:
+            return (float(pos[0]), float(pos[1]))
+        return default
+
     @classmethod
     def from_dict(cls, data: Dict) -> "BrushConfig":
-        pos = data.get("charge_position", {})
-        if isinstance(pos, dict) and "x" in pos and "y" in pos:
-            position = (pos["x"], pos["y"])
-        elif isinstance(pos, (list, tuple)) and len(pos) == 2:
-            position = (pos[0], pos[1])
-        else:
-            position = (10.0, 10.0)
+        wells = {}
+        for k, v in (data.get("charge_positions") or {}).items():
+            wells[int(k)] = cls._xy(v)
         return cls(
-            charge_position=position,
+            charge_position=cls._xy(data.get("charge_position", {})),
+            charge_positions=wells,
             dip_height=data.get("dip_height", 0.0),
             dip_duration=data.get("dip_duration", 0.5),
             drip_duration=data.get("drip_duration", 1.0),
