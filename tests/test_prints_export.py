@@ -83,7 +83,7 @@ Superposition, honestly.
 TOP_KEYS = ["version", "generated", "count", "prints"]
 PRINT_KEYS = ["id", "subject", "basename", "slug", "family", "title", "one_line", "sections",
               "paper", "pens", "pen_count", "stats", "seed", "piece", "rendered",
-              "published_at", "order", "size", "plotted", "assets", "bytes"]
+              "published_at", "order", "size", "detail", "plotted", "assets", "bytes"]
 
 
 def pub(verdict: str = "publish", name: str = NAME, subject: str = SUBJECT,
@@ -175,7 +175,7 @@ def test_catalog_matches_the_v1_contract(env):
     assert p["piece"] == "studio/fam-slug/rounds/r02/piece.py::fam_wave"
     assert p["rendered"] == "2026-09-20T12:16:38"
     assert p["published_at"] == "2026-10-01T22:14:03"
-    assert p["order"] == 1000 and p["size"] == "s" and p["plotted"] is None
+    assert p["order"] == 1000 and p["size"] == "s" and p["detail"] is None and p["plotted"] is None
 
     sha = gi.sha256(env["gallery"] / SUBJECT / "current" / f"{STEM}.gcode")
     a = p["assets"]
@@ -316,6 +316,21 @@ def test_override_size_sets_the_mosaic_tile(env, caplog, size, expected, warns):
         (p,) = export(env)["prints"]
     assert p["size"] == expected
     assert ("is not one of" in caplog.text) is warns
+
+
+@pytest.mark.parametrize("detail, expected, warns", [
+    ({"u": 0.72, "v": 0.3}, {"u": 0.72, "v": 0.3, "zoom": 2.4}, False),
+    ({"u": 0.5, "v": 0.5, "zoom": 3}, {"u": 0.5, "v": 0.5, "zoom": 3.0}, False),
+    ({"u": 1.4, "v": 0.3}, None, True),
+    ({"u": 0.5, "v": 0.5, "zoom": 9}, None, True),
+    ({"x": 0.5}, None, True),
+    ("centre", None, True)])
+def test_override_detail_is_where_the_site_crop_looks(env, caplog, detail, expected, warns):
+    env["studio"].joinpath("prints.json").write_text(json.dumps({f"{SUBJECT}/{NAME}": {"detail": detail}}))
+    with caplog.at_level(logging.WARNING, logger="prints_export"):
+        (p,) = export(env)["prints"]
+    assert p["detail"] == expected
+    assert ("detail" in caplog.text) is warns
 
 
 def test_plotted_without_a_photo_on_disk_keeps_photo_null(env, caplog):

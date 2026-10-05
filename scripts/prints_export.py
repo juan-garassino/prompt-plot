@@ -210,6 +210,28 @@ def _tile(key: str, size: Any) -> str:
     return size
 
 
+DETAIL_ZOOM = (1.2, 4.0)
+DEFAULT_DETAIL_ZOOM = 2.4
+
+
+def _detail(key: str, value: Any) -> Optional[Dict[str, float]]:
+    """prints.json ``detail``: where the site's small crop looks — ``{"u", "v"}`` as
+    fractions of the sheet (left/top), optional ``zoom`` (magnification). Invalid → None (logged)."""
+    if value is None:
+        return None
+    try:
+        u, v = float(value["u"]), float(value["v"])
+        zoom = float(value.get("zoom", DEFAULT_DETAIL_ZOOM))
+    except (TypeError, KeyError, ValueError):
+        logger.warning("prints.json: %s detail must be {\"u\", \"v\"[, \"zoom\"]} — ignored (%r)", key, value)
+        return None
+    if not (0 <= u <= 1 and 0 <= v <= 1 and DETAIL_ZOOM[0] <= zoom <= DETAIL_ZOOM[1]):
+        logger.warning("prints.json: %s detail out of range (u, v in 0..1, zoom %s..%s) — ignored (%r)",
+                       key, *DETAIL_ZOOM, value)
+        return None
+    return {"u": u, "v": v, "zoom": zoom}
+
+
 def _local(path: str, gallery: Path) -> Path:
     """A repo-relative path from prints.json; ``gallery/...`` follows ``--gallery``."""
     p = Path(path)
@@ -375,6 +397,7 @@ def build_print(subject: str, basename: str, render_rec: dict, gcode_rec: dict,
         "published_at": published_at,
         "order": int(override.get("order", DEFAULT_ORDER)),
         "size": _tile(key, override.get("size")),
+        "detail": _detail(key, override.get("detail")),
         "plotted": plotted,
         "assets": {"sheet": rel("sheet"), "sheet_raster": rel("sheet_raster") if raster else None,
                    "thumb": rel("thumb"), "technical": rel("technical"), "photo": photo_rel,

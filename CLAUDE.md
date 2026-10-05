@@ -559,6 +559,7 @@ are not published or not on disk are warned about:
 ```json
 {"studio/attention_DAG/pp_attention_DAG_landscape.png": {
   "id": "attention-as-topography", "title": "Attention as Topography", "order": 10, "size": "l",
+  "detail": {"u": 0.50, "v": 0.35, "zoom": 2.4},
   "paper": "a4 landscape", "pens": ["dodgerblue","crimson","gold","black"], "pen_widths_mm": [0.3,0.3,0.3,0.5],
   "plotted": {"date":"2026-09-13","paper":"A3 Fabriano 200g cream","pens":["Staedtler 0.3 black","Sakura gold"],"photo":"gallery/studio/attention_DAG/plotted/IMG_2231.jpg"}}}
 ```
@@ -566,8 +567,11 @@ are not published or not on disk are warned about:
 `order` sorts ascending (default 1000; ties newest-published first); `size` (`s`/`m`/`l`, default
 `s`; anything else warns and falls back to `s`) is copied into every catalog entry and reserved
 for the site: the current Prints stage is a one-plate-at-a-time carousel that ignores it (it
-sized tiles when the stage was a mosaic); `plotted.photo` is exported
-as a WebP and rewritten to its asset path. The bucket (europe-west1, uniform access, public
+sized tiles when the stage was a mosaic); `detail` is **where the site's small detail crop
+looks** — `u`/`v` are fractions of the sheet from the left/top (0–1) and `zoom` the magnification
+(1.2–4, default 2.4); picked by eye per plate (the exporter copies it through, out-of-range or
+malformed values warn and are dropped, and the site then falls back to a per-id hash);
+`plotted.photo` is exported as a WebP and rewritten to its asset path. The bucket (europe-west1, uniform access, public
 read, CORS for the site's origins in `scripts/prints_cors.json`) was made by
 `scripts/setup_prints_bucket.sh` — idempotent, re-run it to rebuild or re-apply CORS.
 

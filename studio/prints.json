@@ -1,1 +1,227 @@
-{}
+{
+ "studio/vae/pp_vae_v1.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.42
+  }
+ },
+ "studio/warped_grid/pp_warped_grid_v1.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.41
+  }
+ },
+ "studio/attention_passes/pp_attention_passes_mechanism_v15.png": {
+  "detail": {
+   "u": 0.42,
+   "v": 0.33
+  }
+ },
+ "studio/attention_weaving/pp_attention_weaving_mechanism_v20.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.28
+  }
+ },
+ "studio/bacterio/pp_bacterio_v5.png": {
+  "detail": {
+   "u": 0.65,
+   "v": 0.3
+  }
+ },
+ "studio/convolutions/pp_convolutions_wildcard_v23.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.55
+  }
+ },
+ "studio/diffusion/pp_diffusion_v1.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.56
+  }
+ },
+ "studio/double_slit/pp_double_slit_v13.png": {
+  "detail": {
+   "u": 0.55,
+   "v": 0.72
+  }
+ },
+ "studio/gan_plate/pp_gan_plate_v1.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.4
+  }
+ },
+ "studio/gnn/pp_gnn_v1.png": {
+  "detail": {
+   "u": 0.52,
+   "v": 0.32
+  }
+ },
+ "studio/interf_annot/pp_interf_annot_v8.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.36
+  }
+ },
+ "studio/ising/pp_ising_r06_wildcard_v11.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.5
+  }
+ },
+ "studio/kandinsky_attention/pp_kandinsky_attention_abstract_v1.png": {
+  "detail": {
+   "u": 0.48,
+   "v": 0.4
+  }
+ },
+ "studio/kandinsky_diffusion/pp_kandinsky_diffusion_corrected_v1.png": {
+  "detail": {
+   "u": 0.6,
+   "v": 0.5
+  }
+ },
+ "studio/lstm_spirals/pp_lstm_spirals_iterate_v16.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.28
+  }
+ },
+ "studio/massredist/pp_massredist_v6.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.38
+  }
+ },
+ "studio/millennium_bsd/pp_millennium_bsd_faithful_v5.png": {
+  "detail": {
+   "u": 0.4,
+   "v": 0.47,
+   "zoom": 3.2
+  }
+ },
+ "studio/millennium_hodge/pp_millennium_hodge_faithful_v8.png": {
+  "detail": {
+   "u": 0.55,
+   "v": 0.42
+  }
+ },
+ "studio/millennium_navier_stokes/pp_millennium_navier_stokes_abstract_v16_a4.png": {
+  "detail": {
+   "u": 0.35,
+   "v": 0.33
+  }
+ },
+ "studio/millennium_p_vs_np/pp_millennium_p_vs_np_faithful_v6.png": {
+  "detail": {
+   "u": 0.7,
+   "v": 0.3
+  }
+ },
+ "studio/millennium_poincare/pp_millennium_poincare_faithful_v7.png": {
+  "detail": {
+   "u": 0.52,
+   "v": 0.5
+  }
+ },
+ "studio/millennium_riemann/pp_millennium_riemann_faithful_v5.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.5
+  }
+ },
+ "studio/millennium_yang_mills/pp_millennium_yang_mills_abstract_v7.png": {
+  "detail": {
+   "u": 0.4,
+   "v": 0.4,
+   "zoom": 3.0
+  }
+ },
+ "studio/moe/pp_moe_v1.png": {
+  "detail": {
+   "u": 0.55,
+   "v": 0.4
+  }
+ },
+ "studio/res_backprop/pp_res_backprop_gradient-as-phase_v9.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.45
+  }
+ },
+ "studio/res_ffn/pp_res_ffn_v5.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.43
+  }
+ },
+ "studio/resonance/pp_resonance_one-field_v6.png": {
+  "detail": {
+   "u": 0.3,
+   "v": 0.2
+  }
+ },
+ "studio/resonance_backprop/pp_resonance_backprop_the-fold_v7.png": {
+  "detail": {
+   "u": 0.35,
+   "v": 0.48
+  }
+ },
+ "studio/resonance_ffn/pp_resonance_ffn_the-squash_v15.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.25
+  }
+ },
+ "studio/ssm_mamba/pp_ssm_mamba_v7_s7.png": {
+  "detail": {
+   "u": 0.45,
+   "v": 0.45
+  }
+ },
+ "studio/stable_diffusion/pp_stable_diffusion_faithful_v1.png": {
+  "detail": {
+   "u": 0.55,
+   "v": 0.52
+  }
+ },
+ "studio/attention_DAG/pp_attention_DAG_landscape.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.35
+  }
+ },
+ "studio/cnn_passes/pp_cnn_passes_abstract_v10.png": {
+  "detail": {
+   "u": 0.72,
+   "v": 0.55
+  }
+ },
+ "studio/diffusion_passes/pp_diffusion_passes_abstract_v2.png": {
+  "detail": {
+   "u": 0.55,
+   "v": 0.35
+  }
+ },
+ "studio/gan/pp_gan_escape-spiral_v8.png": {
+  "detail": {
+   "u": 0.5,
+   "v": 0.3,
+   "zoom": 2.0
+  }
+ },
+ "studio/orrery/pp_orrery_resonant-orbits_v14.png": {
+  "detail": {
+   "u": 0.38,
+   "v": 0.42
+  }
+ },
+ "studio/superposition/pp_superposition_INTERFERENCE_FIELD_v9.png": {
+  "detail": {
+   "u": 0.4,
+   "v": 0.5
+  }
+ }
+}
