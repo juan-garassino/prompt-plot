@@ -12,7 +12,7 @@ Nothing under `promptplot/` was modified.
 .venv/bin/python scripts/render_candidate.py studio/resonance/rounds/r01/piece.py \
   --fn attention_as_resonance --seed 7 --colors 6 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,darkviolet,black \
-  --out ~/Downloads/pp_resonance_v13.png
+  --out gallery/studio/resonance/current/pp_resonance_v13.png
 ```
 
 `--colors 6` is required. `render_candidate.py` defaults `--colors` to 3, which folds the

@@ -20,10 +20,10 @@ Files: `net.py` (the arithmetic + `summary()`), `piece.py` (the plate).
 .venv/bin/python scripts/render_candidate.py studio/cnn-passes/rounds/r02/piece.py \
   --fn cnn_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_cnn_passes_mechanism_v9.png
+  --out gallery/studio/cnn_passes/current/pp_cnn_passes_mechanism_v9.png
 ```
 
-Final render: `~/Downloads/pp_cnn_passes_mechanism_v9.png` (+ `.gcode` beside it).
+Final render: `gallery/studio/cnn_passes/current/pp_cnn_passes_mechanism_v9.png` (+ `.gcode` beside it).
 Earlier rounds kept at `v1 … v8` — nothing overwritten.
 
 Print the checkable numbers with `.venv/bin/python studio/cnn-passes/rounds/r02/net.py`.

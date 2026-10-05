@@ -4,11 +4,11 @@ Piece: `studio/ssm-mamba/rounds/r01/piece.py`, entry `receding_horizon`.
 Renders (A4 portrait, `--colors 3`, palette `black,crimson,forestgreen`):
 
     .venv/bin/python scripts/render_candidate.py studio/ssm-mamba/rounds/r01/piece.py \
-        --fn receding_horizon --seed 7 --paper a4 --out ~/Downloads/pp_ssm_mamba_v7_s7.png
+        --fn receding_horizon --seed 7 --paper a4 --out gallery/studio/ssm_mamba/current/pp_ssm_mamba_v7_s7.png
 
-    ~/Downloads/pp_ssm_mamba_v7_s7.png   (seed 7  — chosen)
-    ~/Downloads/pp_ssm_mamba_v7_s11.png  (seed 11 — best terrain form)
-    ~/Downloads/pp_ssm_mamba_v7_s23.png  (seed 23)
+    gallery/studio/ssm_mamba/current/pp_ssm_mamba_v7_s7.png   (seed 7  — chosen)
+    gallery/studio/ssm_mamba/trials/pp_ssm_mamba_v7_s11.png  (seed 11 — best terrain form)
+    gallery/studio/ssm_mamba/trials/pp_ssm_mamba_v7_s23.png  (seed 23)
 
 Earlier rounds kept for history: `pp_ssm_mamba_v1..v6*.png` in ~/Downloads.
 

@@ -7,7 +7,7 @@ Entry point: `piece.py::warped_grid(rng, bounds, colors=5)`.
 .venv/bin/python scripts/render_candidate.py studio/warped-grid/rounds/r01/piece.py \
   --fn warped_grid --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_warped_grid_v1.png
+  --out gallery/studio/warped_grid/current/pp_warped_grid_v1.png
 ```
 
 Pens: 0 red (Q) · 1 blue (K) · 2 ochre (V) · 3 green (Z) · 4 black (lattice, A,

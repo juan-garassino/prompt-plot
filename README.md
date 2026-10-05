@@ -290,6 +290,9 @@ promptplot import F --no-fit     SVG/DXF → GCode; --no-fit is mm-native when t
                                  viewBox + physical width (Bezier curves are flattened exactly)
 promptplot studio design SLUG --mode scene --reference IMG
                                  Reference-driven reconstruction loop (see studio/AUTHORING.md)
+python scripts/prints_export.py  Published plates → catalog.json + site renders (--list,
+                                 --dry-run, --only; --push / make prints-export uploads
+                                 to gs://garassino-ai-prints)
 ```
 
 ## Architecture

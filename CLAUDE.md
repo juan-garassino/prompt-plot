@@ -42,8 +42,12 @@ The machine reads these one line at a time and moves accordingly.
 ## Commands
 - `make dev` — install editable with dev+viz extras (`uv pip install -e ".[dev,viz]"`). Optional extras: `uv pip install -e ".[openai,anthropic,gemini,vision,io]"` (`io` = svgpathtools+ezdxf for full-fidelity SVG/DXF import).
 - `make check` — **the gate: `test-ci` + `studio-check`.** Run it before calling
-  anything done. `studio-check` (`scripts/studio_regression.py`) fingerprints the 51
-  studio pieces, which live outside the package and which no test imports.
+  anything done. `studio-check` (`scripts/studio_regression.py`) re-renders every
+  `studio/*/rounds/*/piece.py` (129 today; 51 have a baseline in `studio/REGRESSION.json`, the
+  rest have nothing to compare against until `--write`) — they live outside the package and no
+  test imports them.
+- `make prints-export` — publish Juan's published plates to the portfolio site's bucket (see
+  "Publishing to the site").
 - `make test` — runs the full suite (~630 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted. One pre-existing failure (`test_refinement.py::test_batch_refinement_prefers_improved_result`, a stub-queue exhaustion) predates the v3.1 work; `make test-ci` deselects it.
 - Single test: `python3 -m pytest tests/test_primitives.py::test_name -v`. By marker: `-m "not requires_hardware and not requires_llm"` to skip hardware/LLM-gated tests.
 - `make lint` (ruff) / `make format` (black + isort). Line length 100.
@@ -64,6 +68,20 @@ The machine reads these one line at a time and moves accordingly.
 All seven pp-* skills/agents were rewritten 2026-09-21: the earlier versions called
 `scripts/{validate,simulate,serial_stream,detect_ports,orchestrate}.py`, none of which
 exist, and `pp-stream` streamed whole files with no frame trace.
+
+### Studio agents (design new plates — project agents in `.claude/agents/`)
+- `studio-expert` — field expert → `studio/<slug>/dossier.md` (truths, lies list, check numbers)
+- `studio-translator` — dossier → `encoding.md` (canon, abstract order, mapping, acceptance checks)
+- `studio-designer` — builds one round `studio/<slug>/rounds/rNN/` by thesis (faithful / mechanism / abstract / lens), self-iterates on its PNG
+- `studio-art-critic` / `studio-science-critic` — blind to code; cold score, 3 mandates, follow-up on open mandates
+- `studio-lead` — keeps `LEDGER.md`, writes `SYNTH.md` (next work order), routes, runs the fabrication gate
+
+The main session is the curator; `.claude/workflows/studio.js` runs the whole loop per plate
+(parallel theses → both critics → lead → follow-up rounds → stop at vote). Every plate has a
+vision-reviewed `studio/<slug>/DESCRIPTION.md` (sheet in (u,v), Keep, Weak, three next
+theses) — the starting spec; `python scripts/studio_descriptions.py [--json]` rebuilds the
+`studio/DESCRIPTIONS.md` index and emits workflow args. Protocol:
+`promptplot/generative/STUDIO.md` § Iteration protocol.
 
 ### Controller skills (drive PromptPlot from Claude Code)
 - `pp-orchestrate` — supervisor-worker loop for dense (10k+) drawings: plan
@@ -142,7 +160,7 @@ Main commands:
 - `promptplot draw "prompt" --simulate` (batch) / `--live` (real-time) / `--colors N` (multi-color) / `--paper a4`.
 - `promptplot art <generator> --seed N --colors K --simulate --preview` (seeded generative, no LLM).
 - `promptplot import file.svg|file.dxf --simulate --preview` (vector file → color layers).
-- `promptplot plot frame --paper a4:landscape --margin 15` (MANDATORY pen-up paper-edge+margin trace, 3s hold on first edge) · `promptplot plot layer file.gcode 1 [--strokes S:E] [--dry-run]` (guardrailed per-colour streaming with batches, 60s acks, park (0,0)) · `promptplot plot file.gcode` (legacy full-file plot).
+- `promptplot plot frame --paper a4:landscape --margin 15` (MANDATORY pen-up paper-edge+margin trace, 3s hold on first edge) · `promptplot plot layer file.gcode 1 [--strokes S:E] [--dry-run]` (guardrailed per-colour streaming with batches, 60s acks, park (0,0)) · `promptplot plot plate file.gcode [--layers 0,2,3] [--batch-strokes 400] [--rezero-every 2000] [--resume JOB_ID] [--retrace] [--jobs] [--port …] [--paper …] [--dry-run]` (a WHOLE multi-pen plate as one resumable job — frame, per-layer park + pen-swap wait, pen-up approach, batches, re-zero checks, job file `~/.promptplot/plot_jobs/<id>.json` after every batch; Enter/p/s at waits, Ctrl-C once = pause, twice = stop; draws capped F500 + dwells floored 1.0s by default; engine `promptplot/plotjob.py`, spec + status `studio/PLOT_JOBS.md`) · `promptplot plot file.gcode` (legacy full-file plot).
 
 New flags on `draw`: `--plan` (LLM plans composition first), `--resume` (resume interrupted drawing),
 `--orchestrate --regions N` (supervisor-worker fan-out), `--colors N` (LLM assigns colors, plotter pauses
@@ -347,12 +365,20 @@ gallery/
 ```
 
 Regenerate all three views with `python scripts/gallery_index.py`. Pull new renders out of
-`~/Downloads` with `python scripts/studio_sync.py` — Downloads is staging, the gallery is the
+`~/Downloads` with `python scripts/studio_sync.py` (files each
+render under its PLATE, thesis as a variant, latest per thesis in `current/`; `--min-age 30`
+makes it safe while agents render — it never overwrites and rewrites Downloads paths in studio
+notes; `--copy --only <plates>` previews a batch; `--fix-refs` repairs stale Downloads paths) — Downloads is staging, the gallery is the
 archive.
+
+**NEW renders** (computed in the viewer from file mtime vs `studio/feedback.jsonl`): a render
+stays NEW until a verdict on its drawing is recorded after it, on it or on a newer render. A drawing
+never judged uses Juan's last verdict anywhere, frozen at page load. Viewing never clears NEW.
+Header **New · N** filters to NEW only, `n` jumps to the next one, and the page opens on the first.
 
 ### Don't break the studio pieces
 
-The 51 candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` live OUTSIDE the package
+The candidate pieces under `studio/<slug>/rounds/<rN>/piece.py` (129 today) live OUTSIDE the package
 and are not in `GENERATOR_REGISTRY`, so `make test` never touches them — yet they import
 `engine.geometry`, `engine.kit`, `engine.policies` and the private helpers `_poly`, `_dot`,
 `_stroke_text`, `_text_width`, `_chain_segments` from `generators.py`. An edit to any of
@@ -362,6 +388,11 @@ those can change an approved plate with nothing going red.
 python scripts/studio_regression.py            # compare against the baseline
 python scripts/studio_regression.py --write    # re-record it (only when the change is intended)
 ```
+
+**`rounds/r00/` is a FROZEN ORIGINAL** restored from history (LSTM helix, manifold fold
+braid, composition-nothing v2 — each verified identical to its gallery render); never edit
+one, new versions go in r01+. Re-render with `scripts/render_candidate.py ... --margin 15`
+(those three were drawn at a 15 mm margin; `--margin` defaults to the paper config's 10).
 
 Each piece is fingerprinted by command count, draw/travel length, pens and a hash of every
 coordinate, so any geometry change shows up even when the totals match. Baseline:
@@ -385,11 +416,43 @@ gitignored and would lose them):
 exact render Juan was looking at, what he wants changed, and any other plates he referenced
 with `@`. Treat a REWORK note the same way you would treat a brief.
 
-Verdicts, mapping to `promptplot/generative/CURATION.md`'s vocabulary:
+Render verdicts (keys 1–5 in the viewer; save at once and jump to the next undecided render),
+mapped to `promptplot/generative/CURATION.md`'s vocabulary:
 
-- **PROMOTE** (= KEEP) — this is the final version of that drawing
+- **PROMOTE** (= CURATION's KEEP) — this is the final version of that drawing
+- **KEEP** (= FLAVOUR) — good, keep it as a flavour; *not* CURATION's KEEP
 - **REWORK** (= REWORK) — good bones, fix what the note says
-- **CUT** (= KILL) — drop it
+- **ARCHIVE** (= PARKED) — not now: `gallery_apply` moves it to `archive/`, hidden unless
+  "show archived"; a later KEEP/REWORK restores it
+- **CUT** (= KILL) — drop it (`cut/`, never deleted)
+
+**Direction verdicts** judge the approach behind a set of renders — a direction is keyed by its
+root round (`r02`, `original`, a wildcard's round, or `x-<variant>` without a ledger), parsed from
+the LEDGERs by `scripts/gallery_directions.py` (`--audit` prints them): **WORKS / MAYBE / DEAD
+END** (keys `w`/`m`/`d`). They are stored as their own scope (target
+`<subject>/@direction/<key>`), never clear NEW, open each `studio/<slug>/FEEDBACK.md` as a
+Directions table with "rounds not to fork from", roll up in `studio/DIRECTIONS.md`, and **steer
+the studio**: `studio_descriptions.py --json` drops dead-end theses and lists `avoid_parents`,
+the workflow refuses a dead-end/archived/cut parent, and the lead and designer agents obey them.
+
+**Publish verdicts** pick the plates that go to Juan's portfolio site: **PUBLISH / UNPUBLISH**
+(the "Publish to site" toggle or `p`; only a render with its gcode beside it). Their own scope,
+virtual target `<subject>/@publish/<basename>`, field `basename`; the newest one per plate
+decides, so an unpublish removes it (`gallery_feedback.latest_published()`). They never move a
+file, never clear NEW and are not agent instructions: they appear in no markdown view and a
+plate that is only published gets no `FEEDBACK.md`. Status filter "published"; a magenta rail
+dot marks a published render. What happens next is § "Publishing to the site" below.
+
+Viewer keys: `1–5` verdict · `w m d` direction · `p` publish · `z` back to the last judged · `n` next NEW ·
+`s` **swipe mode** (a full-screen card deck of undecided renders, newest first: → keep ·
+← archive · ↑ promote · ↓ rework + note · `x` cut · space skip · `z` undo · `p` publish · Esc back);
+Cmd/Ctrl/Alt never record anything. Filters: status, direction verdict, series, NEW, show
+archived; `#p=<path>` deep links. **`gallery/board.html`** is the directions board: a row per
+plate, a card per direction (latest render, canon/order/lineage chips, best critic scores,
+verdict tallies, W/M/D), and a patterns strip counting WORKS/DEAD END by canon and by order
+(`order_norm`: the twelve non-circular orders or "circular"). `python scripts/gallery_index.py`
+reuses cached hashes/stats (seconds; `--full` recomputes, `--views-only` rewrites only the two
+pages).
 
 To review: `python scripts/gallery_serve.py` opens the viewer on localhost and saves feedback
 straight to disk. The viewer's **Plot** panel can also send the plate on screen to the machine
@@ -400,8 +463,17 @@ python scripts/gallery_serve.py --allow-plot --paper a5:landscape \
     --serial-port /dev/cu.usbserial-14120
 ```
 
-Only one colour layer per request today; the whole-plate job (pen-swap pauses,
-batching, re-zero, resume, ETA, queue) is planned in `studio/PLOT_JOBS.md`.
+**Plot plate** runs the whole plate as one job (the same `promptplot/plotjob.py` engine as
+`promptplot plot plate`): it traces the frame first, then per layer parks at (0,0) and waits
+for **Continue** (pen swap), streams batches of `batch_strokes`, parks for a re-zero check
+every `rezero_every` strokes, and rewrites `~/.promptplot/plot_jobs/<id>.json` after every
+batch. Endpoints: `POST /plotter/job {action: "plate", target, layers?, batch_strokes?,
+rezero_every?, max_feed?, min_dwell?, confirm}`, `POST /plotter/continue {wait_seq}` (must
+name the wait on screen), `POST /plotter/pause` (stop at the batch boundary, resumable),
+`POST /plotter/resume {job_id, retrace?, confirm}`, `GET /plotter/jobs`; `GET /plotter/state`
+adds `waiting_for`, `cursor`, `progress`, `eta_min`. One job owns the port (an `flock` shared
+with the terminal command). Built/not-built and the saturation argument: `studio/PLOT_JOBS.md`
+(queue + sort-by-cost are still planned).
 
 Plotting is **off unless `--allow-plot` is passed**, every request must carry `confirm: true`,
 the target must resolve inside `gallery/` and end in `.gcode`, the layer is bounds-checked
@@ -412,10 +484,99 @@ process* (`promptplot plot frame` in another terminal does not satisfy it). Endp
 bare interpreter. Opened as a plain `file://` page it still browses, but a `file://` page
 cannot write, so saving there falls back to the clipboard.
 
-PROMOTE and CUT only *record* a decision — nothing moves until
-`python scripts/gallery_apply.py --dry-run` is checked and re-run without the flag. CUT moves
-a plate to a `cut/` tier and **never deletes**; every move is appended to `MOVES.tsv` and is
-reversible.
+Verdicts only *record* a decision — nothing moves until
+`python scripts/gallery_apply.py --dry-run` is checked and re-run without the flag. PROMOTE,
+ARCHIVE and CUT move files (`current`/`promoted`, `archive/`, `cut/`), KEEP/REWORK restore a
+parked one; nothing is ever deleted, every move is appended to `MOVES.tsv` and is reversible,
+and studio notes are repointed to the new paths. `studio_sync` never resurrects a parked render.
+
+### Publishing to the site
+
+`make prints-export` (= `scripts/prints_export.py --push`) turns the published plates into the
+**Prints** section of Juan's site (career-navigator, `artificial-artifacts.com`), which reads
+`catalog.json` v1 + its assets from the public bucket **`gs://garassino-ai-prints`**:
+
+1. `latest_published()` gives the plates; each resolves through `gallery/<subject>/manifest.json`
+   to its render + gcode at the best tier (so the id survives a move between `current/` and
+   `trials/`). No gcode, no manifest entry, no provenance header and no override, or any error
+   while exporting it → warned and skipped (one broken plate never aborts the rest). The id is
+   `prints.json`'s `id`, else family + stem slugged with `pp_` and a repeated family dropped
+   (`attention_DAG` + `pp_attention_DAG_landscape.png` → `attention-dag-landscape`).
+2. `scripts/prints_render.py` (pure functions, deterministic, byte-comparable) draws the assets
+   from the gcode: `write_svg` (clean vector sheet, one `<path>` per pen, no background — the
+   site supplies cream paper), `write_thumb` (640 px WebP on cream), `write_technical` (1:1 mm
+   plate: mm axes + a legend with the real pen colours, none of the preview's title/stats/travel
+   chrome), `write_raster` (2600 px fallback, only when the SVG exceeds 3 MB), `write_photo`.
+   `parse_header` reads the provenance block — first line `; promptplot render` (annotated by
+   round-local wrappers) or `; promptplot PLATE (...)` (studio plate writers), then `; key value`
+   lines; a magic line with no such block is header-less — `parse_polylines` the toolpath, and
+   `fit_sheet` transposes the declared sheet for old plates whose strokes only fit it turned;
+   a bbox that overflows either way is warned about.
+3. Each catalog entry carries, in this order: `id subject basename slug family title one_line
+   sections paper pens pen_count stats seed piece rendered published_at order size plotted assets
+   bytes` — `pens[]` is per layer index (`black,black` stays two), `pen_count` counts unique
+   names, `plotted` is null or an object, `assets.sheet_raster` is null unless the SVG tripped
+   the size guard. The site's Prints section is built against exactly this shape.
+   Title and texts come from `studio/<slug>/DESCRIPTION.md`: the one-liner is `## Lede`
+   (else the first paragraph of `## In one line`), the two prose sections are the **brief
+   site sections** `## On the sheet` and `## The science` (≤ 70 words each, written for a
+   visitor; they fall back to the long studio sections "What is on the sheet" / "The science
+   it encodes"); paper, pens, seed and piece from the gcode header; stats and
+   the plot-time estimate from the manifest. A plate with no DESCRIPTION.md is warned about, gets
+   its family name as title (underscores → spaces) and no prose, and `--list`/`--dry-run` mark it
+   `no description` — give it a `title` in `prints.json` (or write the description).
+4. `build/prints/catalog.json` + `build/prints/assets/<id>/` are written (asset paths in the
+   catalog are relative to it); `--push` uploads assets first (`--no-clobber`,
+   `max-age=31536000, immutable` — names are content-addressed, so a re-push uploads only new
+   ones), then the catalog (`max-age=300`, so the site sees a change within 5 minutes).
+
+Assets are **content-addressed** — `<gcode sha16>-r<RENDER_VERSION>-<inp6>.{svg,thumb.webp,tech.webp}`,
+`inp6` = the first 6 hex of a sha256 over the other render inputs (pen names, per-index widths,
+the final sheet w/h) — and never re-rendered while the file exists, so a re-run only stats files.
+**The site refreshes when the inputs change**: a new gcode, a `pen_widths_mm` edit or a
+header-less `paper`/`pens` edit gets new names (the old objects are left alone — the bucket
+serves them as immutable), and bumping `prints_render.RENDER_VERSION` re-renders everything.
+`--force` only rebuilds local files under the *same* names; it is **not** a way to refresh the
+site (those objects are cached for a year).
+
+```
+python scripts/prints_export.py --list      # the published set, resolved paths, header status
+python scripts/prints_export.py --dry-run   # ids, cached vs would-render; writes nothing
+python scripts/prints_export.py --only attention-dag-landscape --force   # rebuild one locally
+make prints-export                          # build + push
+```
+
+Exit codes: **0** ok · **1** nothing published / nothing exportable (no push) · **2** push failed
+(also argparse's usage error) · **3** `--push` refused because a published plate was skipped.
+With `--push`, a published plate that could not be exported is listed and blocks the push
+(the site would silently lose it) unless `--allow-skips`; an empty result is refused unless
+`--allow-empty`, which uploads a `count: 0` catalog so the site shows its empty state.
+`--only` writes a partial catalog, so it refuses `--push`. **Curate and export from the main
+checkout**: `--gallery` redirects only the gallery — `studio/feedback.jsonl` (the publish
+verdicts) and `studio/prints.json` are always read from the checkout the script runs in.
+
+**`studio/prints.json`** (tracked) adjusts a plate on the site; key `<subject>/<basename>`,
+every field optional; `paper`/`pens` are used only when the gcode has no header, and keys that
+are not published or not on disk are warned about:
+
+```json
+{"studio/attention_DAG/pp_attention_DAG_landscape.png": {
+  "id": "attention-as-topography", "title": "Attention as Topography", "order": 10, "size": "l",
+  "detail": {"u": 0.50, "v": 0.35, "zoom": 2.4},
+  "paper": "a4 landscape", "pens": ["dodgerblue","crimson","gold","black"], "pen_widths_mm": [0.3,0.3,0.3,0.5],
+  "plotted": {"date":"2026-09-13","paper":"A3 Fabriano 200g cream","pens":["Staedtler 0.3 black","Sakura gold"],"photo":"gallery/studio/attention_DAG/plotted/IMG_2231.jpg"}}}
+```
+
+`order` sorts ascending (default 1000; ties newest-published first); `size` (`s`/`m`/`l`, default
+`s`; anything else warns and falls back to `s`) is copied into every catalog entry and reserved
+for the site: the current Prints stage is a one-plate-at-a-time carousel that ignores it (it
+sized tiles when the stage was a mosaic); `detail` is **where the site's small detail crop
+looks** — `u`/`v` are fractions of the sheet from the left/top (0–1) and `zoom` the magnification
+(1.2–4, default 2.4); picked by eye per plate (the exporter copies it through, out-of-range or
+malformed values warn and are dropped, and the site then falls back to a per-id hash);
+`plotted.photo` is exported as a WebP and rewritten to its asset path. The bucket (europe-west1, uniform access, public
+read, CORS for the site's origins in `scripts/prints_cors.json`) was made by
+`scripts/setup_prints_bucket.sh` — idempotent, re-run it to rebuild or re-apply CORS.
 
 ## Authored scenes — how a reference picture becomes a plotted drawing
 
@@ -481,6 +642,7 @@ Core flat modules:
 - `orchestrate.py` — pure-function public API: `plan_regions`, `generate_region`, `validate_chunk`, `score_chunk`, `merge_chunks`, `stream_chunk`, `stream_pen_layers`/`split_color_layers` (multi-color), `load_and_continue`, `compose_and_stream`
 - `pipeline.py` — FilePipeline: load .gcode → postprocess → preview → stream
 - `plotter.py` — ConnectionState SM, BasePlotter ABC, SerialPlotter (ALARM/recovery/pause/resume), SimulatedPlotter
+- `plotjob.py` — **plate jobs**: `build_plan` (colour runs → prepared, every layer bounds-checked up front), `PlateJob` + `JobStore` (`~/.promptplot/plot_jobs/<id>.json`, atomic, `flock` port lock), `JobControl`/`KeypressControl`/`AutoContinueControl`, `PlateJobRunner` (frame → park + swap wait → pen-up approach → batches via `stream_chunk` → re-zero waits → park; stop/pause/resume, abort on the first failed ack), the Leo ETA model. Used by `plot plate` and `scripts/gallery_plotter.py`. Never writes to the port itself — every line goes through `plotter.send_command`.
 - `postprocess.py` — pipeline: arcs, bounds, pen safety, stroke optimization (or `reorder_by_color` when multi-color → per-color optimize, never across a color), dips, dwells; plus `validate_chunk`
 - `checkpoint.py` — CheckpointManager for resumable drawings
 - `visualizer.py` — matplotlib GCode renderer with stats; color-coded per-pen preview when a program has color layers
@@ -490,6 +652,7 @@ Core flat modules:
 - `logger.py` — Rich-based terminal output
 - `__init__.py` — Public API exports (the stable surface for the `orchestrate`/`compose_and_stream` controller path)
 - `scripts/` — standalone Claude-Code controller scripts (`cc_draw_*.py`, `cc_colors_test.py`, `cc_brush_test.py`, `cc_llm_stream.py`) using the `orchestrate` API directly against hardware
+- `scripts/prints_render.py` (gcode → site SVG/WebP renders), `scripts/prints_export.py` (publish verdicts → `catalog.json` + assets → `gs://garassino-ai-prints`), `scripts/setup_prints_bucket.sh` + `scripts/prints_cors.json` (the bucket's bootstrap and CORS policy), `studio/prints.json` (per-plate site overrides) — see "Publishing to the site"
 
 ## Serial port
 - macOS: `/dev/cu.usbserial-*` (e.g. `/dev/cu.usbserial-1420`)

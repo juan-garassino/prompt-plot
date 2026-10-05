@@ -4,7 +4,7 @@ PYTHON := python3
 PACKAGE := promptplot
 TESTS := tests
 
-.PHONY: help install dev test test-ci studio-check check lint format clean
+.PHONY: help install dev test test-ci studio-check check prints-export lint format clean
 
 help:
 	@echo "PromptPlot v3.0"
@@ -13,8 +13,9 @@ help:
 	@echo "  dev        Install with dev dependencies"
 	@echo "  test       Run tests"
 	@echo "  test-ci    Tests, minus the one known pre-existing failure"
-	@echo "  studio-check  Fingerprint the 51 studio pieces against the baseline"
+	@echo "  studio-check  Re-render every studio piece and compare against the baseline"
 	@echo "  check      test-ci + studio-check — run this before you call it done"
+	@echo "  prints-export  Published plates -> build/prints/ catalog + assets -> gs://garassino-ai-prints"
 	@echo "  lint       Run ruff linter"
 	@echo "  format     Format code with black"
 	@echo "  clean      Remove build artifacts"
@@ -39,6 +40,11 @@ studio-check:
 	$(PYTHON) scripts/studio_regression.py
 
 check: test-ci studio-check
+
+# Juan's publish verdicts -> catalog.json + content-addressed assets -> the
+# public bucket the portfolio site reads. Re-runs render only what is new.
+prints-export:
+	uv run python scripts/prints_export.py --push
 
 lint:
 	$(PYTHON) -m ruff check $(PACKAGE)/

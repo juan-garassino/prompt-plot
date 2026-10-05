@@ -2,7 +2,7 @@
 
 Piece: `piece.py` → `double_slit_cross_term(rng, bounds, colors=3)`
 Brief: `studio/quantum-01/double-slit.md`
-Render: `~/Downloads/pp_double_slit_s7.png` (A4 portrait, 2 pens, 15 738 commands,
+Render: `gallery/studio/double_slit/trials/pp_double_slit_s7.png` (A4 portrait, 2 pens, 15 738 commands,
 draw 8 620 mm, travel 8 243 mm). Seeds 3 / 7 / 21 produce **byte-identical** PNGs —
 the piece is deterministic and effectively seed-free (the physics is exact; `rng`
 is accepted for the contract and never consulted).
@@ -152,7 +152,7 @@ Three concrete moves for r02:
 
 ```bash
 .venv/bin/python scripts/render_candidate.py studio/double-slit/rounds/r01/piece.py \
-    --fn double_slit_cross_term --seed 7 --paper a4 --out ~/Downloads/pp_double_slit_s7.png
+    --fn double_slit_cross_term --seed 7 --paper a4 --out gallery/studio/double_slit/trials/pp_double_slit_s7.png
 ```
 
 The table in §2 comes from a throwaway script that imports `piece.py` and calls

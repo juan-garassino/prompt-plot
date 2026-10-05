@@ -7,7 +7,7 @@ Render:
 ```
 .venv/bin/python scripts/render_candidate.py studio/diffusion-topography/rounds/r01/piece.py \
   --fn diffusion_topography --seed 7 --colors 4 --paper a4 --orientation landscape \
-  --palette dodgerblue,goldenrod,forestgreen,black --out ~/Downloads/pp_diffusion_topo_v1.png
+  --palette dodgerblue,goldenrod,forestgreen,black --out gallery/studio/diffusion_topo/current/pp_diffusion_topo_v1.png
 ```
 
 Pens: 0 blue (data blob, forward flow) · 1 ochre (noise tangle, reverse flow, the

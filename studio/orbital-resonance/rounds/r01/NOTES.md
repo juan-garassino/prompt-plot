@@ -8,7 +8,7 @@ Render (A4 portrait, seeds 7 / 3 / 11):
 .venv/bin/python scripts/render_candidate.py studio/orbital-resonance/rounds/r01/piece.py \
     --fn orbital_resonance_belt --seed 7 --paper a4 \
     --palette black,crimson,black \
-    --out ~/Downloads/pp_orbital_resonance_r01_s7.png
+    --out gallery/studio/orbital_resonance/trials/pp_orbital_resonance_r01_s7.png
 ```
 
 `--palette black,crimson,black` matters: pen **2 is the type/furniture layer** and is a

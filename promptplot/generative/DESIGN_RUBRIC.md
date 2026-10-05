@@ -28,7 +28,8 @@ scores **avg ≥ 8/10 with no dimension below 7** (all seven dimensions; a decla
    mistakes however rigorous the content behind them.
 5. **Craft for pen** — line weight built from 1–3 passes with purpose; fills solid
    without flooding; no muddy ink-on-ink collisions; density plottable (≥0.8 mm
-   spacing); ≤ 3–4 pen swaps.
+   spacing); one pen swap per colour layer (any number of
+   layers — see PLOTTABLE below).
 
    **CONTOUR LEVELS BY GRADIENT, NOT BY VALUE.** Evenly spaced iso-VALUES
    bunch wherever the field is steep, so a contour nest floods solid in the
@@ -151,6 +152,89 @@ scores **avg ≥ 8/10 with no dimension below 7** (all seven dimensions; a decla
    assigned style canon is flat by nature (Swiss, Pop Ben-Day, classic Bauhaus)
    and the designer says so in the report, or the concept demands it. Undeclared
    flatness scores ≤ 4.
+
+## CIRCLES MUST BE EARNED
+
+Juan (2026-09-28): "we have a big tendency to go to circles — it worked out for now, but we
+should explore other alternatives." Measured that day: 42 of 59 plates describe their sheet
+with circular vocabulary three or more times (rings 155×, circle 72×, spiral 49×, concentric
+36×). Concentric rings, spirals, orbits, whorls, radial bursts and ring-nodes became the
+studio's default answer. They are now a choice that must be argued:
+
+- A circular order is allowed when the mechanism is genuinely rotational, radial or
+  angle-periodic (a photon ring, an orbit, a phase, a point source's wavefronts). NOTES.md
+  says which, in one line ("why circular: …"). Otherwise it is a default, and the art critic
+  scores it as a concept fault (concept legibility ≤ 5).
+- Rings used as a fill, a halo, a node marker or "emphasis" are the tell: a ring must carry a
+  level of something.
+- The translator lists at least two non-circular orders considered before choosing a
+  circular one; the wildcard is never circular.
+
+**The non-circular orders** (each is plotter-native; the lineage is where to look first):
+
+| order | the mark system | lineage |
+|---|---|---|
+| ruled field | parallel lines whose spacing, phase or amplitude is the data | Riley *Current*; Agnes Martin |
+| ridge stack | horizontal profiles with hidden-line occlusion | *Unknown Pleasures* (Joy Division, 1979) |
+| orthogonal partition | areas that sum to a whole, cut by rules | Mondrian *Broadway Boogie Woogie*; De Stijl |
+| tessellation with defects | Voronoi cells, Truchet, stitch grids, quasicrystal tilings | Molnár *Interruptions*; Escher |
+| branching | trees, river deltas, dendrites, L-systems | Klee's line studies; Haeckel |
+| folding | crease patterns, origami, pleats | Josef Albers's Bauhaus paper studies |
+| interlacing | over/under, braids, knots | Anni Albers |
+| straight-line moiré | line grids at small angles | Soto; Riley |
+| scatter gradient | points drifting from order to disorder | Nees *Schotter* |
+| projective | axonometry, vanishing points, Prouns | Lissitzky *Prouns* |
+| network | straight lines between points, instructions | LeWitt *Wall Drawings* |
+| typographic | glyph rows as structure, the equation built of its own symbols | concrete poetry; Swiss |
+
+## LINEAGE — every plate answers a named work
+
+Juan (2026-09-28): "need to be creative, plottable in the pen plotter, refer to good artistic
+waves." A canon from STYLES.md is the language; a LINEAGE is the conversation. Every plate
+names **one movement and one real reference work** it answers, and says in one line what
+ORDER it takes from it — never its look. "Riley's *Current*: one line family whose phase
+drift makes the surface" is a lineage; "Op Art style" is not.
+
+The pen plotter has its own art history — prefer it, these artists drew with line machines
+or wrote the instruction that a machine can follow:
+
+| lineage | reference | the order it lends |
+|---|---|---|
+| early computer art | Georg Nees, *Schotter* (c. 1968) | order → disorder down the sheet; noise as a controlled gradient |
+| early computer art | Vera Molnár, *Interruptions* (1968–69), *(Dés)Ordres* (1974) | a strict field with measured, local breaks |
+| early computer art | Frieder Nake, *Hommage à Paul Klee* (1965) | a random walk bounded by horizontal strata |
+| systems art | Manfred Mohr, hypercube works (1970s–) | a rule-generated projection; the rule IS the image |
+| conceptual | Sol LeWitt, *Wall Drawings* (1968–) | an instruction executed exactly; the text could redraw it |
+| Op Art | Bridget Riley, *Current* (1964), *Cataract 3* (1967) | one line family, phase/amplitude drift makes the surface move |
+| Op Art | Victor Vasarely, *Vega* series (1957–) | a lattice swollen by a hidden volume |
+| De Stijl | Piet Mondrian, *Broadway Boogie Woogie* (1942–43) | orthogonal lanes whose rhythm is the data |
+| Constructivism | El Lissitzky, *Beat the Whites with the Red Wedge* (1919) | one driving diagonal against a mass |
+| Bauhaus | Kandinsky, *Point and Line to Plane* (1926) | point / line / plane as forces with direction and weight |
+| textile | Anni Albers's weavings | interlacing: over/under as information |
+| minimalism | Agnes Martin's grids | a hand-ruled grid, tone by density alone |
+
+Rules: the lineage is stated in the designer's HANDOFF.md (`lineage:` line) and NOTES.md;
+the art critic judges whether the plate would hold its own **hung beside that work**
+(concept + craft, not resemblance) and fails a plate that merely borrows a surface texture.
+Two plates in one batch should not share a lineage unless the mechanism demands it.
+
+**Plottable is part of creative.** These plates will be plotted for real on Leo, as
+batched plate jobs (studio/PLOT_JOBS.md): frame → per colour layer: park, swap, stream in
+stroke batches with re-zero checks → park. Juan (2026-09-28): more than 4 colours and longer
+sessions are fine **as long as batching and colour changes are right**. So the rule is not a
+pen cap, it is layer discipline:
+
+- **As many pens as the mechanism has meanings** — each pen a stated meaning, each a clean
+  colour layer, never re-entered after its layer (one swap per pen). State the layer order
+  (usually light → dark so dark ink lands last) and why.
+- **Every layer streams well in batches**: strokes spatially ordered within the layer, no
+  sheet-crossing travel between consecutive strokes, no single stroke so long it cannot be
+  a batch boundary.
+- **Time is allowed, waste is not**: state draw length and minutes per layer and in total.
+  Pen cycles are time (each lift+drop dwells on Leo): a dotted run costing thousands of
+  cycles must earn them — otherwise fewer, longer dashes or one hairline.
+- Always: `.gcode` beside every render, spacing ≥ 0.8 mm (2.4× the finest nib for hatch),
+  no floods, bounds clean on the stated paper. A plate that only works as a PNG fails.
 
 ## The designer's expressive levers (play them consciously, every round)
 

@@ -4,14 +4,14 @@ Reproduction of `studio/superposition/ref/reference.png`. No redesign: every
 element, position, colour and mark type is transcribed from the reference.
 
 - piece: `studio/superposition/rounds/r01/piece.py`, `def superposition(rng, bounds, colors=5)`
-- render: `~/Downloads/pp_superposition_v16.png` (+ `.gcode`)
+- render: `gallery/studio/superposition/current/pp_superposition_v16.png` (+ `.gcode`)
 - command:
 
 ```
 .venv/bin/python scripts/render_candidate.py studio/superposition/rounds/r01/piece.py \
   --fn superposition --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_superposition_v16.png
+  --out gallery/studio/superposition/current/pp_superposition_v16.png
 ```
 
 16 rounds, each one rendered and read back against the reference.

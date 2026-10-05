@@ -121,7 +121,7 @@ killed the "everything must get through" pressure.
   studio/attention-weaving/rounds/r03/piece.py \
   --fn attention_weaving --seed 7 --paper 24x30 --orientation portrait \
   --palette black,crimson,dodgerblue,goldenrod,darkgreen \
-  --out ~/Downloads/pp_attention_weaving_aperture_v19.png
+  --out gallery/studio/attention_weaving/current/pp_attention_weaving_aperture_v19.png
 ```
 
 v9 (Juan's reference for "the top is good") is frozen and still renders:

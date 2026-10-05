@@ -67,3 +67,12 @@ def test_malformed_brief_degrades_gracefully(tmp_path):
     b = parse_brief(f)
     assert b.slug == "weird"
     assert b.essence == "" and b.sections == {}
+
+
+def test_studio_state_files_are_not_briefs(tmp_path):
+    d = tmp_path / "piece"
+    d.mkdir()
+    for name in ("FEEDBACK.md", "LEDGER.md", "DESCRIPTION.md", "README.md"):
+        (d / name).write_text("# NOT A BRIEF — state\n")
+    (d / "BRIEF.md").write_text("# PIECE — tagline\n**Essence:** e **Status:** s\n")
+    assert [b.slug for b in load_briefs(root=tmp_path)] == ["BRIEF"]

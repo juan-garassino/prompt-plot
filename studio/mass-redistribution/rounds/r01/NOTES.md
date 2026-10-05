@@ -8,10 +8,10 @@ deliberately redesigned at Juan's request.
   studio/mass-redistribution/rounds/r01/piece.py --fn mass_redistribution \
   --seed 7 --colors 5 --paper a4 --orientation portrait \
   --palette crimson,dodgerblue,goldenrod,forestgreen,black \
-  --out ~/Downloads/pp_massredist_v6.png
+  --out gallery/studio/massredist/current/pp_massredist_v6.png
 ```
 
-Render: `~/Downloads/pp_massredist_v6.png` (rounds v1–v6 kept alongside).
+Render: `gallery/studio/massredist/current/pp_massredist_v6.png` (rounds v1–v6 kept alongside).
 
 | | |
 |---|---|

@@ -2,7 +2,7 @@
 
 Piece: `studio/ising/rounds/r01/piece.py`, entry `ising_critical`.
 Render: `.venv/bin/python scripts/render_candidate.py studio/ising/rounds/r01/piece.py
---fn ising_critical --seed 7 --paper a4 --out ~/Downloads/pp_ising_v6.png`
+--fn ising_critical --seed 7 --paper a4 --out gallery/studio/ising/current/pp_ising_v6.png`
 Renders reviewed: v1 → v6 (`~/Downloads/pp_ising_v{1..6}.png`, plus seed sweeps
 `pp_ising_v5_s{3,7,13}.png`). Nothing under `promptplot/` was modified.
 

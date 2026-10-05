@@ -14,7 +14,7 @@ Parses the front-matter-less markdown convention used by ``studio/<domain>/*.md`
 
 Section bodies are kept as raw markdown — the LLM consumes them, so structural
 fidelity beats parsing depth. ``README.md`` files are treated as domain indexes
-and skipped.
+and skipped, as are the studio's state files (``_NOT_BRIEFS``).
 """
 
 from __future__ import annotations
@@ -26,6 +26,10 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Per-piece files that share a folder with briefs but are not briefs: the domain
+# index, Juan's generated verdicts, the lead's round ledger and the vision review.
+_NOT_BRIEFS = {"readme.md", "feedback.md", "ledger.md", "description.md"}
 
 # studio/ lives at the repo root, two levels up from this file's package
 _DEFAULT_ROOT = Path(__file__).resolve().parents[2] / "studio"
@@ -123,7 +127,7 @@ def load_briefs(root: Optional[Path] = None, domain: Optional[str] = None) -> Li
     briefs: List[Brief] = []
     for d in dirs:
         for f in sorted(d.glob("*.md")):
-            if f.name.lower() == "readme.md":
+            if f.name.lower() in _NOT_BRIEFS:
                 continue
             try:
                 briefs.append(parse_brief(f, domain=d.name))

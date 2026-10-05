@@ -3,14 +3,14 @@
 > ## STATUS: **v10 IS APPROVED.** Juan reviewed it and said "i love this one!".
 > **The approved source is `studio/cnn-passes/rounds/r03/piece_v10_APPROVED.py`
 > — frozen, never to be edited.** The approved render is
-> `~/Downloads/pp_cnn_passes_abstract_v10.png` with its `.gcode` beside it.
+> `gallery/studio/cnn_passes/current/pp_cnn_passes_abstract_v10.png` with its `.gcode` beside it.
 >
 > `piece.py` in this folder is byte-for-byte the same source as of the freeze
 > and is the file any future round would branch FROM — but the file of record
 > is `piece_v10_APPROVED.py`.
 >
 > Verified by re-rendering the frozen source to
-> `~/Downloads/pp_cnn_passes_abstract_v10_verify.png`:
+> `gallery/studio/cnn_passes/trials/pp_cnn_passes_abstract_v10_verify.png`:
 > **drawing 17011.13 mm · travel 19825.54 mm · 36825 commands**, all three
 > matching the approved render, and the two GCode bodies are byte-identical.
 >
@@ -139,7 +139,7 @@ half, and the mirror disappeared.
   studio/cnn-passes/rounds/r03/piece_v10_APPROVED.py \
   --fn cnn_passes --seed 7 --paper a3 --orientation landscape \
   --palette black,dodgerblue,crimson \
-  --out ~/Downloads/pp_cnn_passes_abstract_v10.png
+  --out gallery/studio/cnn_passes/current/pp_cnn_passes_abstract_v10.png
 ```
 
 **Paper: A3 landscape**, as specified. The landscape format is what the order

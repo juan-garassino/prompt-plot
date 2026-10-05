@@ -6,10 +6,10 @@ Exact recreation of `studio/gan-plate/ref/reference.png`. Reproduction, not desi
 .venv/bin/python scripts/render_candidate.py studio/gan-plate/rounds/r01/piece.py \
   --fn gan_plate --seed 7 --colors 5 --paper a4 --orientation landscape \
   --palette crimson,dodgerblue,goldenrod,olive,black \
-  --out ~/Downloads/pp_gan_plate_v1.png
+  --out gallery/studio/gan_plate/current/pp_gan_plate_v1.png
 ```
 
-Render: `~/Downloads/pp_gan_plate_v1.png` · GCode: `~/Downloads/pp_gan_plate_v1.gcode`
+Render: `gallery/studio/gan_plate/current/pp_gan_plate_v1.png` · GCode: `gallery/studio/gan_plate/trials/pp_gan_plate_v1.gcode`
 
 ## Numbers
 

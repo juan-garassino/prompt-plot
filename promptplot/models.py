@@ -101,7 +101,8 @@ class GCodeCommand(BaseModel):
                 key = token[0].lower()
                 try:
                     value = float(token[1:])
-                    if key in ("f", "s", "p"):
+                    # P is a dwell in seconds: G4 P0.2 must not load as G4 P0
+                    if key in ("f", "s"):
                         params[key] = int(value)
                     else:
                         params[key] = value

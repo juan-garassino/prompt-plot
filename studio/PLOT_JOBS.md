@@ -1,6 +1,84 @@
 # Sending plot jobs from the gallery server
 
-Status: **the single-layer path is built and tested; the job layer below is not.**
+Status (2026-09-28): **steps 1–4 of the job layer are built and tested** — plate
+jobs, pen-swap waits, persistence + resume, batching + re-zero checks, progress + ETA
+in the panel. Steps 5–6 (sort by cost, multi-plate queue) are not. See "What is built"
+right below; the design sections after it are kept as the spec they were built from.
+
+## What is built (steps 1–4)
+
+One engine, `promptplot/plotjob.py`, two seats:
+
+- **Server** — `POST /plotter/job {action: "plate", target, layers?, batch_strokes?,
+  rezero_every?, max_feed?, min_dwell?, confirm}` · `POST /plotter/continue {wait_seq}` ·
+  `POST /plotter/pause` · `POST /plotter/resume {job_id, retrace?, confirm}` ·
+  `GET /plotter/jobs`. `GET /plotter/state` carries `waiting_for`, `cursor`, `progress`,
+  `eta_min`. Viewer Plot panel: **Plot plate** (batch / re-zero inputs), the wait
+  message, **Continue / Pause / Stop**, a progress bar with layer · strokes · plate ·
+  ETA, and a resumable-jobs list with **Resume**.
+- **Terminal** — `promptplot plot plate FILE.gcode [--layers 0,2,3] [--batch-strokes 400]
+  [--rezero-every 2000] [--max-feed 500] [--min-dwell 1.0] [--resume JOB_ID] [--retrace]
+  [--jobs] [--port …] [--paper a5:landscape] [--margin 15] [--dry-run]`. Enter continues
+  a wait, `p` pauses, `s` stops; Ctrl-C once = pause after this batch, twice = stop now.
+  `--dry-run` rehearses the whole sequence on the simulator.
+
+**The sequence** (both seats): refuse unless every selected layer fits the paper →
+open the port → [resume: pen up, WAIT `awaiting_rezero` — reopening the port re-zeroes
+Grbl where the head sits] → frame trace pen up (first act of a fresh job) → per layer:
+[pen changes] `M5`, dwell, `G0 X0 Y0`, `G4 P0.5` (the ack means the head is home) →
+WAIT `awaiting_swap` → pen-up `G0` to the batch's first drawn point → batches through
+`stream_chunk(enforce_pen_state=True)` → job file saved → [pause asked] park, `paused`
+→ [`rezero_every` reached] park, WAIT `awaiting_rezero`, pen-up approach → … → park
+(0,0), `done`. Consecutive runs of the same colour do not wait for a swap. A swap wait
+counts as a re-zero check.
+
+**Not saturating Leo.** Nothing in the job layer writes to the port: every line goes
+through `SerialPlotter.send_command` (`promptplot/plotter.py`), which holds `_io_lock`
+across write + `readline` — send one line, wait for its `ok`. One line in flight means
+Grbl's 128-byte RX buffer cannot overflow, and Grbl holds the `ok` until the line fits
+its planner, so the controller sets the pace. The heartbeat is off, so the ack loop is
+the only reader; HTTP threads only set `threading.Event`s; a `flock` on
+`~/.promptplot/plot_jobs/plotter.lock` keeps a terminal job and a server job (or its
+frame/layer jobs) off the port at the same time. Batches are the stop / drift-check /
+resume granularity, not flow control, and always end on a stroke boundary. A failed or
+timed-out ack **aborts** (pen up retried, park) rather than carrying on — a lost `ok`
+shifts every later ack by one line.
+
+**Leo-safe defaults** (memory: slow feeds, long dwells): every draw is capped at
+F500 and carries an explicit `F` (a resumed batch cannot lean on a modal feed lost in
+the reconnect reset); every `G4` is floored at 1.0 s. `--max-feed 0 --min-dwell 0`
+streams the file as-is.
+
+**ETA** = Σ draw length ÷ each draw's (capped) feed + travel ÷ 2000 mm/min + the file's
+`G4` dwells (or 2.0 s per pen cycle when it has none) + 90 s per pen swap + 20 s per
+re-zero check, × a measured pace (stream wall time ÷ modelled time, once a minute of
+drawing has been streamed). The 600/2000/2.0 constants are `gallery_index.py`'s
+(`PRINT.md`); 90 s and 20 s are guesses — correct them after the first real plate.
+
+**Resume.** `stopped`, `paused` and `error` jobs are resumable; the file's sha256 must
+still match. A stop mid-batch rewinds the cursor to the stroke that was being drawn
+(redrawn once — better than a half-missing stroke). The server resumes only on the
+paper it was started on, and only with a frame traced in this process or `retrace: true`;
+the terminal resume relies on the job's own earlier trace unless `--retrace`. Both wait
+for the origin check before anything moves. `continue` must name the wait on screen
+(`wait_seq`), so a double click cannot acknowledge the next pen swap.
+
+Tests: `tests/test_plotjob.py` (stub plotter, no hardware).
+
+### Follow-ups the job layer could not do (files it must not touch)
+
+- `GCodeCommand.from_string` parses `P` as `int`: `G4 P0.2` loads as `G4 P0`, so every
+  gcode streamed through `FilePipeline` (`plot layer`, the server's layer job) loses its
+  pen dwells. The plate job's dwell floor masks it; the loader should keep a float.
+- `SerialPlotter.send_command` ack timeout is fixed per plotter (60 s here). Grbl acks a
+  `G4` only after the planner drains, so a very long queued move before a dwell could
+  still time out; an adaptive timeout (length ÷ feed × 2 + 2 s) belongs in `plotter.py`.
+- Travel speed: `G0` runs at Grbl's `$110/$111` max rate. Slowing rapids for Leo is a
+  firmware setting — do not turn travels into `G1` (the pen guardrail would ink them).
+- `split_color_layers` returns contiguous runs; a colour that appears twice is two
+  layers (two swaps) in file order. `--layers` groups a colour's runs together.
+- `plot frame` / `plot layer` from the terminal do not take the plotter lock.
+
 
 ## What exists today
 
@@ -105,10 +183,10 @@ single-plate jobs run unattended, and they will not until batching and resume wo
 
 ## Order of work
 
-1. `action: "plate"` + `awaiting_swap` + `/plotter/continue` — turns 4 clicks into 1.
-2. Job persistence + `/plotter/resume`.
-3. Batching + `rezero_every` + `awaiting_rezero`.
-4. Progress + ETA in the panel.
+1. ~~`action: "plate"` + `awaiting_swap` + `/plotter/continue` — turns 4 clicks into 1.~~ built
+2. ~~Job persistence + `/plotter/resume`.~~ built
+3. ~~Batching + `rezero_every` + `awaiting_rezero`.~~ built
+4. ~~Progress + ETA in the panel.~~ built
 5. Sort/filter by cost in the viewer.
 6. Multi-plate queue.
 
