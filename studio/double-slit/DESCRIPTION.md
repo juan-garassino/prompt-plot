@@ -26,7 +26,7 @@ The double slit drawn so that **interference moves probability rather than creat
 Four related plates. One stacks two oblique reliefs, a smooth single bell above a five-fringed comb, in black with crimson plumb lines at the nulls. Another strings equal beads on two wires, with crimson beads marking missing places. A third lays equal-spaced rules across a slab. The last weaves crimson and green rulings into a moiré around a giant black word.
 
 ## The science
-All four share one calculation of light through two slits, using the exact aperture integral, with slit separation three times the width so the third fringe order vanishes. The cross term itself is never drawn; it appears as paper left bare and as extra density elsewhere. In the moiré plate the fringe structure is not readable.
+All four share one exact wave calculation of light through two slits. The slits are spaced three times their own width apart, which is why every third bright fringe is missing. The interference itself is never drawn; it shows up as paper left bare in some places and extra density in others. In the moiré plate the fringes are not readable.
 
 ## What is on the sheet
 

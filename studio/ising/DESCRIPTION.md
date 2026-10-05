@@ -21,7 +21,7 @@ A strip of the Ising magnet cooled across its **critical temperature**, drawn so
 Giant spaced capitals spell CRITICAL up the left edge, with a thermometer ruler along the top. A dense black ruled sea fills the left, bounded by one ragged crimson coastline. Beyond it, black and then grey closed outlines of smaller clusters thin out to the right until bare paper remains. Footer text in three columns carries the numbers.
 
 ## The science
-One lattice is simulated with temperature rising from left to right, using the Swendsen-Wang cluster method. Rule density in the sea is the magnetisation; outlines are random clusters, sized by pen weight. The crimson coast sits at about 1.02 times the exact critical temperature, and the measured magnetisation matches Onsager's exact result within simulation noise.
+One grid of tiny magnets is simulated with the temperature rising from left to right. How densely the sea is ruled shows how magnetised it is; the outlines are clusters of aligned magnets, sized by pen weight. The crimson coast sits just above the exact critical temperature, and the measured magnetisation matches the exact solution known since 1944 within simulation noise.
 
 ## What is on the sheet
 Reading order:

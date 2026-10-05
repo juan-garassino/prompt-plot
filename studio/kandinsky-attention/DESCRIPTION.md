@@ -20,7 +20,7 @@ Real GPT-2 attention drawn in Kandinsky's language: **every query spends exactly
 One version is a large triangular grid of black spirals at the centre, with crimson bars down its left side, blue spirals along the top, gold hatched swatches and green bars beneath. The other is a big black dial with gold marks around the rim, a gold triangle across it, a tangle of crimson tracks at the middle and green discs at the track ends.
 
 ## The science
-Both use attention weights from GPT-2 small, layer 4, head 7. Each row of weights sums to one, so what a query pays to each value is drawn as ring counts or step lengths. Crimson is queries, blue is keys, gold is values, green is outputs. The reading of Kandinsky is an analogy, not a derivation.
+Both use the attention weights of one real GPT-2 head. Each row of weights sums to one, so what a query pays to each value is drawn as ring counts or step lengths. Crimson is queries, blue is keys, gold is values, green is outputs. The reading of Kandinsky is an analogy, not a derivation.
 
 ## What is on the sheet
 

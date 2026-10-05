@@ -9,16 +9,16 @@
 | status | r01 faithful thesis, plate 6 of 7 in the MILLENNIUM series · critics FAIL/FAIL (rank 2) · the ledger's best-so-far is the r03 abstract iterate |
 
 ## In one line
-Perelman's proof of the Poincaré conjecture drawn as **one dumbbell-shaped space that the Ricci flow cuts in two**: concentric time-lines crowd at a thin red-ringed waist, then close as two separate nests, each shrinking round onto its own red point.
+Perelman's proof of the Poincaré conjecture drawn as **one dumbbell-shaped space that a curvature-smoothing flow cuts in two**: concentric time-lines crowd at a thin red-ringed waist, then close as two separate nests, each shrinking round onto its own red point.
 
 ## Lede
-Perelman's proof of the Poincaré conjecture as **one dumbbell-shaped space that the Ricci flow cuts in two**, each half shrinking onto its own red point.
+Perelman's proof of the Poincaré conjecture as **one dumbbell-shaped space that a curvature-smoothing flow cuts in two**, each half shrinking onto its own red point.
 
 ## On the sheet
 A dumbbell of black closed curves rises from lower left to upper right: a dense nest of rings in the large lobe, a lighter nest in the small one. At the narrow waist a small red ellipse marks the cut, crossed by a wider open red arc. A fine grey bowl sits below. Title and notes occupy the corners.
 
 ## The science
-Each black curve is the whole space at one instant of a computed Ricci flow of a symmetric 3-sphere, drawn in section, so every chord stands for a round 2-sphere. The neck thins, is cut, and both pieces vanish, so the original was a sphere. The sphere reading, the 2D control and the word SOLVED are stated in text only.
+Each black curve is the whole space at one instant of a computed flow that evens out its curvature, drawn in cross-section, so every line stands for a round sphere. The neck thins, is cut, and both pieces shrink away, which is how the proof shows the original was a sphere. The word SOLVED and the fine print are text only.
 
 ## What is on the sheet
 - **Title block, top-left** (u 0.05–0.40): `THE POINCARÉ` / `CONJECTURE` in wide-spaced black caps (v 0.04–0.08) over a short rule; then the italic statement `Every closed, simply connected` / `3-manifold is homeomorphic` / `to the 3-sphere.` (v 0.11–0.15); then `SOLVED` in spaced crimson caps (v 0.17); then a two-line black stamp `G. PERELMAN 2002-03 · RICCI FLOW WITH SURGERY,` / `AFTER R. HAMILTON (1982) · CLAY PRIZE 18 MAR 2010, DECLINED` (v 0.19–0.20).

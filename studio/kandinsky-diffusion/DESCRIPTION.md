@@ -21,7 +21,7 @@ A diffusion model drawn as a Kandinsky poster: **one straight chord jumps from d
 A colour-block composition at the left melts rightward into scattered blue, crimson, gold and green spirals. At the centre sits a gold circle of dots, the noise, ringed by a black stack of orbits that thin toward the middle. A single black line crosses to it. A sparser composition appears at the right edge, with a time ruler along the bottom.
 
 ## The science
-Each orbit is one denoising step of a cosine-schedule DDPM, with a thousand steps in total and every thirty-eighth drawn; the inked fraction of an orbit follows the signal that remains. Colour appears only where signal outweighs noise. The one-step formula is written in text. Some encodings, such as the orbit wobble, are too subtle to see.
+Each orbit is one denoising step of a standard diffusion model, a thousand steps in all with every thirty-eighth drawn; how much of an orbit is inked follows how much of the picture remains. Colour appears only where signal outweighs noise. The one-step formula is written in text. Some encodings, such as the orbit wobble, are too subtle to see.
 
 ## What is on the sheet
 Positions normalised to the sheet (u → right, v → down).

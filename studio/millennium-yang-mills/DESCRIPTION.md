@@ -18,7 +18,7 @@ The glueball spectrum of Yang–Mills theory as **a light cone with an empty tip
 A single black dot sits low at the left. A heavy red bar rises from it and turns into a red curve sweeping up to the right, above a grey dashed diagonal. Five fine black curves fan out higher, under a dense field of horizontal black rules across the upper half. Small tags label each curve; the title is at the top left.
 
 ## The science
-Height is energy and width is momentum. The red curve is the lightest glueball, its start height is the gap, and the grey diagonal is where massless particles would travel; nothing sits on it. The black curves use lattice-computed masses; the ruled field is the two-particle continuum. That this is a proof problem, and omitted states, are stated in text.
+Height is energy and width is momentum. The red curve is the lightest glueball, its start height is the gap, and the grey diagonal is where massless particles would travel; nothing sits on it. The black curves use particle masses from large numerical simulations; the ruled field is where pairs of particles can have any energy at all. That this is a proof problem, and omitted states, are stated in text.
 
 ## What is on the sheet
 Read bottom to top, along an undrawn vertical line at u ≈ 0.134 where every element begins.

@@ -21,7 +21,7 @@ An LSTM drawn as a flow field: **two spiral sinks on one axis**, short-term hidd
 Two interleaved spirals fill the centre of the sheet along a vertical axis: black above for the hidden state, crimson below for the cell state. Black input streams enter from the left, gate labels sit on both sides, and the title runs across the top left. The standard LSTM equations and a flow legend form a band along the bottom.
 
 ## The science
-The streamlines are numerically integrated from a real two-dimensional field of two equal spiral sinks, so a stagnation point sits exactly halfway between them. That field is a visual metaphor for the cell. The gate names, the equations and the legend are the standard LSTM definitions, stated in text rather than computed from a trained network.
+The streamlines are traced through a real flow field with two equal spiral drains, so a still point sits exactly halfway between them. That field is a visual metaphor for the cell. The gate names, the equations and the legend are the standard LSTM definitions, stated in text rather than computed from a trained network.
 
 ## What is on the sheet
 - **The two vortices (dominant mass).** A vertical double-spiral occupying u≈0.19–0.86, v≈0.14–0.79.

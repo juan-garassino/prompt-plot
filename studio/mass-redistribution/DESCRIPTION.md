@@ -21,7 +21,7 @@ Single-head attention drawn as transport between five stations: **attention redi
 Crimson query curves sit at the upper left and blue key curves at the upper right, their ribbons converging on a black five-by-five matrix at the centre. Gold value discs run down the left, and green output pies cascade diagonally to the lower right. Dotted black circles and a title at the top right complete the sheet.
 
 ## The science
-The query and key densities are random mixtures sampled into eight-dimensional vectors, then run through the real attention formula, softmax of QK transposed over root d_k. The resulting weights cut the matrix rails and set every output pie's wedge angles. The values and queries are synthetic, not taken from a trained model.
+The query and key curves are random shapes turned into short vectors and run through the real attention formula. The resulting weights cut the matrix rails and set every output pie's wedge angles. The values and queries are synthetic, not taken from a trained model.
 
 ## What is on the sheet
 Reading order: the red and blue bundles converging on the black matrix at centre, then the ochre and green bundles fanning down, then the V column and the Z cascade.

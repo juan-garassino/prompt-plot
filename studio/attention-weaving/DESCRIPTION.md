@@ -20,7 +20,7 @@ Attention as everything forced through **one constriction**: queries and keys in
 Crimson query strands enter from one side and blue key strands from the other, crossing in a lens at the top. They pinch into a waist of black beads. Below, gold value strands join green output strands that braid or fan toward the right edge. One version shows a black wall with a single slit, with strands radiating above and a green cable beneath it.
 
 ## The science
-The mechanism plate routes strands from a real GPT-2 attention head (layer 2, head 9) on a sample sentence, with weights summing to one and most mass on a few words. The slit version builds streamlines from elliptic coordinates, so passing through one opening is a property of the geometry. The faithful version is a seeded recreation.
+The mechanism plate routes strands from one real GPT-2 attention head reading a sample sentence; the weights add up to one, and most of it lands on a few words. The slit version follows the real geometry of flow through a narrow opening, so the pinch is a property of the shape, not a drawing choice. The faithful version recreates a reference and measures nothing.
 
 ## What is on the sheet
 

@@ -12,16 +12,16 @@
 | status | unreviewed (no feedback) · 7 renders on disk |
 
 ## In one line
-Scaled dot-product attention drawn as **interference on a vertical axis** — Q and K emit fans of curves from spiral nests that cross into a woven diamond lattice (the score matrix), which collapses into a nested cone (softmax weights), five taps from which pull V's bundle into a green ridged lens (Z = AV); a measured, pixel-for-pixel recreation of an AI-made reference poster.
+The attention step inside a transformer drawn as **interference on a vertical axis** — Q and K emit fans of curves from spiral nests that cross into a woven diamond lattice (the score matrix), which collapses into a nested cone (softmax weights), five taps from which pull V's bundle into a green ridged lens (Z = AV); a measured, pixel-for-pixel recreation of an AI-made reference poster.
 
 ## Lede
-Scaled dot-product attention drawn as **interference on a vertical axis**: queries and keys cross into a woven lattice that resolves into weights and a blended output.
+The attention step inside a transformer drawn as **interference on a vertical axis**: queries and keys cross into a woven lattice that resolves into weights and a blended output.
 
 ## On the sheet
 Crimson spiral clusters (queries) fill the upper left and blue ones (keys) the upper right, their curves meeting in a black woven lattice on the central axis. Below it a stacked black cone of ellipses shows the weights. Gold curves from the right (values) feed a green ridged lens at the bottom. Small labels and corner crosses frame the page.
 
 ## The science
-The plate follows the attention formula: scores from queries and keys, a softmax into weights, then a weighted mix of values. It is a visual metaphor, not a computation. No real attention weights or vectors are used; every position is measured from a reference poster, and the interference is drawn, not calculated.
+The plate follows the attention recipe: scores from queries and keys, turned into weights that add up to one, then a weighted mix of values. It is a visual metaphor, not a computation. No real attention weights or vectors are used; every position is measured from a reference poster, and the interference is drawn, not calculated.
 
 ## What is on the sheet
 Reading order: the red/blue wings at the top, down the central axis through the black lattice and disc, into the green lens; V hangs off to the right.

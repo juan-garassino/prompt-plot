@@ -18,7 +18,7 @@ Plate five shows a surface built only from straight lines, where **every curve o
 A weave of crossing blue and gold strings forms a hyperboloid at the upper right, with a bare lens of paper at its middle and green curves lying across it. Black text sits down the left. Along the lower part, five small copies show a line, a second line, a conic, a twisted cubic and a quintic, with a green circle, an equals sign and blue and gold slashes beneath.
 
 ## The science
-The surface is a quadric, and its two families of lines carry two classes, A and B. Every curve on it has class a times A plus b times B, which is a case where the Hodge conjecture is already a theorem, by Lefschetz in 1924. The drawing is exact. The Hodge decomposition is stated in text only.
+The surface is one of the simplest curved surfaces, and it carries exactly two families of straight lines. Every curve drawn on it can be counted as so many lines of one family plus so many of the other, which is one of the cases where the Hodge conjecture has been a theorem since 1924. The drawing is exact; the general statement is text only.
 
 ## What is on the sheet
 - **Title (top-left).** `HODGE` / `CONJECTURE` in large spaced caps at u ≈ 0.07–0.42, v ≈ 0.05–0.11. Under it: `IN COHOMOLOGY A CIRCLE` / `IS TWO STRAIGHT LINES.` (v ≈ 0.14).

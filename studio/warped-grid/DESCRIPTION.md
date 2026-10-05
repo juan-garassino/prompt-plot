@@ -21,7 +21,7 @@ Self-attention drawn as a lattice **pinched by alignment**: queries and keys fan
 Crimson spiral clusters (queries) sit top left and blue ones (keys) top right. Below them a black dotted grid pinches into a bow-tie at the centre. Under that, a black perspective plane carries five contour cones. Four black leads and a goldenrod bundle of values drop to a green ridged landscape at lower left, labelled as the output. Small black marginal glyphs surround the main forms.
 
 ## The science
-This is a measured copy of a reference poster, not a computation. Contour nests, the bow-tie warp and the cones are geometric constructions placed to match it. The mechanism, queries times keys transposed, softmax, then weights times values, is carried by the labels and the layout, not by any real attention data.
+This is a measured copy of a reference poster, not a computation. Contour nests, the bow-tie warp and the cones are geometric constructions placed to match it. The mechanism, match queries to keys, turn the scores into weights, then blend the values, is carried by the labels and the layout, not by any real attention data.
 
 ## What is on the sheet
 Reading order: the red and blue clusters at the top, the black lattice below them, the A plane, then Z lower left with V lower right. No title.

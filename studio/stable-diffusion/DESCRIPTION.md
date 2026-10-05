@@ -22,7 +22,7 @@ Latent diffusion drawn two ways: as a **flow of contour landscapes** from image 
 The landscape plate runs left to right: crimson contour nests for the image and its decoded copy, goldenrod nests for the latent and its noising row, a central black bowtie for the denoiser, and blue nests for the text condition. The portrait plate is a field of black rules with crimson twins, a small gold-filled room with a blue comb on its edge, and giant black lettering.
 
 ## The science
-Both plates encode the same pipeline: an image is compressed eight times per side into a small latent, noised and denoised there under a text condition, then decoded with some loss. The second plate turns that into numbers: area as dimensionality, pen passes as denoising visits, crimson displacement as the round-trip error. No neural network is drawn; some printed ratios do not match the stated targets.
+Both plates encode the same pipeline: an image is compressed eight times per side into a small latent, noised and denoised there under a text condition, then decoded with some loss. The second plate turns that into numbers: area as the number of values, pen passes as denoising visits, crimson displacement as the round-trip error. No neural network is drawn; some printed ratios do not match the stated targets.
 
 ## What is on the sheet
 

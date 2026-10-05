@@ -14,7 +14,7 @@
 A VAE's converged posteriors drawn as a **nested / packed** order on the prior's exact energy bowl — each posterior an ellipse stamped with the one ε-constellation that trained it (z = μ + σ·ε), the constellation's master copy on a flat N(0,I) target below — meant to show the collapsed zero-bit posterior as the hero and the unvisited prior wedge as bare paper.
 
 ## Lede
-A variational autoencoder's learned posteriors, drawn as small ellipses inside the **bowl of the prior** they are pulled toward.
+A variational autoencoder's learned guesses, drawn as small ellipses inside the **bowl** that pulls them all toward its centre.
 
 ## On the sheet
 A green wireframe bowl fills most of the sheet. Inside it, a crescent of black ellipses, each with a small green plus at its centre, is speckled with short crimson darts. Bottom left, three dotted black rings hold a star-like scatter of crimson darts, the master noise set. Two dashed green lines climb from it to the bowl. The title sits top left; a rate readout runs along the bottom.

@@ -20,7 +20,7 @@ Mixture-of-experts routing drawn as **faceted green tents over a speckle of red 
 A cluster of green terraced tents fills the upper centre and right, drawn as nested triangles and chevrons, some edges dashed. Hundreds of tiny crimson dashes speckle two of the tents. Spaced title letters sit top left, a small green bar chart of expert load bottom left, and an empty band between.
 
 ## The science
-A 16-expert linear gate splits a flat token space into exact cells; height is the routing margin, with terraces as level lines. A simulated rich-get-richer update collapses it: five experts hold territory, eleven never fire, and the top one takes 46 percent. The figures are printed in text; nothing on the sheet marks the missing experts.
+A router sends each token to one of sixteen experts, carving the plane into territories; height shows how confidently a token is routed, with terraces as level lines. A simulated rich-get-richer training run collapses it: five experts hold territory, eleven never fire, and the top one takes 46 percent. The figures are printed in text; nothing on the sheet marks the missing experts.
 
 ## What is on the sheet
 - **The terrain (dominant mass).** An isometric cluster of faceted tents, ~0.72 of sheet width, spanning u≈0.21–0.93, v≈0.15–0.67, drawn in green as nested terrace rings (polygon offsets) with no mesh fill.

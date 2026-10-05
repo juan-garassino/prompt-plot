@@ -17,13 +17,13 @@
 The forward and backward passes of a CNN drawn as **nested annuli collapsing to a core** — each ring-band is one layer, angular cell count halves at every pool while radial sub-rings double with channels, the forward half runs inward and the gradient half climbs back out, and blank paper is ReLU on both. The faithful variant keeps the reference's **laminar two-register pipeline** (forward stacks on top, gradient twins on the same columns below); the mechanism variant is the same two registers with every plane computed by a real numpy CNN.
 
 ## Lede
-A convolutional network's forward pass and its backpropagated gradient drawn as **concentric rings** that run inward to a single answer and back out again.
+A convolutional network's forward pass and the learning signal that runs back out drawn as **concentric rings** that run inward to a single answer and back out again.
 
 ## On the sheet
 A disc of concentric rings fills the right of the sheet, cropped by the frame, with black arcs for the forward pass and crimson dashes for the gradient. Dodger blue marks one tracked channel, and blank wedges of paper cut across every ring. A blue and crimson core sits at the centre, joined to the edge by a straight corridor. Type and a stage table run down the left.
 
 ## The science
-Each ring is a layer: moving inward, the angular cells halve at every pooling step while radial sub-rings multiply with channels. Blank paper is the ReLU gate, empty on both the forward and backward passes. The measured figures are printed on the sheet, but the activations are a seeded synthetic field, not a trained network.
+Each ring is a layer. Moving inward, every ring has half as many cells as the one before, the way pooling shrinks an image, while the finer sub-rings stand for the growing number of channels. Blank paper is the network's off switch, empty on the way in and on the way back. The printed figures are measured, but from a synthetic example, not a trained network.
 
 ## What is on the sheet
 

@@ -21,7 +21,7 @@ Reverse diffusion drawn as a wireframe landscape: a broad hill of noise at the b
 A black wireframe hill fills the upper middle, broad at the top and funnelling into three needle-like peaks at the front. A crimson ladder-shaped canyon runs down its centre, ending in thin crimson spikes. Jagged green noise paths wander across the hill, and black dashes scatter above its crest. Small numbers label each peak, with dashed droplines to a baseline. Spaced capital type sits at the top and bottom.
 
 ## The science
-The mesh shows a diffusion model turning Gaussian noise into a three-peaked data distribution: rows are moments in time, columns are sampler paths. The green path is a real simulated noise trajectory. The crimson canyon marks where the choice of peak is still undecided. The printed peak masses are only labels and do not match the underlying mixture weights.
+The mesh shows a diffusion model turning pure noise into three possible outcomes: rows are moments in time, columns are the paths a sample can take. The green path is one real simulated run. The crimson canyon marks where the choice of peak is still undecided. The numbers printed under the peaks are labels only, not measured weights.
 
 ## What is on the sheet
 All positions normalised to the sheet (u → right, v → down). Portrait; the subject occupies the upper-middle 60 %, the bottom fifth is type and paper.

@@ -23,7 +23,7 @@ Diffusion drawn as **a ring of time that does not close**: an ordered crystal me
 A wide ring takes up most of the sheet. Its texture runs from a black ruled lattice through blue, purple and pink to crimson scatter, with a small crimson bullseye of pure noise at the lower right. The return arc is stitched and tilted. One straight diagonal chord crosses the ring, and large stroke type stacks down the left.
 
 ## The science
-The forward half follows the real DDPM noising equation under a cosine schedule: fine structure dies first, and each pen change marks a signal-to-noise threshold. The chord stands for the closed-form jump to noise in one evaluation. The reverse half's tilt means a new sample, not the original. The learned network is not drawn.
+The forward half follows the standard recipe for adding noise step by step: fine detail dies first, and each pen change marks a level where noise overtakes what is left of the picture. The chord is the shortcut that jumps straight to pure noise in one step. The return arc's tilt means a new picture, not the original. The learned network is not drawn.
 
 ## What is on the sheet
 

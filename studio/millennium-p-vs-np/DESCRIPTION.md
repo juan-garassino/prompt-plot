@@ -18,7 +18,7 @@ The full search of a real 20-variable puzzle as **one pruned tree with a single 
 A great black tree fills the centre, forking in eight clean rows and then hanging as a fine curtain of hairlines, longer toward the right. One red line threads down the right side to the word SOLUTION. Bottom left, a small dense black tree; bottom right, a red rule bristling with ticks. Black captions fill the top left.
 
 ## The science
-The tree is the complete search of a real SAT instance: 8,047 nodes, 4,023 dead ends, one solution, each node placed by its share of the million candidates. The red path is the answer; the red ticks check it clause by clause. Drawn exactly. That the tree measures this algorithm, not the problem, and what NP leaves open are stated in text.
+The tree is the complete search of a real logic puzzle: 8,047 branch points, 4,023 dead ends, one solution, each branch placed by its share of the million possible answers. The red path is the answer; the red ticks check it one rule at a time, which takes almost no space. Drawn exactly. That the tree measures one search method, not the problem itself, is stated in text.
 
 ## What is on the sheet
 - **Title block, top-left.** `P VS NP` in heavy spaced capitals (u ≈ 0.05–0.28, v ≈ 0.04–0.07); below, Clay's question (v ≈ 0.10–0.11): `IF IT IS EASY TO CHECK THAT A SOLUTION IS CORRECT, / IS IT ALSO EASY TO FIND ONE?`; then, smaller (v ≈ 0.13–0.14): `SATLIB UF20-03: 20 VARIABLES, 91 CLAUSES OF 3. / 2²⁰ = 1,048,576 CANDIDATES. ONE SATISFIES ALL 91.`
