@@ -677,3 +677,23 @@ def test_only_and_push_together_are_refused(env):
     with pytest.raises(SystemExit) as e:
         pe.main(["--gallery", str(env["gallery"]), "--only", "fam-wave-v3", "--push"])
     assert e.value.code == 2
+
+
+def test_a_plate_can_point_at_its_own_description_file(env):
+    # Two live plates can share one studio folder (convolutions, ising) but show different pieces;
+    # prints.json `describe` names the plate's own file in that folder.
+    d = env["studio"] / "fam-slug"
+    (d / "DESCRIPTION.coastline.md").write_text(
+        "# HOW LONG IS THE COAST — description\n\n## Lede\nA ruler-dependent coast.\n\n"
+        "## On the sheet\nCrimson edges.\n\n## The science\nFractal dimension 11/8.\n")
+    env["studio"].joinpath("prints.json").write_text(json.dumps({f"{SUBJECT}/{NAME}": {"describe": "DESCRIPTION.coastline.md"}}))
+    (p,) = export(env)["prints"]
+    assert p["title"] == "HOW LONG IS THE COAST" and p["one_line"] == "A ruler-dependent coast."
+    assert p["sections"][1] == {"heading": "The science it encodes", "md": "Fractal dimension 11/8."}
+
+
+def test_a_describe_override_cannot_leave_the_plate_folder(env):
+    # The export logs and skips a plate whose override is bad (one corrupt override never sinks the catalog).
+    for bad in ("../other/DESCRIPTION.md", "/etc/passwd", "DESCRIPTION.txt"):
+        with pytest.raises(ValueError, match="describe"):
+            pe.describe("fam-slug", filename=bad)

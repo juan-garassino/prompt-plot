@@ -15,13 +15,15 @@
 A transformer block drawn as **interfering waves**: Q and K are rows of Gaussian wave packets whose dot product is shown as a real two-source Huygens interference figure (crest loci r = m·L, d = 35·L), then softmax peaks, Z = AV, a mixture-of-experts fork and a gradient band. Siblings: **backprop** replaces MoE with a full mirrored backward pass; **ffn** replaces MoE with an FFN stage and a single backward row; **clean** stops at Z.
 
 ## Lede
-Attention drawn as **interference between two wave families**: queries and keys are wave packets meeting in a central ripple pattern, followed by a mixture-of-experts step.
+What if attention were sound? This plate draws a query and a key as two sources of ripples, and lets them interfere — strong where their waves agree, silent where they cancel. Underneath, the result becomes a row of attention peaks.
 
 ## On the sheet
-Crimson query packets sit top left and blue key packets top right, with dotted curves funnelling down into two black bullseyes of concentric rings at the centre. Below are a black softmax row of peaks, ochre value packets at mid-right, and a green output packet at lower left. Violet lanes fork through a router at lower right, and stacked gradient labels run along the bottom.
+Almost the whole sheet is covered by two families of rings. Crimson ripples spread from a crimson dot in the upper left, blue ripples from a blue dot just below and to the right of it. Where the two families cross, the blue breaks into dashes and the circles weave into a moiré, with bands of agreement and quiet running across the page. Near the bottom, a heavy black line rises into a row of eleven sharp peaks, tallest in the middle and shrinking toward the edges. ATTENTION AS RESONANCE sits alone in the empty strip at the bottom.
 
 ## The science
-The central figure is computed, not drawn by hand: two point sources send out rings of wave crests, and the pattern marks where crests from both meet. The wave packets, softmax peaks, expert lanes and gradients are copied from a reference diagram rather than derived from a model, so they illustrate the idea instead of measuring it.
+In a transformer, attention asks how well a query matches a key, and the answer is a dot product: two vectors that point the same way score high, two that disagree score low. Waves give you the same thing physically. Drop two pebbles in a pond, and where their crests arrive together they add up into a bigger wave; where a crest meets a trough, they cancel out. That pattern is called interference, and the bright bands are where the two sources "agree".
+
+The ripples here are computed, not drawn by hand: two point sources send out evenly spaced crests, and the pattern is wherever the crests line up. The peaks at the bottom show what attention does next. It takes those raw agreement scores and sharpens them with a softmax into a few strong choices and many weak ones. It's an analogy rather than a measurement — the peaks illustrate the idea instead of coming from a model — but it captures why attention feels like resonance: a query "rings" when it meets a key tuned to the same frequency.
 
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet. The plate is bilaterally symmetric in its top half and reads top to bottom.

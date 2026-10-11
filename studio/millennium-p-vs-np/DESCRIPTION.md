@@ -12,13 +12,19 @@
 The complete backtracking search of a real 20-variable SAT puzzle, drawn as **one huge pruned tree with a single red thread to the only solution** — set against a short red comb of 91 ticks, the whole cost of checking that solution once it is found.
 
 ## Lede
-The full search of a real 20-variable puzzle as **one pruned tree with a single red thread** to its only solution, beside a short comb that checks it.
+If an answer is easy to check, is it easy to find? This plate draws the complete search for the one answer to a real logic puzzle, as a great radial tree, beside the needle that checks it in a single sweep.
 
 ## On the sheet
-A great black tree fills the centre, forking in eight clean rows and then hanging as a fine curtain of hairlines, longer toward the right. One red line threads down the right side to the word SOLUTION. Bottom left, a small dense black tree; bottom right, a red rule bristling with ticks. Black captions fill the top left.
+A big circle fills the lower two-thirds of a tall sheet. From its centre a black tree branches outward in clean forking rows, then dissolves into hundreds of grey hairlines of different lengths radiating toward the rim, like a burst or a dandelion clock. One crimson path threads out of the tree and keeps going, up past the circle almost to the top of the sheet, bristling with little ticks of three lengths: the needle, pulled out of the haystack.
+
+P VS NP sits at the top left with its question in small type; dense captions in the corners give the puzzle, the search, and the score: 7,812 nodes and 43,668 clause tests to find it, 273 lookups to check it.
 
 ## The science
-The tree is the complete search of a real logic puzzle: 8,047 branch points, 4,023 dead ends, one solution, each branch placed by its share of the million possible answers. The red path is the answer; the red ticks check it one rule at a time, which takes almost no space. Drawn exactly. That the tree measures one search method, not the problem itself, is stated in text.
+The puzzle is a real benchmark (SATLIB uf20-03): 20 true-or-false switches and 91 rules, each rule demanding that at least one of three switches be set a certain way. That's 1,048,576 possible settings — and exactly one of them satisfies all 91 rules.
+
+The tree is a computer actually looking for it, by backtracking: set switch 1 to false, then switch 2, and so on, and the moment a rule is broken, give up on that branch and back up. The black part draws every step through the first eight switches; after that, each hairline stands for a whole sub-search, as long as it went deep, and a line that stops is a dead end. Searching clockwise from twelve o'clock, it finds the answer at 11:37 — after 7,812 nodes.
+
+Checking is a different story: the crimson needle runs through the 91 rules once, three lookups each, and it's done. That gap — finding is long, checking is short — is the P vs NP question, one of the seven Millennium Prize problems. The plate is honest about one thing: this tree measures *this* method, not the problem — a smarter technique (unit propagation) finds the same needle in 87 nodes. Whether there's a fast shortcut for every puzzle like this one is still open.
 
 ## What is on the sheet
 - **Title block, top-left.** `P VS NP` in heavy spaced capitals (u ≈ 0.05–0.28, v ≈ 0.04–0.07); below, Clay's question (v ≈ 0.10–0.11): `IF IT IS EASY TO CHECK THAT A SOLUTION IS CORRECT, / IS IT ALSO EASY TO FIND ONE?`; then, smaller (v ≈ 0.13–0.14): `SATLIB UF20-03: 20 VARIABLES, 91 CLAUSES OF 3. / 2²⁰ = 1,048,576 CANDIDATES. ONE SATISFIES ALL 91.`

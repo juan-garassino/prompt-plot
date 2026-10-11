@@ -17,13 +17,19 @@
 Diffusion drawn as **a lattice-with-defects wrapped into a ring of time that fails to close** — the arc coordinate is t, the crystal melts to an isotropic bullseye at the antipode and recrystallises back to the seam at a 37.4° grain tilt, and one straight chord (the closed-form forward jump) crosses the void one way only. The faithful and mechanism variants keep the reference's **three laminar registers** (noising row, U-Net bowtie, denoising row) with colour as t; the mechanism's states are real DDPM particles.
 
 ## Lede
-Diffusion drawn as **a ring of time that does not close**: an ordered crystal melts into noise along one arc and is rebuilt, slightly rotated, along the other.
+Diffusion models make pictures by learning to undo noise. This plate draws that as a ring of time: an ordered crystal melts into static along one side and is slowly rebuilt along the other — but the ring doesn't quite close. What comes back is a new crystal, turned 37.4° from the one that left.
 
 ## On the sheet
-A wide ring takes up most of the sheet. Its texture runs from a black ruled lattice through blue, purple and pink to crimson scatter, with a small crimson bullseye of pure noise at the lower right. The return arc is stitched and tilted. One straight diagonal chord crosses the ring, and large stroke type stacks down the left.
+A wide ring fills the right two-thirds of the sheet. At the top left it starts as a neat black lattice, like a crystal or a sheet of graph paper. Moving clockwise, the lattice warps and loosens, turns blue, breaks into fragments, fades through purple and pink, and finally scatters into crimson dust around a small, perfect crimson bullseye at the lower right — pure noise, the only true circle on the sheet.
+
+The other half of the ring climbs back: crimson to pink to purple to blue, the fragments gathering into short black strokes that line up into crystal again, now at a tilt. A single dashed diagonal chord cuts straight across the ring from the crystal to the bullseye. Down the left run big stroke letters and a short essay of numbers: the noise schedule, the moment each size of detail dies, and the tilt of the new crystal.
 
 ## The science
-The forward half follows the standard recipe for adding noise step by step: fine detail dies first, and each pen change marks a level where noise overtakes what is left of the picture. The chord is the shortcut that jumps straight to pure noise in one step. The return arc's tilt means a new picture, not the original. The learned network is not drawn.
+A diffusion model is trained on a strange game. Take a real image and add a little noise, then a little more, and keep going for hundreds of steps until nothing is left but static. That direction is easy — so easy you don't even need to walk it: there's a closed-form shortcut that jumps from the clean picture to any amount of noise in one go. That's the straight chord, "one evaluation".
+
+The hard part is the way back. The model learns to take one small step out of the noise at a time, and making an image means walking all 512 of those steps — the stitched return arc. The plate also shows *which* details die first: fine texture drowns early, the overall shape survives much longer, and the numbers on the left measure exactly when each scale of detail is lost under the cosine schedule.
+
+Then the twist. The schedule is perfectly symmetric about the axis; the sample isn't. The return doesn't recover the crystal you started with — it grows a new, plausible one, tilted 37.4°. That isn't a bug, it's the whole point of a generative model: it doesn't remember pictures, it makes new ones. The trained network itself isn't drawn — only its path.
 
 ## What is on the sheet
 

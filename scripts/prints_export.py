@@ -173,13 +173,16 @@ def _exact_section(text: str, heading: str) -> str:
     return m.group(1).strip() if m else ""
 
 
-def describe(slug: str, family: Optional[str] = None) -> Dict[str, Any]:
-    """{title, one_line, sections} from ``studio/<slug>/DESCRIPTION.md``."""
-    path = STUDIO / slug / "DESCRIPTION.md"
+def describe(slug: str, family: Optional[str] = None, filename: str = "DESCRIPTION.md") -> Dict[str, Any]:
+    """{title, one_line, sections} from ``studio/<slug>/DESCRIPTION.md`` — or, when two live plates share a
+    studio folder, the plate's own file named by prints.json ``describe`` (a bare name in that folder)."""
+    if Path(filename).name != filename or not filename.endswith(".md"):
+        raise ValueError(f"prints.json describe must be a .md file name in studio/{slug}/, got {filename!r}")
+    path = STUDIO / slug / filename
     if not path.is_file():
         title = (family or slug).replace("_", " ")
-        logger.warning("%s: no studio/%s/DESCRIPTION.md — title falls back to %r; "
-                       "set title in prints.json", family or slug, slug, title)
+        logger.warning("%s: no studio/%s/%s — title falls back to %r; "
+                       "set title in prints.json", family or slug, slug, filename, title)
         return {"title": title, "one_line": "", "sections": []}
     text = path.read_text()
     m = _TITLE.search(text)
@@ -387,7 +390,7 @@ def build_print(subject: str, basename: str, render_rec: dict, gcode_rec: dict,
     if drawn:
         logger.info("rendered %s: %s", pid, ", ".join(drawn))
 
-    desc = describe(slug, family)
+    desc = describe(slug, family, override.get("describe") or "DESCRIPTION.md")
     rel = lambda k: f"assets/{pid}/{names[k]}"  # noqa: E731
     return {
         "id": pid,

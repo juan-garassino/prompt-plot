@@ -15,13 +15,19 @@
 Kandinsky's diffusion poster recast as **one straight chord in, a nest of concentric orbits out** — a colour-block composition (the data) melts left→right into a field of shrinking coloured spirals, a single ruled chord jumps straight to a Gaussian ball at the centre, and 26 concentric orbits around it (one per denoising step, inked fraction = ᾱ_t) are the reverse chain that re-emerges as a sparser colour-block sample at the right edge.
 
 ## Lede
-A diffusion model drawn as a Kandinsky poster: **one straight chord jumps from data to noise**, while twenty-six concentric orbits trace the slow denoising path back.
+A diffusion model drawn as a Kandinsky poster. A playful composition of colour blocks and spirals melts into a ball of noise; one straight line jumps there in a single step, and twenty-six concentric orbits trace the slow way back.
 
 ## On the sheet
-A colour-block composition at the left melts rightward into scattered blue, crimson, gold and green spirals. At the centre sits a gold circle of dots, the noise, ringed by a black stack of orbits that thin toward the middle. A single black line crosses to it. A sparser composition appears at the right edge, with a time ruler along the bottom.
+The left side is pure Kandinsky: green striped blocks, black chequer patterns, a white triangle, and a crowd of spirals in gold, blue, crimson and green that thin out as they drift right. In the middle of the sheet, a huge disc of concentric black orbits, cut by radial gaps, surrounds a gold circle filled with scattered black dots and small spirals — the noise. Two bold black diagonals cross the composition, and one of them runs straight into the centre.
+
+Along the bottom runs a time ruler from t = 0 to t = 1000, with a small crimson mark where signal and noise are equal. At the top right, a gold spiral and a blue one sit on either side of a "≠" under the words SAME LAW · DIFFERENT DRAW; at the right edge, a sparser echo of the composition starts to form. The forward formula is written out across the top left, and a quarter-circle gauge in the corner marks one, two and three standard deviations of pure noise.
 
 ## The science
-Each orbit is one denoising step of a standard diffusion model, a thousand steps in all with every thirty-eighth drawn; how much of an orbit is inked follows how much of the picture remains. Colour appears only where signal outweighs noise. The one-step formula is written in text. Some encodings, such as the orbit wobble, are too subtle to see.
+Every diffusion model rests on one simple formula, printed at the top: the noisy image at time *t* is a blend of the original and pure random noise, with the mix sliding from all-picture to all-noise as *t* runs from 0 to 1000. Because that blend has a closed form, you can jump straight from any picture to any noise level in one step — that's the straight black line.
+
+Getting back is the hard part. A neural network learns to remove a little noise at a time, and generating an image means running it a thousand times. The plate draws 26 of those steps (every 38th) as the concentric orbits: how much of each orbit is inked follows how much of the picture survives at that step, and colour only appears where signal still outweighs noise — past the crimson mark, it's mostly static.
+
+And the line top right is the punchline. Run the same process twice from different noise and you get two different pictures: same law, different draw. A diffusion model isn't a memory, it's a machine for sampling new things that obey the same rules.
 
 ## What is on the sheet
 Positions normalised to the sheet (u → right, v → down).

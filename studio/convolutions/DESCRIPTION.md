@@ -19,13 +19,17 @@
 - Above and right of it, X is still a pale field of level-set stripes, running out through the top-right corner.
 
 ## Lede
-One shape, read by a convolution: the sweep's frontier is a **staircase**, with sampled dots and response rings behind it and pale stripes ahead.
+A convolution caught halfway through its job. A small window is sliding across a shape, asking the same question at every stop — and the sheet freezes the moment it's about half done.
 
 ## On the sheet
-A black outline of a Y-shaped figure runs across the sheet, with a heavy card marking the kernel at its fork. Behind a black staircase, a lattice of black dots and chains of crimson and blue rings fill the lower left. The upper right holds pale black stripes running off the corner. A key and the title sit at lower right.
+A big Y-shaped figure made of black dots spreads from the top left down to the bottom. Each dot is one pixel of the input, and its size is how bright that pixel is. Where the window has already passed, crimson and blue rings bloom around some of the dots.
+
+The heavy black square sitting at the fork is the kernel itself — a 5 × 5 grid of weights, crimson around the edge and blue in the middle, each collar sized by how much that weight counts. A black staircase marks the frontier of the sweep: behind it everything has been read; ahead of it, in the upper right, the shape is still raw, a pale loop of contour stripes the window hasn't reached yet. A small key in the corner gives the code: dot area is the input, the number of rings is the size of the answer, crimson is positive and blue is negative.
 
 ## The science
-A convolution slides one small window over a picture and asks the same question at every stop. Here the window is a real edge detector, moved two cells at a time. Dot size shows what it saw, the number of rings how strongly it answered, and crimson or blue whether the answer was positive or negative. It only speaks where the shape bends, so flat interiors stay blank. Three answers hidden under the card are listed in the notes.
+A convolution is surprisingly humble. You take a tiny stencil of numbers, lay it on the image, multiply what's underneath by those numbers, add everything up, and write down one result. Then you shift two cells over — the "stride 2" — and do it again, across the whole picture. That's all. And yet, stacked in layers, this is how machines learned to see.
+
+The stencil here is a Laplacian of Gaussian, a classic edge detector. Its shape, a positive rim around a negative centre, means it stays silent on flat, even areas and only speaks up where the brightness changes. So the inside of the Y stays mostly ringless, and the rings gather along the outline and at the fork — exactly where the shape bends. How many rings a dot gets says how strongly the detector answered, scaled to the strongest answer on the sheet; the colour says which way. One simple rule, applied everywhere, turns a picture into a map of its edges.
 
 ## What is on the sheet
 Reading order:

@@ -15,13 +15,15 @@
 **COOLING STRIP.** One 212 × 129 Ising lattice with temperature running linearly from 0.70 Tc at the left edge to 2.30 Tc at the right edge. The Fortuin–Kasteleyn cluster held by a fixed + wall on the left is drawn as a ruled sea. Its hull is **one crimson coast**, at mean 1.02 Tc: Tc is a *place*. Free FK clusters are drawn as closed outlines, weighted by size. They shrink and thin to the right until heat is finer than the 13-site cut, and the sheet ends in bare paper.
 
 ## Lede
-A strip of the Ising magnet cooled across its **critical temperature**, drawn so that the critical point appears as a place on the sheet: one ragged crimson coast.
+A magnet is millions of tiny compasses that all want to agree with their neighbours, while heat keeps shaking them. This strip heats one magnet from cold to hot along its length, so the critical temperature — the exact point where order gives way to chaos — stops being a number and becomes a place on the sheet.
 
 ## On the sheet
-Giant spaced capitals spell CRITICAL up the left edge, with a thermometer ruler along the top. A dense black ruled sea fills the left, bounded by one ragged crimson coastline. Beyond it, black and then grey closed outlines of smaller clusters thin out to the right until bare paper remains. Footer text in three columns carries the numbers.
+A thermometer runs along the top, from 0.70 to 1.80 times the critical temperature, with 1.00 marked in crimson. Under it, the left third of the sheet is a calm sea of black horizontal rules, with the word CRITICAL and "TC IS A PLACE" floating in it. Then one ragged crimson coastline runs down the sheet, and beyond it the world breaks up: a dense thicket of black outlines that thins, bit by bit, into small scraps and finally into bare paper and scattered dots at the far right. A short block of type in the lower left gives the recipe and the score.
 
 ## The science
-One grid of tiny magnets is simulated with the temperature rising from left to right. How densely the sea is ruled shows how magnetised it is; the outlines are clusters of aligned magnets, sized by pen weight. The crimson coast sits just above the exact critical temperature, and the measured magnetisation matches the exact solution known since 1944 within simulation noise.
+This is the Ising model, physics' favourite toy: a grid of tiny magnets, each pointing up or down, each preferring to match its neighbours, all jostled by heat. Cold, they agree and the whole thing becomes one big magnet. Hot, they're a random mess. And right at the critical temperature something strange happens: patches of agreement form at *every* size at once, from single cells to continents, and the system can't make up its mind.
+
+Here the temperature rises from left to right across a 212 × 137 grid, simulated with two standard algorithms (Wolff and Metropolis). The left edge is held pointing up; the ruled sea is the droplet still connected to it, the crimson line is that droplet's edge, and the black outlines further right are the free droplets that have broken away. The coast settles, on average, at 1.03 times the critical temperature — right where theory says order should end. Lars Onsager solved this model exactly in 1944, one of the great feats of twentieth-century physics, and the simulation's energy tracks his answer to within 0.013.
 
 ## What is on the sheet
 Reading order:

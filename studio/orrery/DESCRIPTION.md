@@ -15,13 +15,17 @@
 Attention drawn as **an orbital system**: four planetary systems (Q, K, V, Z) circle a central Q·Kᵀ/softmax sun inside one big dotted orbit, and coloured bundles of curves carry Q, K and V into the central rings and Z out of them. It is an exact reproduction of an engraved orrery reference.
 
 ## Lede
-Attention drawn as **a small planetary system**: query, key and value bodies orbit a central softmax sun, and their curves flow into it and out as the result.
+Attention — the mechanism at the heart of every modern language model — drawn as a little solar system. And it's not a metaphor: every orbit is measured from a real GPT-2 reading a real sentence.
 
 ## On the sheet
-Concentric rings with scattered nodes form the central sun, labelled with the dot product and softmax, inside one large dotted orbit. Four smaller systems circle it: crimson Q at upper left, blue K at upper right, ochre V at lower right and green Z at the bottom. A coloured bundle of curves joins each to the centre. Moon discs and small marks fill the margins.
+In the centre sits a big black "sun" of concentric rings, labelled Q·Kᵀ and softmax, with short arcs and small dots spiralling inside it. A large dashed orbit circles it, and three planets ride on that orbit: a small crimson Q at upper left, a larger blue K at upper right, and a goldenrod V at lower right, each with its own rings and little moons. Crimson and blue curves arc from Q and K into the sun; a thick ochre bundle flows from V down to a green planet at the bottom marked Z = AV.
+
+ATTENTION and "gpt-2 small · layer 4 · head 3" head the sheet. At the bottom, one sentence: "The pen plotter drew a black hole while the transformer watched itself think" — with *transformer* and *itself* underlined. A small legend explains the code: left to right is the sentence, a ring is the size of a row, one turn of the ochre bundle is 5 %.
 
 ## The science
-The mapping is a metaphor. Q, K and V feed the central score-and-softmax step and Z is the output, but no real weight or score sets any radius. The sheet is a measured recreation of an engraved reference, with every hub and orbit placed from it and only the small central nodes drawn at random.
+When a transformer reads, every word asks a question of every other word. Each word becomes three vectors: a **query** (what am I looking for?), a **key** (what do I offer?) and a **value** (what do I pass on?). Multiply queries by keys, push the scores through a softmax, and you get a set of weights that decides how much each word listens to each other word. Then you take a weighted blend of the values — Z = AV — and that's attention.
+
+This plate isn't decoration. It runs GPT-2 small, layer 4, attention head number 3, on the sentence at the bottom, with the word "itself" as the query, and every size on the sheet comes from that computation, checked against the reference implementation. The rings of each planet are the lengths of the real Q, K and V rows, and the attention itself is counted out in ink: every line of the ochre ribbon, and every turn of the grooves in the sun, is 5 % of the head's attention. The two underlined words are the query, "itself", and "transformer", the thing that is watching itself think — a sentence about a model reading, read by a model, drawn by a pen.
 
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.
