@@ -12,13 +12,17 @@
 Plate 7 of the Millennium series puts an elliptic curve and its L-function on one sheet at one scale: **a single gold point generates every rational point by drawing lines, and the L-function crosses zero once, in gold, exactly where the conjecture says it must.**
 
 ## Lede
-Plate seven draws an elliptic curve beside the function that counts its points: **one gold point generates every rational point**, and its companion function crosses zero exactly once, where the conjecture says it must.
+One of the seven hardest open problems in mathematics, drawn with a ruler. An elliptic curve sits beside the function that "counts" its points — and one gold point, plus the art of drawing straight lines, is enough to produce every rational point it has.
 
 ## On the sheet
-A black elliptic curve fills the middle: a closed egg at the left and an open branch to its right, studded with small circles. A gold point sits on the egg, and three black chords pass through it. At the right, that companion function dips below a thin axis and crosses it in a short gold stretch. Text columns surround them.
+A black elliptic curve fills the middle of a tall sheet: a closed oval on the left and an open branch sweeping up and down on the right, both studded with small open circles. A gold point sits on the oval, and straight black chords run from it across both pieces of the curve, a few dashed vertical lines linking points to their mirror images. Each circle near the centre is labelled — P, 2P, −2P, 3P, 4P, 5P — with their coordinates.
+
+To the right, a second, smaller drawing: the curve's L-function, which dips just below a horizontal axis and crosses it in one short gold stretch. Columns of type frame everything — the equation y² + y = x³ − x at upper left, the big statement RANK E(Q) = ORD L(E,S) at lower left with a list of ever-uglier fractions (6P, 7P… 14P), and the numbers behind the gold crossing at the right.
 
 ## The science
-The curve is drawn exactly from its equation, and every small circle is a true multiple of the gold starting point, reached by drawing lines. The companion function is computed, and its slope at the crossing is shown as an angle. The conjecture links that slope to the curve's points; the statement and the partial proofs are text only.
+An elliptic curve is an equation like y² + y = x³ − x, and the ancient question is: which points on it have *rational* coordinates — plain fractions? Here's the magic trick. Take two such points, draw the straight line through them, and it hits the curve exactly once more, at another rational point. On this curve, every rational point can be built that way from the single gold point P = (0, 0): 2P, 3P, −4P and so on. The sheet draws 47 of them, with odd multiples landing on the oval and even ones on the open branch. Notice how the fractions in the list explode — 14P already has numbers with seven digits.
+
+The Birch and Swinnerton-Dyer conjecture says you can read how many independent generators a curve needs (its "rank") from a completely different object: a function L(E, s) built by counting the curve's points modulo every prime. The rank should equal how many times L vanishes at s = 1. Here it crosses zero once — a crossing, not a touch — so the rank is 1, and the slope of that gold crossing (0.306) is exactly the curve's real period times the "height" of P, as the conjecture predicts. For this curve it's proved (Gross–Zagier 1986, Kolyvagin 1988). In general it's open, and worth a million dollars from the Clay Institute.
 
 ## What is on the sheet
 - **Title block** (top-left): `BIRCH AND SWINNERTON-DYER` in spaced caps (u 0.05–0.78, v 0.05), above `GEOMETRY MEETS ANALYSIS: THE RANK OF E(Q) IS` / `THE ORDER OF THE ZERO OF L(E,S) AT S = 1.` (v 0.09–0.10). Top-right: `MILLENNIUM PRIZE PROBLEMS 7 / 7` / `CLAY MATHEMATICS INSTITUTE, 2000`.

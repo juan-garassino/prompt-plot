@@ -16,13 +16,17 @@
 Latent diffusion drawn two ways: the faithful plate keeps the reference's **left-to-right dataflow of contour nests** (image x → encoder horn → small latent z₀ → noising row → bowtie denoiser with a sampling loop → decoder horn → x̃), while TWICE HERE transposes it to a **nested orthogonal subdivision** — a De Stijl field of black rules redrawn at 1/8 inside one of its own blocks, where area is dimensionality, pen passes are visits, and crimson rules are the lossy round trip.
 
 ## Lede
-Latent diffusion drawn two ways: as a **flow of contour landscapes** from image to latent and back, and as a subdivision nested inside itself at one eighth.
+Stable Diffusion, drawn as a map. An image travels left to right as a series of contour landscapes: squeezed into a small latent world, dissolved into noise, rebuilt by a denoiser that listens to a text prompt, and expanded back into a picture.
 
 ## On the sheet
-The landscape plate runs left to right: crimson contour nests for the image and its decoded copy, goldenrod nests for the latent and its noising row, a central black bowtie for the denoiser, and blue nests for the text condition. The portrait plate is a field of black rules with crimson twins, a small gold-filled room with a blue comb on its edge, and giant black lettering.
+Read the sheet like a sentence. At the top left, a crimson four-lobed shape drawn in nested contours — the image x — funnels through a black fan, the encoder, into a much smaller goldenrod shape, z₀. From there a row of goldenrod copies marches right, getting more and more speckled with black dots until, at z_T, only a cloud of noise is left. That's q(z_t | z_{t−1}), the noising road.
+
+In the centre sits a big black bowtie of contours, the denoiser, with goldenrod arrows circling through it, a little "t" feeding the time step in from the left. At the lower left a blue shape — the text prompt y — goes through its own black fan and becomes a small blue condition c, whose wiggly blue lines feed the bowtie. On the right, a clean goldenrod z₀ comes out, passes through the reverse fan, the decoder, and becomes a crimson image again, x̃. Captions at the corners read NOISE · CONDITION · DENOISE · GENERATE and IMAGES THROUGH LATENT LANDSCAPES.
 
 ## The science
-Both plates encode the same pipeline: an image is compressed eight times per side into a small latent, noised and denoised there under a text condition, then decoded with some loss. The second plate turns that into numbers: area as the number of values, pen passes as denoising visits, crimson displacement as the round-trip error. No neural network is drawn; some printed ratios do not match the stated targets.
+Doing diffusion directly on pixels is expensive — a single image has hundreds of thousands of numbers. Stable Diffusion's trick is to work in a compressed space instead. An encoder squeezes the picture down to a "latent" about eight times smaller on each side, a little landscape that keeps the meaning and throws away fine detail. That's why the crimson image shrinks into the small goldenrod one.
+
+All the action happens in that latent world. Noise is added step by step until nothing is left (the top row), and a denoising network — the bowtie, in real life a U-Net — learns to remove it again, one step at a time. What makes it *your* picture is the prompt: the text is turned into its own vector by a text encoder, and that condition is fed into the denoiser at every step, steering each little cleanup toward "a cat on a skateboard" or whatever you typed. Finally a decoder blows the clean latent back up into pixels; the result, x̃, is close to an image but never exactly the one you put in. No real network weights are drawn here: it's the pipeline, mapped as terrain.
 
 ## What is on the sheet
 

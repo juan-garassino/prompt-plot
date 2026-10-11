@@ -33,7 +33,8 @@
   "detail": {
    "u": 0.45,
    "v": 0.55
-  }
+  },
+  "describe": "DESCRIPTION.wildcard.md"
  },
  "studio/diffusion/pp_diffusion_v1.png": {
   "detail": {
@@ -223,5 +224,8 @@
    "u": 0.4,
    "v": 0.5
   }
+ },
+ "studio/ising/pp_ising_COASTLINE_v8.png": {
+  "describe": "DESCRIPTION.coastline.md"
  }
 }

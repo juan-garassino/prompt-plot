@@ -17,13 +17,17 @@
 The forward and backward passes of a CNN drawn as **nested annuli collapsing to a core** — each ring-band is one layer, angular cell count halves at every pool while radial sub-rings double with channels, the forward half runs inward and the gradient half climbs back out, and blank paper is ReLU on both. The faithful variant keeps the reference's **laminar two-register pipeline** (forward stacks on top, gradient twins on the same columns below); the mechanism variant is the same two registers with every plane computed by a real numpy CNN.
 
 ## Lede
-A convolutional network's forward pass and the learning signal that runs back out drawn as **concentric rings** that run inward to a single answer and back out again.
+A convolutional network has two lives: the trip in, when it looks at a picture and decides what it is, and the trip back out, when it learns from being wrong. This plate draws both on one set of rings — and shows the surprising thing they share: whatever the network ignored on the way in, it can never learn from on the way out.
 
 ## On the sheet
-A disc of concentric rings fills the right of the sheet, cropped by the frame, with black arcs for the forward pass and crimson dashes for the gradient. Dodger blue marks one tracked channel, and blank wedges of paper cut across every ring. A blue and crimson core sits at the centre, joined to the edge by a straight corridor. Type and a stage table run down the left.
+A big disc of concentric rings fills the right of the sheet, so large the frame cuts it off. Every ring-band is one layer of the network, read from the rim inward. The black dashed arcs are the forward pass, the network "thinking"; the crimson flecks tucked inside each band are the gradient, the learning signal travelling back. One channel is picked out in blue, so you can follow a single feature from the edge all the way in.
+
+Look closely and you'll see blank wedges of paper cutting across several rings at once, lined up like spokes. At the heart sits a small blue-and-crimson bullseye — the network's final answer — and a straight blue corridor slices from outside the disc right into it. On the left, a Swiss column of type keeps the books: a table of every layer, from 256 × 3 in to 9 classes out, a little plot of ReLU, a diagram of pooling and un-pooling, and three measured numbers in the top corner.
 
 ## The science
-Each ring is a layer. Moving inward, every ring has half as many cells as the one before, the way pooling shrinks an image, while the finer sub-rings stand for the growing number of channels. Blank paper is the network's off switch, empty on the way in and on the way back. The printed figures are measured, but from a synthetic example, not a trained network.
+Think of a CNN as a funnel. A picture comes in as a wide, thin sheet of pixels, and every layer squeezes it: pooling halves the resolution while the number of channels doubles. The network trades knowing exactly *where* something is for knowing more about *what* it is, until the whole image has collapsed into a single verdict. That's why the rings hold fewer and fewer cells as you move inward, but more and more sub-rings.
+
+The blank paper is the most interesting part. It is ReLU, the network's on/off switch: any neuron that comes out negative is simply set to zero and goes quiet — here, 52 % of the paper the gate covers stays blank. And because a silent neuron passes nothing back, those same wedges stay blank on the return trip too. Max-pooling makes it stricter still: it keeps only the single winner of every window, so learning can only flow back down the paths the forward pass happened to use — of everything that fired, the gradient re-enters 47 %. Hence the title: the mirror forgets. The numbers are measured from a real computation, on a synthetic example rather than a trained model.
 
 ## What is on the sheet
 

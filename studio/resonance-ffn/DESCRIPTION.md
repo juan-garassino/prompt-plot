@@ -15,13 +15,17 @@
 The `resonance` plate with its MoE fork swapped for a feed-forward block, drawn as **interfering waves then a pinched streamline bundle**. The top half is identical to v13 (Q, K packets → two-source Huygens interference → softmax). Below, Z = AV runs into expand → nonlinearity → project → Y, and one backward row mirrors it all at the foot, including a miniature second interference figure for ∂L/∂A. The two current renders are near-identical: **v5** has cramped/condensed small type and a bulb-shaped nonlinearity; **v9** has cleaner lowercase glyphs and a barrel-shaped nonlinearity.
 
 ## Lede
-Attention drawn as **resonance between two wave families**, followed through a feed-forward block and back again as gradients.
+A whole transformer block on one sheet, drawn as waves. Queries and keys interfere, values get mixed by the result, a feed-forward block reshapes it — and then the learning signal runs the entire thing backwards.
 
 ## On the sheet
-The upper half shows crimson query and blue key wave packets converging on a black two-bullseye interference figure at the centre, with a softmax row below. Lower on the sheet an ochre value knot and a green output packet lead right into a bracketed feed-forward block of violet strokes. A smaller copy of the interference figure and stacked gradient labels run along the bottom.
+Crimson wave packets labelled Q stack at the upper left and blue packets labelled K at the upper right, five of each, and dotted curves pour from both into a black figure in the middle: two overlapping bullseyes of concentric rings, labelled Q·Kᵀ/√dₖ. Beneath it, a softmax row of peaks feeds dotted gold lines across to a stack of goldenrod V packets on the right, which flow back into one big green packet, Z = AV.
+
+From Z, violet strokes enter a bracketed block marked FFN — expand, nonlinearity, project — and come out as Y. Along the bottom, the same chain runs in reverse: ∂L/∂Y on the right, through the transposed feed-forward block, a smaller twin of the interference figure (∂L/∂A), and out at the left as ∂L/∂Q, ∂L/∂K and ∂L/∂V.
 
 ## The science
-The interference figure is computed from rings of wave crests spreading out from two point sources and adding up where they cross. The feed-forward block is a fan of lines that flatten at the top like a squashed wave; going backward, each line gets the same notch, standing for its slope. Wave packets and labels are traced from a reference, not model weights.
+This is one transformer block, the building unit of every large language model, told as waves. First, attention. Each query is compared with each key, a dot product, drawn here as two wave sources interfering: where they agree, the pattern is strong. A softmax sharpens those scores into weights, and the weights decide how to blend the values into the output Z. Then the feed-forward network takes each position on its own, expands it into a wider space, bends it through a nonlinearity — the fan of violet lines flattening at the top like a squashed wave — and projects it back down.
+
+The bottom row is how the block learns. Training measures how wrong the final answer was (the loss L) and sends that blame backwards, step by step, through every operation in reverse: the projection runs transposed, the nonlinearity contributes its slope (each line gets the same notch), and the interference figure reappears small as the gradient of the attention weights, until the blame reaches Q, K and V and tells them how to change. The interference figure is computed from two real wave sources; the wave packets and labels are traced from a reference diagram, so they illustrate the flow rather than measure a model.
 
 ## What is on the sheet
 Coordinates are (u, v) on the 210 × 297 sheet.

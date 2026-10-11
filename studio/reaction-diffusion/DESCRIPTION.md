@@ -16,13 +16,17 @@
 Gray-Scott reaction-diffusion drawn as a **lattice-with-defects** (a labyrinth with one pitch and no grain) — the selected wavelength follows √D. MORPHOGENESIS states it as an exploded axonometric deck of three separate runs at D 0.4 / 1.0 / 2.0 plus a magnified relief; BACTERIO states it as one sheet-filling field whose D ramps ×7 left→right, overprinted with green rules spaced at the predicted local wavelength and red germ outlines at true scale, dressed as Sottsass's Memphis *Bacterio* laminate.
 
 ## Lede
-A chemical pattern-forming reaction drawn as a labyrinth with one natural pitch: the **spacing of its stripes grows with how fast the chemicals spread**.
+How does a leopard get its spots, or a fingertip its ridges? In 1952 Alan Turing proposed that two chemicals spreading and reacting can make patterns out of nothing. This plate runs that idea and measures it: a featureless field picks its own length.
 
 ## On the sheet
-Both plates are dense black contour fields of a simulated pattern. One is a tilted deck of three plates and a large relief at upper right, with crimson scale bars at left. The other fills the sheet beneath a giant blue title, crossed by vertical green rules and outlined by crimson germ shapes. Captions run down the left side.
+MORPHOGENESIS runs across the top of a tall sheet in widely spaced letters, with "a uniform field chooses a length" beneath it. Four square tiles climb diagonally from the lower left to the upper right, drawn in isometric view like plates on a table. The first, T 0, is uniform noise. The next three show the pattern after it has grown, at three spreading speeds — D 0.4, 1.0 and 2.0 — and the labyrinth stripes get visibly wider each time.
+
+Dashed lines lift the middle tile up into a large relief at the top right, a terrain of contour lines with one stripe spacing marked in crimson. Crimson scale bars down the left compare the three spacings, plus two controls; at the bottom right, a little chart shows each tile's spectrum as a sharp peak, and the bottom left lists the recipe and the result.
 
 ## The science
-Both run the real equations of a two-chemical reaction. Letting the chemicals spread four times faster makes the stripes twice as wide, and the printed measurements agree within a few percent. On the second plate the green rules are the predicted spacing, not measured. Counting stripes between rules by eye is hard, and the starting shapes leave visible traces.
+Imagine two chemicals on a dish. One is steadily fed in; the other feeds on it, makes more of itself as it does, and slowly dies away — and the two spread at different speeds. Start them almost perfectly even, with a tiny bit of noise, and something remarkable happens: the evenness is unstable, and the mix organises itself into spots or stripes with a natural spacing — no blueprint required. This is the Gray–Scott version of Turing's idea, simulated on a 128 × 128 grid for 7,000 steps.
+
+The plate tests one clean prediction: if you let both chemicals spread faster, the pattern should get coarser, with spacing growing as the square root of the spreading speed. Speed it up five-fold, from 0.4 to 2.0, and the measured stripe spacing goes from 7.5 to 12.1 to 17.4 cells — ratios of 0.62, 1.00 and 1.44, against a predicted 0.63, 1.00 and 1.41. Agreement within 3 %. The two controls keep the speed and change the starting seed instead (size 8 versus 50), and get the same spacing: the length comes from the chemistry, not from where it started.
 
 ## What is on the sheet
 
