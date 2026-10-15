@@ -50,13 +50,24 @@ def validate_bounds(
     violations: List[str] = []
     new_commands: List[GCodeCommand] = []
 
+    # A G0 whose next XY motion is a G1 is where the pen goes down, i.e. the
+    # first inked point of a stroke. In clamp mode it must obey the drawable
+    # area like the G1s, otherwise the stroke starts in the margin.
+    stroke_start = [False] * len(program.commands)
+    next_is_draw = False
+    for i in range(len(program.commands) - 1, -1, -1):
+        cmd = program.commands[i]
+        if cmd.command in ("G0", "G1") and (cmd.x is not None or cmd.y is not None):
+            stroke_start[i] = cmd.command == "G0" and next_is_draw
+            next_is_draw = cmd.command == "G1"
+
     for i, cmd in enumerate(program.commands):
         out_of_bounds = False
         clamped_x = cmd.x
         clamped_y = cmd.y
 
         # Choose bounds per move type.
-        if cmd.command == "G1":
+        if cmd.command == "G1" or (mode == "clamp" and stroke_start[i]):
             lx0, ly0, lx1, ly1 = x0, y0, x1, y1
         else:
             lx0, ly0, lx1, ly1 = mx0, my0, mx1, my1
@@ -291,30 +302,44 @@ def ensure_pen_safety(
 def extract_strokes(commands: List[GCodeCommand]) -> List[List[GCodeCommand]]:
     """Extract individual strokes (G0 + M3 ... G1s ... M5) from a command list.
 
-    Includes the preceding G0 travel in each stroke so the optimizer knows the
-    real start position — not just the first G1 endpoint.
+    Every stroke starts with a ``G0`` to the position the pen actually goes
+    down at, so it can be reordered safely. That position is tracked from all
+    preceding motion rather than taken from the last ``G0`` seen, because:
+
+    - a Z-only ``G0`` (``G0 Z5``) between the XY travel and ``M3`` carries no
+      XY, and
+    - a stroke can start with ``M5``/``M3`` and no travel at all (the pen is
+      re-lowered where the previous stroke ended).
+
+    Using the last ``G0`` in either case made the reordered program draw a line
+    from wherever the previous stroke ended to the first ``G1`` (ink that was
+    never in the original drawing). Commands outside strokes (dwells, Z moves,
+    comments) are dropped; the pipeline re-inserts dwells afterwards.
     """
     strokes: List[List[GCodeCommand]] = []
     current: List[GCodeCommand] = []
     pen_state = PenState()
-    last_g0: GCodeCommand | None = None  # None until an explicit G0 is seen
+    x, y = 0.0, 0.0
 
     for cmd in commands:
-        if cmd.command == "G0":
-            last_g0 = cmd
-        elif cmd.command == "M3":
+        if cmd.command == "M3":
+            if pen_state.is_down and current:
+                continue  # redundant M3 while already drawing — keep the stroke going
             pen_state.set_down()
-            # Include the preceding G0 so the optimizer knows the true travel start.
-            # If no G0 was seen yet, omit it — _stroke_start will fall back to first G1.
-            current = [last_g0, cmd] if last_g0 is not None else [cmd]
+            current = [GCodeCommand(command="G0", x=x, y=y), cmd]
         elif cmd.command == "M5":
             if current:
                 current.append(cmd)
                 strokes.append(current)
                 current = []
             pen_state.set_up()
-        elif pen_state.is_down and cmd.command == "G1":
-            current.append(cmd)
+        elif cmd.command in ("G0", "G1"):
+            if pen_state.is_down and cmd.command == "G1":
+                current.append(cmd)
+            if cmd.x is not None:
+                x = cmd.x
+            if cmd.y is not None:
+                y = cmd.y
 
     if current:
         current.append(GCodeCommand(command="M5"))
@@ -324,7 +349,7 @@ def extract_strokes(commands: List[GCodeCommand]) -> List[List[GCodeCommand]]:
 
 
 def _stroke_start(stroke: List[GCodeCommand]) -> Tuple[float, float]:
-    # G0 is now captured in each stroke; use it as the true travel target.
+    # extract_strokes puts the pen-down position in a leading G0.
     for cmd in stroke:
         if cmd.command == "G0" and cmd.x is not None and cmd.y is not None:
             return (cmd.x, cmd.y)

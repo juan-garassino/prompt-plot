@@ -112,3 +112,30 @@ def test_stream_pen_layers_runs_all_layers():
     assert err == 0 and ok > 0
     # two swaps between three color layers
     assert swaps == [(1, "red"), (2, "blue")]
+
+
+def test_untagged_m3_moves_with_its_colour_layer():
+    """The LLM colour prompt tags G1s only, so M3s arrive untagged. The M3 that
+    starts the next colour must not stay at the end of the previous layer, or
+    the old pen is lowered at the new colour's start point before the swap."""
+    cfg = _cfg()
+    raw = [
+        GCodeCommand(command="M5"),
+        GCodeCommand(command="G0", x=20, y=20),
+        GCodeCommand(command="M3", s=1000),
+        GCodeCommand(command="G1", x=40, y=20, color=0),
+        GCodeCommand(command="M5"),
+        GCodeCommand(command="G0", x=20, y=40),
+        GCodeCommand(command="M3", s=1000),
+        GCodeCommand(command="G1", x=40, y=40, color=1),
+        GCodeCommand(command="M5"),
+    ]
+    prog = merge_chunks([raw], cfg)
+    layers = split_color_layers(prog)
+    assert [c for c, _ in layers] == [0, 1]
+    for _color, cmds in layers:
+        downs = [i for i, c in enumerate(cmds) if c.command == "M3"]
+        draws = [i for i, c in enumerate(cmds) if c.command == "G1"]
+        # every pen-down in a layer is followed by ink in that same layer
+        assert all(any(j > i for j in draws) for i in downs)
+    assert sum((layer for _, layer in layers), []) == prog.commands

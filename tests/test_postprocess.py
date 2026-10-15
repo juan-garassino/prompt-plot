@@ -144,18 +144,20 @@ class TestOptimizeStrokeOrder:
         # Stroke 2: near origin (5, 5)
         # Starting from (0,0), should pick stroke 2 first
         cmds = _make([
+            {"command": "G0", "x": 100, "y": 100},
             {"command": "M3", "s": 1000},
-            {"command": "G1", "x": 100, "y": 100, "f": 2000},
+            {"command": "G1", "x": 110, "y": 110, "f": 2000},
             {"command": "M5"},
+            {"command": "G0", "x": 5, "y": 5},
             {"command": "M3", "s": 1000},
-            {"command": "G1", "x": 5, "y": 5, "f": 2000},
+            {"command": "G1", "x": 15, "y": 15, "f": 2000},
             {"command": "M5"},
         ])
         strokes = extract_strokes(cmds)
         ordered = optimize_stroke_order(strokes)
         # The stroke near origin should come first
         first_g1 = [c for c in ordered[0] if c.command == "G1"][0]
-        assert first_g1.x == 5.0
+        assert first_g1.x == 15.0
 
 
 class TestOptimizeGCodeProgram:
@@ -252,3 +254,59 @@ class TestRunPipeline:
         config = PromptPlotConfig()
         result = run_pipeline(prog, config)
         assert isinstance(result, GCodeProgram)
+
+
+def _inked_segments(cmds):
+    """Set of (start, end) segments drawn with the pen down."""
+    segs, pos, down = set(), (0.0, 0.0), False
+    for c in cmds:
+        if c.command == "M3":
+            down = True
+        elif c.command == "M5":
+            down = False
+        elif c.command in ("G0", "G1"):
+            nxt = (c.x if c.x is not None else pos[0], c.y if c.y is not None else pos[1])
+            if down and c.command == "G1" and nxt != pos:
+                segs.add(tuple(sorted((pos, nxt))))
+            pos = nxt
+    return segs
+
+
+class TestStrokeStartRegression:
+    """Reordering must never add ink: each stroke starts where its pen went down."""
+
+    def test_z_only_g0_does_not_hide_xy_travel(self):
+        cmds = _make([
+            {"command": "M5"},
+            {"command": "G0", "x": 150, "y": 150},
+            {"command": "G0", "z": 0},
+            {"command": "M3", "s": 1000},
+            {"command": "G1", "x": 190, "y": 190, "f": 2000},
+            {"command": "G0", "z": 5},
+            {"command": "M5"},
+            {"command": "G0", "x": 30, "y": 30},
+            {"command": "G0", "z": 0},
+            {"command": "M3", "s": 1000},
+            {"command": "G1", "x": 60, "y": 30, "f": 2000},
+            {"command": "M5"},
+        ])
+        out = optimize_gcode_program(GCodeProgram(commands=ensure_pen_safety(cmds)))
+        assert _inked_segments(out.commands) == _inked_segments(cmds)
+
+    def test_relowered_pen_without_travel_keeps_start(self):
+        cmds = _make([
+            {"command": "M5"},
+            {"command": "G0", "x": 100, "y": 100},
+            {"command": "M3", "s": 1000},
+            {"command": "G1", "x": 140, "y": 100, "f": 2000},
+            {"command": "M5"},
+            {"command": "M3", "s": 1000},
+            {"command": "G1", "x": 140, "y": 140, "f": 2000},
+            {"command": "M5"},
+            {"command": "G0", "x": 10, "y": 10},
+            {"command": "M3", "s": 1000},
+            {"command": "G1", "x": 20, "y": 10, "f": 2000},
+            {"command": "M5"},
+        ])
+        out = optimize_gcode_program(GCodeProgram(commands=cmds))
+        assert _inked_segments(out.commands) == _inked_segments(cmds)

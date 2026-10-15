@@ -100,15 +100,17 @@ class TestValidateBounds:
     def test_exactly_at_boundary(self):
         """Coordinates exactly at drawable area boundary should pass.
 
-        G0(0,0) is machine home — allowed by machine extents.
-        G1(200,287) is exactly at drawable area edge (210-10, 297-10) — allowed.
+        The stroke starts at the drawable corner (10,10) and draws to the
+        opposite edge (200,287) = (210-10, 297-10). The final G0(0,0) is a
+        pen-up return home — allowed by machine extents.
         """
         program = _make_program([
             {"command": "M5"},
-            {"command": "G0", "x": 0, "y": 0},
+            {"command": "G0", "x": 10, "y": 10},
             {"command": "M3", "s": 1000},
             {"command": "G1", "x": 200, "y": 287, "f": 2000},
             {"command": "M5"},
+            {"command": "G0", "x": 0, "y": 0},
         ])
         paper = PaperConfig(width=210, height=297)  # margin=10 → drawable [10..200,10..287]
         result, violations = validate_bounds(program, paper)
@@ -146,3 +148,23 @@ class TestValidateBounds:
         paper = PaperConfig(width=210, height=297)
         result, violations = validate_bounds(program, paper, mode="reject")
         assert len(result.commands) >= 1  # Should have fallback commands
+
+
+def test_stroke_start_travel_is_clamped_to_drawable_area():
+    """The G0 that positions a stroke is its first inked point, so in clamp
+    mode it obeys the margins like the G1s (pure travel may still use the
+    machine extents)."""
+    program = _make_program([
+        {"command": "M5"},
+        {"command": "G0", "x": 0, "y": 50},
+        {"command": "M3", "s": 1000},
+        {"command": "G1", "x": 100, "y": 50, "f": 2000},
+        {"command": "M5"},
+        {"command": "G0", "x": 0, "y": 0},
+    ])
+    paper = PaperConfig(width=210, height=297)
+    result, violations = validate_bounds(program, paper)
+    g0s = [c for c in result.commands if c.command == "G0"]
+    assert (g0s[0].x, g0s[0].y) == (10.0, 50.0)
+    assert (g0s[-1].x, g0s[-1].y) == (0.0, 0.0)  # home travel untouched
+    assert len(violations) == 1
