@@ -10,20 +10,19 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
 
 from promptplot.models import GCodeCommand
 
-Point = Tuple[float, float]
+Point = tuple[float, float]
 # (x0, y0, x1, y1, color) with endpoints rounded and sorted so a segment drawn
 # in either direction gets the same key.
-SegKey = Tuple[float, float, float, float, int]
+SegKey = tuple[float, float, float, float, int]
 
 EPS = 1e-3  # mm tolerance for bounds checks
 ROUND = 2  # decimals used when matching segments (0.01 mm)
 
 
-def seg_key(a: Point, b: Point, color: int = 0) -> Optional[SegKey]:
+def seg_key(a: Point, b: Point, color: int = 0) -> SegKey | None:
     """Canonical, direction-free key for a segment; ``None`` for zero length."""
     pa = (round(a[0], ROUND), round(a[1], ROUND))
     pb = (round(b[0], ROUND), round(b[1], ROUND))
@@ -39,8 +38,8 @@ def seg_len(k: SegKey) -> float:
 
 @dataclass
 class SimResult:
-    ink: Dict[SegKey, int] = field(default_factory=dict)  # segment -> times drawn
-    ink_order: List[SegKey] = field(default_factory=list)
+    ink: dict[SegKey, int] = field(default_factory=dict)  # segment -> times drawn
+    ink_order: list[SegKey] = field(default_factory=list)
     draw_mm: float = 0.0
     travel_mm: float = 0.0
     pen_lifts: int = 0  # down -> up transitions
@@ -50,12 +49,12 @@ class SimResult:
     starts_pen_up: bool = True
     ends_pen_up: bool = True
     color_switches: int = 0  # colour changes along the inked order
-    colors: List[int] = field(default_factory=list)
+    colors: list[int] = field(default_factory=list)
 
 
 def simulate(
-    commands: List[GCodeCommand],
-    drawable: Optional[Tuple[float, float, float, float]] = None,
+    commands: list[GCodeCommand],
+    drawable: tuple[float, float, float, float] | None = None,
     start: Point = (0.0, 0.0),
     g1_is_ink: bool = False,
 ) -> SimResult:
@@ -69,7 +68,7 @@ def simulate(
     x, y = start
     down = False
     first_motion = True
-    last_color: Optional[int] = None
+    last_color: int | None = None
     for cmd in commands:
         c = cmd.command
         if c == "M3":
@@ -126,28 +125,30 @@ def simulate(
 CELL = 0.5  # mm raster used to compare ink coverage
 
 
-def ink_cells(ink: Dict[SegKey, int], drawable=None) -> Set[Tuple[int, int, int]]:
+def ink_cells(ink: dict[SegKey, int], drawable=None) -> set[tuple[int, int, int]]:
     """Rasterise inked segments into ``(i, j, color)`` cells of ``CELL`` mm.
 
     Comparing coverage rather than exact segments makes the fidelity check
     indifferent to stroke order, stroke direction and subdivision (arc
-    approximation, stroke merging). With ``drawable`` the samples are clamped
-    into it first, mirroring the pipeline's default ``clamp`` bounds mode.
+    approximation, stroke merging). With ``drawable`` the segment endpoints are
+    clamped into it first, mirroring the pipeline's default ``clamp`` bounds mode.
     """
-    cells: Set[Tuple[int, int, int]] = set()
+    cells: set[tuple[int, int, int]] = set()
     for ax, ay, bx, by, col in ink:
+        if drawable is not None:
+            # clamp mode moves endpoints, so the segment between them stays straight
+            x0, y0, x1, y1 = drawable
+            ax, ay = min(max(ax, x0), x1), min(max(ay, y0), y1)
+            bx, by = min(max(bx, x0), x1), min(max(by, y0), y1)
         n = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / (CELL / 2))))
         for i in range(n + 1):
             t = i / n
             px, py = ax + (bx - ax) * t, ay + (by - ay) * t
-            if drawable is not None:
-                x0, y0, x1, y1 = drawable
-                px, py = min(max(px, x0), x1), min(max(py, y0), y1)
             cells.add((int(math.floor(px / CELL)), int(math.floor(py / CELL)), col))
     return cells
 
 
-def _uncovered(a: Set[Tuple[int, int, int]], b: Set[Tuple[int, int, int]]) -> int:
+def _uncovered(a: set[tuple[int, int, int]], b: set[tuple[int, int, int]]) -> int:
     """Cells of ``a`` with no cell of ``b`` (same colour) within one cell."""
     n = 0
     for i, j, c in a:
@@ -156,7 +157,7 @@ def _uncovered(a: Set[Tuple[int, int, int]], b: Set[Tuple[int, int, int]]) -> in
     return n
 
 
-def ink_diff(ref_cells, got_cells) -> Tuple[float, float]:
+def ink_diff(ref_cells, got_cells) -> tuple[float, float]:
     """Return approximate ``(missing_mm, spurious_mm)`` of ink vs the reference.
 
     Colour is part of the cell key, so ink drawn with the wrong pen counts as

@@ -30,7 +30,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from promptplot.config import PromptPlotConfig
 from promptplot.models import DrawProgram, GCodeProgram
@@ -48,11 +48,15 @@ PALETTE = ["black", "red", "blue", "green"]
 GENERATOR_CASES = [
     {"name": "gen_truchet_2c", "generator": "truchet", "seed": 7, "colors": 2, "params": {}},
     {"name": "gen_maze", "generator": "maze", "seed": 3, "colors": 1, "params": {}},
-    {"name": "gen_hitomezashi_2c", "generator": "hitomezashi", "seed": 11, "colors": 2,
-     "params": {}},
+    {
+        "name": "gen_hitomezashi_2c",
+        "generator": "hitomezashi",
+        "seed": 11,
+        "colors": 2,
+        "params": {},
+    },
     {"name": "gen_flow_field", "generator": "flow_field", "seed": 5, "colors": 1, "params": {}},
-    {"name": "gen_wave_bands_3c", "generator": "wave_bands", "seed": 2, "colors": 3,
-     "params": {}},
+    {"name": "gen_wave_bands_3c", "generator": "wave_bands", "seed": 2, "colors": 3, "params": {}},
 ]
 
 
@@ -77,21 +81,24 @@ def _llm_program(response: str, cfg: PromptPlotConfig) -> GCodeProgram:
     return GCodeProgram(commands=[parsed])
 
 
-def _gen_program(case: Dict[str, Any], cfg: PromptPlotConfig) -> GCodeProgram:
+def _gen_program(case: dict[str, Any], cfg: PromptPlotConfig) -> GCodeProgram:
     from promptplot.generative.registry import run_generator
 
     cmds = run_generator(
-        case["generator"], cfg.paper.get_drawable_area(), case["seed"],
-        colors=case["colors"], params=case["params"],
+        case["generator"],
+        cfg.paper.get_drawable_area(),
+        case["seed"],
+        colors=case["colors"],
+        params=case["params"],
     )
     return GCodeProgram(commands=cmds)
 
 
-def evaluate_case(name: str, colors: int, build) -> Dict[str, Any]:
+def evaluate_case(name: str, colors: int, build) -> dict[str, Any]:
     """Run one case end-to-end and return its metrics (``error`` on failure)."""
     cfg = _config(colors)
     drawable = cfg.paper.get_drawable_area()
-    row: Dict[str, Any] = {"case": name}
+    row: dict[str, Any] = {"case": name}
     try:
         raw = build(cfg)
     except Exception as e:  # a crash before the pipeline is itself a result
@@ -101,14 +108,15 @@ def evaluate_case(name: str, colors: int, build) -> Dict[str, Any]:
     ref = sim.simulate(raw.commands, g1_is_ink=True)
     before = sim.simulate(raw.commands)
     after = sim.simulate(out.commands, drawable=drawable)
-    missing, spurious = sim.ink_diff(
-        sim.ink_cells(ref.ink, drawable), sim.ink_cells(after.ink)
-    )
+    missing, spurious = sim.ink_diff(sim.ink_cells(ref.ink, drawable), sim.ink_cells(after.ink))
     layers = split_color_layers(out) if colors > 1 else [(0, out.commands)]
     min_switches = max(0, len(after.colors) - 1)
     row.update(
-        safety=after.g0_pen_down + after.g1_pen_up + after.out_of_bounds
-        + (not after.starts_pen_up) + (not after.ends_pen_up),
+        safety=after.g0_pen_down
+        + after.g1_pen_up
+        + after.out_of_bounds
+        + (not after.starts_pen_up)
+        + (not after.ends_pen_up),
         missing_mm=round(missing, 1),
         spurious_mm=round(spurious, 1),
         leaks=sim.layer_pen_down_leaks(layers) if colors > 1 else 0,
@@ -123,20 +131,22 @@ def evaluate_case(name: str, colors: int, build) -> Dict[str, Any]:
     return row
 
 
-def run_all() -> List[Dict[str, Any]]:
+def run_all() -> list[dict[str, Any]]:
     rows = []
     for case in json.loads(FIXTURES.read_text()):
-        rows.append(evaluate_case(
-            case["name"], case["colors"], lambda cfg, c=case: _llm_program(c["response"], cfg)
-        ))
+        rows.append(
+            evaluate_case(
+                case["name"], case["colors"], lambda cfg, c=case: _llm_program(c["response"], cfg)
+            )
+        )
     for case in GENERATOR_CASES:
-        rows.append(evaluate_case(
-            case["name"], case["colors"], lambda cfg, c=case: _gen_program(c, cfg)
-        ))
+        rows.append(
+            evaluate_case(case["name"], case["colors"], lambda cfg, c=case: _gen_program(c, cfg))
+        )
     return rows
 
 
-def summarize(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate metrics across cases (errors counted separately)."""
     ok = [r for r in rows if "error" not in r]
     total = lambda k: round(sum(r[k] for r in ok), 1)  # noqa: E731
@@ -154,8 +164,19 @@ def summarize(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-COLS = ["case", "safety", "missing_mm", "spurious_mm", "leaks", "mixed", "extra_switches",
-        "lifts_in", "lifts", "travel_in", "travel"]
+COLS = [
+    "case",
+    "safety",
+    "missing_mm",
+    "spurious_mm",
+    "leaks",
+    "mixed",
+    "extra_switches",
+    "lifts_in",
+    "lifts",
+    "travel_in",
+    "travel",
+]
 
 
 def main(argv=None) -> int:

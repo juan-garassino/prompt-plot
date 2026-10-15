@@ -4,7 +4,7 @@ PYTHON := python3
 PACKAGE := promptplot
 TESTS := tests
 
-.PHONY: help install dev test lint format clean
+.PHONY: help install dev test eval lint format clean
 
 help:
 	@echo "PromptPlot v3.0"
@@ -12,6 +12,7 @@ help:
 	@echo "  install    Install package"
 	@echo "  dev        Install with dev dependencies"
 	@echo "  test       Run tests"
+	@echo "  eval       Run the offline eval harness (no keys/hardware)"
 	@echo "  lint       Run ruff linter"
 	@echo "  format     Format code with black"
 	@echo "  clean      Remove build artifacts"
@@ -24,6 +25,9 @@ dev:
 
 test:
 	$(PYTHON) -m pytest $(TESTS)/ -v
+
+eval:
+	$(PYTHON) -m evals.run_evals
 
 lint:
 	$(PYTHON) -m ruff check $(PACKAGE)/

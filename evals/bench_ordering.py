@@ -20,12 +20,14 @@ def _strokes(n, seed=1):
     out = []
     for _ in range(n):
         x, y = rnd.uniform(10, 200), rnd.uniform(10, 280)
-        out.append([
-            C(command="G0", x=x, y=y),
-            C(command="M3", s=1000),
-            C(command="G1", x=x + rnd.uniform(-5, 5), y=y + rnd.uniform(-5, 5)),
-            C(command="M5"),
-        ])
+        out.append(
+            [
+                C(command="G0", x=x, y=y),
+                C(command="M3", s=1000),
+                C(command="G1", x=x + rnd.uniform(-5, 5), y=y + rnd.uniform(-5, 5)),
+                C(command="M5"),
+            ]
+        )
     return out
 
 
