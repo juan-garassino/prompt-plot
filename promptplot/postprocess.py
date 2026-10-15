@@ -50,13 +50,24 @@ def validate_bounds(
     violations: List[str] = []
     new_commands: List[GCodeCommand] = []
 
+    # A G0 whose next XY motion is a G1 is where the pen goes down, i.e. the
+    # first inked point of a stroke. In clamp mode it must obey the drawable
+    # area like the G1s, otherwise the stroke starts in the margin.
+    stroke_start = [False] * len(program.commands)
+    next_is_draw = False
+    for i in range(len(program.commands) - 1, -1, -1):
+        cmd = program.commands[i]
+        if cmd.command in ("G0", "G1") and (cmd.x is not None or cmd.y is not None):
+            stroke_start[i] = cmd.command == "G0" and next_is_draw
+            next_is_draw = cmd.command == "G1"
+
     for i, cmd in enumerate(program.commands):
         out_of_bounds = False
         clamped_x = cmd.x
         clamped_y = cmd.y
 
         # Choose bounds per move type.
-        if cmd.command == "G1":
+        if cmd.command == "G1" or (mode == "clamp" and stroke_start[i]):
             lx0, ly0, lx1, ly1 = x0, y0, x1, y1
         else:
             lx0, ly0, lx1, ly1 = mx0, my0, mx1, my1
@@ -291,30 +302,44 @@ def ensure_pen_safety(
 def extract_strokes(commands: List[GCodeCommand]) -> List[List[GCodeCommand]]:
     """Extract individual strokes (G0 + M3 ... G1s ... M5) from a command list.
 
-    Includes the preceding G0 travel in each stroke so the optimizer knows the
-    real start position — not just the first G1 endpoint.
+    Every stroke starts with a ``G0`` to the position the pen actually goes
+    down at, so it can be reordered safely. That position is tracked from all
+    preceding motion rather than taken from the last ``G0`` seen, because:
+
+    - a Z-only ``G0`` (``G0 Z5``) between the XY travel and ``M3`` carries no
+      XY, and
+    - a stroke can start with ``M5``/``M3`` and no travel at all (the pen is
+      re-lowered where the previous stroke ended).
+
+    Using the last ``G0`` in either case made the reordered program draw a line
+    from wherever the previous stroke ended to the first ``G1`` (ink that was
+    never in the original drawing). Commands outside strokes (dwells, Z moves,
+    comments) are dropped; the pipeline re-inserts dwells afterwards.
     """
     strokes: List[List[GCodeCommand]] = []
     current: List[GCodeCommand] = []
     pen_state = PenState()
-    last_g0: GCodeCommand | None = None  # None until an explicit G0 is seen
+    x, y = 0.0, 0.0
 
     for cmd in commands:
-        if cmd.command == "G0":
-            last_g0 = cmd
-        elif cmd.command == "M3":
+        if cmd.command == "M3":
+            if pen_state.is_down and current:
+                continue  # redundant M3 while already drawing — keep the stroke going
             pen_state.set_down()
-            # Include the preceding G0 so the optimizer knows the true travel start.
-            # If no G0 was seen yet, omit it — _stroke_start will fall back to first G1.
-            current = [last_g0, cmd] if last_g0 is not None else [cmd]
+            current = [GCodeCommand(command="G0", x=x, y=y), cmd]
         elif cmd.command == "M5":
             if current:
                 current.append(cmd)
                 strokes.append(current)
                 current = []
             pen_state.set_up()
-        elif pen_state.is_down and cmd.command == "G1":
-            current.append(cmd)
+        elif cmd.command in ("G0", "G1"):
+            if pen_state.is_down and cmd.command == "G1":
+                current.append(cmd)
+            if cmd.x is not None:
+                x = cmd.x
+            if cmd.y is not None:
+                y = cmd.y
 
     if current:
         current.append(GCodeCommand(command="M5"))
@@ -323,49 +348,196 @@ def extract_strokes(commands: List[GCodeCommand]) -> List[List[GCodeCommand]]:
     return strokes
 
 
+def _stroke_points(stroke: List[GCodeCommand]) -> List[Tuple[float, float]]:
+    """Resolved XY of the pen-down point followed by every G1 endpoint.
+
+    Partial coordinates (``G1 X5`` with no Y) inherit the previous value, so
+    the returned points are what the plotter actually visits.
+    """
+    pts: List[Tuple[float, float]] = []
+    x = y = None
+    for cmd in stroke:
+        if cmd.command not in ("G0", "G1"):
+            continue
+        x = cmd.x if cmd.x is not None else x
+        y = cmd.y if cmd.y is not None else y
+        if x is None or y is None:
+            continue
+        if cmd.command == "G0":
+            pts = [(x, y)]  # the last G0 before ink is the start
+        else:
+            pts.append((x, y))
+    return pts or [(0.0, 0.0)]
+
+
 def _stroke_start(stroke: List[GCodeCommand]) -> Tuple[float, float]:
-    # G0 is now captured in each stroke; use it as the true travel target.
-    for cmd in stroke:
-        if cmd.command == "G0" and cmd.x is not None and cmd.y is not None:
-            return (cmd.x, cmd.y)
-    for cmd in stroke:
-        if cmd.command == "G1" and cmd.x is not None and cmd.y is not None:
-            return (cmd.x, cmd.y)
-    return (0.0, 0.0)
+    return _stroke_points(stroke)[0]
 
 
 def _stroke_end(stroke: List[GCodeCommand]) -> Tuple[float, float]:
-    for cmd in reversed(stroke):
-        if cmd.command == "G1" and cmd.x is not None and cmd.y is not None:
-            return (cmd.x, cmd.y)
-    return (0.0, 0.0)
+    return _stroke_points(stroke)[-1]
 
 
 def _distance(p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
+def _is_reversible(stroke: List[GCodeCommand]) -> bool:
+    """True for the canonical ``[G0 X Y, M3, G1..., M5]`` shape with XY-only G1s."""
+    return (
+        len(stroke) >= 4
+        and stroke[0].command == "G0"
+        and stroke[0].x is not None
+        and stroke[0].y is not None
+        and stroke[1].command == "M3"
+        and stroke[-1].command == "M5"
+        and all(c.command == "G1" and c.z is None for c in stroke[2:-1])
+    )
+
+
+def reverse_stroke(stroke: List[GCodeCommand]) -> List[GCodeCommand]:
+    """Return the same stroke drawn end-to-start (identical ink).
+
+    Each G1 keeps the feed/colour/comment of the segment it now draws in the
+    opposite direction. Non-canonical strokes are returned unchanged.
+    """
+    if not _is_reversible(stroke):
+        return stroke
+    pts = _stroke_points(stroke)
+    g1s = stroke[2:-1]
+    out = [stroke[0].model_copy(update={"x": pts[-1][0], "y": pts[-1][1]}), stroke[1]]
+    for i in range(len(g1s) - 1, -1, -1):
+        out.append(g1s[i].model_copy(update={"x": pts[i][0], "y": pts[i][1]}))
+    out.append(stroke[-1])
+    return out
+
+
+def _order_travel(
+    strokes: List[List[GCodeCommand]], start: Tuple[float, float] = (0.0, 0.0)
+) -> float:
+    """Pen-up travel (mm) needed to draw ``strokes`` in the given order."""
+    total, pos = 0.0, start
+    for s in strokes:
+        pts = _stroke_points(s)
+        total += _distance(pos, pts[0])
+        pos = pts[-1]
+    return total
+
+
+def _nearest_neighbor(
+    strokes: List[List[GCodeCommand]], start: Tuple[float, float], allow_reverse: bool
+) -> List[List[GCodeCommand]]:
+    """Greedy nearest-neighbour tour over stroke endpoints.
+
+    Endpoints are bucketed in a uniform grid so each lookup scans only nearby
+    cells (rings grow until no closer endpoint can exist). This keeps dense
+    generator output (thousands of strokes) fast where a full O(n^2) scan was
+    the cost. Ties break on (distance, stroke index, start-before-end), so the
+    result is deterministic.
+    """
+    n = len(strokes)
+    ends = []  # (stroke idx, use_reversed, point)
+    for i, s in enumerate(strokes):
+        pts = _stroke_points(s)
+        ends.append((i, False, pts[0]))
+        if allow_reverse and pts[-1] != pts[0] and _is_reversible(s):
+            ends.append((i, True, pts[-1]))
+
+    xs = [e[2][0] for e in ends]
+    ys = [e[2][1] for e in ends]
+    minx, miny = min(xs), min(ys)
+    span = max(max(xs) - minx, max(ys) - miny, 1e-6)
+    cell = max(span / max(1.0, math.sqrt(n)), 1e-6)
+    grid: dict = {}
+    for e in ends:
+        key = (int((e[2][0] - minx) // cell), int((e[2][1] - miny) // cell))
+        grid.setdefault(key, []).append(e)
+    max_k = max(k for key in grid for k in key) + 1
+
+    used = [False] * n
+    ordered: List[List[GCodeCommand]] = []
+    pos = start
+    for _ in range(n):
+        cx = int(math.floor((pos[0] - minx) / cell))
+        cy = int(math.floor((pos[1] - miny) / cell))
+        # rings needed to reach every occupied cell from (cx, cy)
+        reach = max(abs(cx), abs(cy), abs(cx - max_k), abs(cy - max_k)) + 1
+        best = None
+        for r in range(reach + 1):
+            for gx in range(cx - r, cx + r + 1):
+                for gy in (range(cy - r, cy + r + 1) if gx in (cx - r, cx + r) else (cy - r, cy + r)):
+                    bucket = grid.get((gx, gy))
+                    if not bucket:
+                        continue
+                    live = [e for e in bucket if not used[e[0]]]
+                    if len(live) != len(bucket):
+                        grid[(gx, gy)] = live
+                    for e in live:
+                        cand = (_distance(pos, e[2]), e[0], e[1])
+                        if best is None or cand < best:
+                            best = cand
+            # unseen cells are at least r*cell away
+            if best is not None and best[0] <= r * cell:
+                break
+        _, idx, rev = best
+        used[idx] = True
+        stroke = reverse_stroke(strokes[idx]) if rev else strokes[idx]
+        ordered.append(stroke)
+        pos = _stroke_points(stroke)[-1]
+    return ordered
+
+
 def optimize_stroke_order(
     strokes: List[List[GCodeCommand]],
+    start: Tuple[float, float] = (0.0, 0.0),
+    allow_reverse: bool = True,
 ) -> List[List[GCodeCommand]]:
-    """Reorder strokes using nearest-neighbor heuristic."""
+    """Reorder (and optionally reverse) strokes to cut pen-up travel.
+
+    Nearest-neighbour from ``start``; a stroke may be drawn end-to-start when
+    that endpoint is closer. Greedy NN can lose to an already well-ordered
+    input (e.g. a maze emitted cell by cell), so the input order is kept
+    whenever it needs no more travel. Ink is never changed, only its order and
+    direction.
+    """
     if len(strokes) <= 1:
         return strokes
-    remaining = list(range(len(strokes)))
-    ordered: List[List[GCodeCommand]] = []
-    pos = (0.0, 0.0)
-    while remaining:
-        best_idx = min(remaining, key=lambda i: _distance(pos, _stroke_start(strokes[i])))
-        remaining.remove(best_idx)
-        ordered.append(strokes[best_idx])
-        pos = _stroke_end(strokes[best_idx])
+    ordered = _nearest_neighbor(strokes, start, allow_reverse)
+    if _order_travel(ordered, start) >= _order_travel(strokes, start):
+        return strokes
     return ordered
+
+
+def merge_contiguous_strokes(
+    strokes: List[List[GCodeCommand]], tol: float = 1e-3
+) -> List[List[GCodeCommand]]:
+    """Join consecutive strokes where one starts where the previous ended.
+
+    Drops the ``M5 / G0 / M3`` between them, so the pen stays down: fewer pen
+    lifts and dwells with identical ink. Strokes of different colours are never
+    joined.
+    """
+    if not strokes:
+        return strokes
+    merged = [list(strokes[0])]
+    for s in strokes[1:]:
+        prev = merged[-1]
+        if (
+            _is_reversible(s)
+            and prev[-1].command == "M5"
+            and _stroke_color(prev, -1) == _stroke_color(s, -1)
+            and _distance(_stroke_end(prev), _stroke_start(s)) <= tol
+        ):
+            merged[-1] = prev[:-1] + s[2:]
+        else:
+            merged.append(list(s))
+    return merged
 
 
 def rebuild_program(strokes: List[List[GCodeCommand]]) -> List[GCodeCommand]:
     """Rebuild a full command list from ordered strokes.
 
-    Strokes now carry their G0 travel command as the first element, so no
+    Strokes carry their G0 travel command as the first element, so no
     separate G0 is added here — the included G0 IS the repositioning move.
     """
     commands: List[GCodeCommand] = [GCodeCommand(command="M5")]
@@ -377,12 +549,18 @@ def rebuild_program(strokes: List[List[GCodeCommand]]) -> List[GCodeCommand]:
     return commands
 
 
-def optimize_gcode_program(program: GCodeProgram) -> GCodeProgram:
-    """Optimize stroke order to minimize travel distance."""
+def optimize_gcode_program(program: GCodeProgram, merge: bool = True) -> GCodeProgram:
+    """Optimize stroke order to minimize travel distance.
+
+    With ``merge`` (default), strokes that end where the next one starts are
+    joined so the pen is not lifted between them.
+    """
     strokes = extract_strokes(program.commands)
     if len(strokes) <= 1:
         return program
     ordered = optimize_stroke_order(strokes)
+    if merge:
+        ordered = merge_contiguous_strokes(ordered)
     optimized = rebuild_program(ordered)
     return GCodeProgram(
         commands=optimized,
@@ -434,7 +612,7 @@ def group_strokes_by_color(commands, color_config):
     return buckets, color_sequence
 
 
-def reorder_by_color(program: GCodeProgram, color_config) -> GCodeProgram:
+def reorder_by_color(program: GCodeProgram, color_config, merge: bool = True) -> GCodeProgram:
     """Order the program by color layer, optimizing strokes WITHIN each color.
 
     All strokes of color 0 are emitted, then color 1, etc. Stroke reordering
@@ -444,12 +622,17 @@ def reorder_by_color(program: GCodeProgram, color_config) -> GCodeProgram:
     buckets, color_sequence = group_strokes_by_color(program.commands, color_config)
     if len(color_sequence) <= 1:
         # Single (or no) color — fall back to plain optimization.
-        return optimize_gcode_program(program)
+        return optimize_gcode_program(program, merge=merge)
 
     commands: List[GCodeCommand] = [GCodeCommand(command="M5")]
+    pos = (0.0, 0.0)
     for ci in color_sequence:
-        for stroke in optimize_stroke_order(buckets[ci]):
+        ordered = optimize_stroke_order(buckets[ci], start=pos)
+        if merge:
+            ordered = merge_contiguous_strokes(ordered)
+        for stroke in ordered:
             commands.extend(stroke)
+        pos = _stroke_end(ordered[-1])
     if not commands or commands[-1].command != "M5":
         commands.append(GCodeCommand(command="M5"))
     commands.append(GCodeCommand(command="G0", x=0.0, y=0.0))
@@ -589,10 +772,13 @@ def run_pipeline(program: GCodeProgram, config: PromptPlotConfig) -> GCodeProgra
 
     # 2. Optimize stroke order (per-color when multi-color layering is enabled,
     #    so strokes are grouped by pen and never reordered across a color)
+    #    Merging contiguous strokes is skipped in brush mode, where each pen-down
+    #    is a stroke that insert_paint_dips counts towards the next reload.
+    merge = not config.brush.enabled
     if getattr(config, "color", None) is not None and config.color.enabled:
-        program = reorder_by_color(program, config.color)
+        program = reorder_by_color(program, config.color, merge=merge)
     else:
-        program = optimize_gcode_program(program)
+        program = optimize_gcode_program(program, merge=merge)
 
     # 3. Brush reload sequences
     if config.brush.enabled:

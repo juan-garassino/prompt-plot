@@ -1,0 +1,68 @@
+[
+ {
+  "name": "llm_house_clean",
+  "colors": 1,
+  "notes": "Well-formed M5/G0/M3/G1 strokes in a fenced reply; deliberately poor stroke order.",
+  "response": "Here is the drawing:\n```json\n{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 150, \"y\": 40}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 190, \"y\": 40, \"f\": 2000}, {\"command\": \"G1\", \"x\": 190, \"y\": 80, \"f\": 2000}, {\"command\": \"G1\", \"x\": 150, \"y\": 80, \"f\": 2000}, {\"command\": \"G1\", \"x\": 150, \"y\": 40, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 20, \"y\": 20}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 60, \"y\": 20, \"f\": 2000}, {\"command\": \"G1\", \"x\": 60, \"y\": 60, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 150, \"y\": 80}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 170, \"y\": 110, \"f\": 2000}, {\"command\": \"G1\", \"x\": 190, \"y\": 80, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 30, \"y\": 200}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 80, \"y\": 250, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}\n```\nEnjoy!"
+ },
+ {
+  "name": "llm_missing_pen_cmds",
+  "colors": 1,
+  "notes": "G1 without a preceding M3 and a G0 travel issued while the pen is down.",
+  "response": "{\"commands\": [{\"command\": \"G0\", \"x\": 20, \"y\": 20}, {\"command\": \"G1\", \"x\": 100, \"y\": 20, \"f\": 2000}, {\"command\": \"G1\", \"x\": 100, \"y\": 100, \"f\": 2000}, {\"command\": \"G0\", \"x\": 120, \"y\": 120}, {\"command\": \"G1\", \"x\": 180, \"y\": 120, \"f\": 2000}, {\"command\": \"G1\", \"x\": 180, \"y\": 180, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_z_lifts",
+  "colors": 1,
+  "notes": "Each stroke is G0 XY, G0 Z0, M3, G1..., G0 Z5, M5 - a Z-only G0 sits between the XY travel and M3.",
+  "response": "{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 30, \"y\": 30}, {\"command\": \"G0\", \"z\": 0}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 90, \"y\": 30, \"f\": 2000}, {\"command\": \"G1\", \"x\": 90, \"y\": 90, \"f\": 2000}, {\"command\": \"G0\", \"z\": 5}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 150, \"y\": 150}, {\"command\": \"G0\", \"z\": 0}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 190, \"y\": 190, \"f\": 2000}, {\"command\": \"G0\", \"z\": 5}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 40, \"y\": 220}, {\"command\": \"G0\", \"z\": 0}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 120, \"y\": 260, \"f\": 2000}, {\"command\": \"G0\", \"z\": 5}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_restroke_no_travel",
+  "colors": 1,
+  "notes": "M5 immediately followed by M3 (no G0) - the next stroke starts where the last ended.",
+  "response": "{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 100, \"y\": 100}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 140, \"y\": 100, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 140, \"y\": 140, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 20, \"y\": 250}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 60, \"y\": 280, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 20, \"y\": 280, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_out_of_bounds",
+  "colors": 1,
+  "notes": "Negative X and coordinates past the A4 edge; default bounds mode is clamp.",
+  "response": "{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": -10, \"y\": 50}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 250, \"y\": 50, \"f\": 2000}, {\"command\": \"G1\", \"x\": 250, \"y\": 320, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 100, \"y\": 100}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 150, \"y\": 150, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_arc",
+  "colors": 1,
+  "notes": "G2 arc (no I/J fields exist on GCodeCommand, so it is approximated by its chord).",
+  "response": "{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 50, \"y\": 50}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G2\", \"x\": 100, \"y\": 50, \"f\": 2000}, {\"command\": \"G1\", \"x\": 100, \"y\": 100, \"f\": 2000}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_dsl_primitives",
+  "colors": 1,
+  "notes": "PRIMITIVE blocks (circle, polygon, hatch) plus a raw stroke.",
+  "response": "{\"commands\": [{\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"params\": {\"cx\": 60, \"cy\": 60, \"radius\": 30}}, {\"command\": \"PRIMITIVE\", \"type\": \"polygon\", \"params\": {\"points\": [[180.0, 200.0], [165.0, 225.98], [135.0, 225.98], [120.0, 200.0], [135.0, 174.02], [165.0, 174.02]]}}, {\"command\": \"PRIMITIVE\", \"type\": \"hatch\", \"params\": {\"x\": 20, \"y\": 150, \"width\": 60, \"height\": 60, \"spacing\": 6}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"params\": {\"cx\": 150, \"cy\": 60, \"radius\": 20}}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 30, \"y\": 260}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 180, \"y\": 260, \"f\": 2000}, {\"command\": \"M5\"}]}"
+ },
+ {
+  "name": "llm_dsl_colors",
+  "colors": 3,
+  "notes": "Primitives tagged with three pens, interleaved in the response.",
+  "response": "{\"commands\": [{\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"color\": 0, \"params\": {\"cx\": 60, \"cy\": 60, \"radius\": 25}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"color\": 1, \"params\": {\"cx\": 140, \"cy\": 60, \"radius\": 25}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"color\": 0, \"params\": {\"cx\": 60, \"cy\": 160, \"radius\": 25}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"color\": 2, \"params\": {\"cx\": 140, \"cy\": 160, \"radius\": 25}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"color\": 1, \"params\": {\"cx\": 100, \"cy\": 240, \"radius\": 25}}]}"
+ },
+ {
+  "name": "llm_raw_colors_g1_only",
+  "colors": 2,
+  "notes": "Colour index on G1 only, M3 untagged - matches the colour prompt example in llm/prompts.py.",
+  "response": "{\"commands\": [{\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 20, \"y\": 20}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 80, \"y\": 20, \"f\": 2000, \"color\": 0}, {\"command\": \"G1\", \"x\": 80, \"y\": 80, \"f\": 2000, \"color\": 0}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 120, \"y\": 20}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 180, \"y\": 20, \"f\": 2000, \"color\": 1}, {\"command\": \"G1\", \"x\": 180, \"y\": 80, \"f\": 2000, \"color\": 1}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 20, \"y\": 120}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 80, \"y\": 180, \"f\": 2000, \"color\": 0}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 120, \"y\": 120}, {\"command\": \"M3\", \"s\": 1000}, {\"command\": \"G1\", \"x\": 180, \"y\": 180, \"f\": 2000, \"color\": 1}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_raw_colors_missing_m3",
+  "colors": 2,
+  "notes": "Coloured G1s without M3; colour 1 appears before colour 0.",
+  "response": "{\"commands\": [{\"command\": \"G0\", \"x\": 20, \"y\": 20}, {\"command\": \"G1\", \"x\": 80, \"y\": 20, \"f\": 2000, \"color\": 1}, {\"command\": \"G1\", \"x\": 80, \"y\": 80, \"f\": 2000, \"color\": 1}, {\"command\": \"G0\", \"x\": 120, \"y\": 20}, {\"command\": \"G1\", \"x\": 180, \"y\": 20, \"f\": 2000, \"color\": 0}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 20, \"y\": 150}, {\"command\": \"G1\", \"x\": 90, \"y\": 150, \"f\": 2000, \"color\": 1}, {\"command\": \"M5\"}, {\"command\": \"G0\", \"x\": 0, \"y\": 0}]}"
+ },
+ {
+  "name": "llm_primitive_extra_param",
+  "colors": 1,
+  "notes": "One PRIMITIVE carries an unknown 'stroke_width' param.",
+  "response": "{\"commands\": [{\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"params\": {\"cx\": 100, \"cy\": 100, \"radius\": 30, \"stroke_width\": 1}}, {\"command\": \"PRIMITIVE\", \"type\": \"circle\", \"params\": {\"cx\": 100, \"cy\": 200, \"radius\": 30}}]}"
+ }
+]

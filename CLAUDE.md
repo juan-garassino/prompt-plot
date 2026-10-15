@@ -41,7 +41,8 @@ The machine reads these one line at a time and moves accordingly.
 
 ## Commands
 - `make dev` — install editable with dev+viz extras (`uv pip install -e ".[dev,viz]"`). Optional extras: `uv pip install -e ".[openai,anthropic,gemini,vision,io]"` (`io` = svgpathtools+ezdxf for full-fidelity SVG/DXF import).
-- `make test` — runs the full suite (~385 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted. One pre-existing failure (`test_refinement.py::test_batch_refinement_prefers_improved_result`, a stub-queue exhaustion) predates the v3.1 work; `make test-ci` deselects it.
+- `make test` — runs the full suite (~540 tests). Note: pytest `addopts` **always** runs coverage (`--cov`, html+xml reports) and treats warnings as errors (`filterwarnings = ["error", ...]`) — a new `DeprecationWarning` will fail CI unless whitelisted.
+- `make eval` — offline eval harness (`evals/`): mocked LLM replies + seeded generators → `run_pipeline` → toolpath simulator; reports safety violations, missing/spurious ink, colour-layer leaks, pen lifts, travel. Runs in seconds, no keys/hardware; `tests/test_evals.py` gates the safety/ink/layer metrics at zero.
 - Single test: `python3 -m pytest tests/test_primitives.py::test_name -v`. By marker: `-m "not requires_hardware and not requires_llm"` to skip hardware/LLM-gated tests.
 - `make lint` (ruff) / `make format` (black + isort). Line length 100.
 - Run the tool: `python3 -m promptplot ...` or the `promptplot` entry point (`cli:main`).

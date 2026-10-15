@@ -519,7 +519,8 @@ Every GCode program passes through six stages (in order):
 0. **Arc approximation** — convert G2/G3 arcs to short G1 line segments
 1. **Bounds validation** — clamp, reject, or warn on out-of-bounds coordinates
 2. **Pen safety** — enforce M5 before G0 travel, M3 before G1 draw, return home
-3. **Stroke optimization** — nearest-neighbor reorder to minimize pen lifts and travel
+3. **Stroke optimization** — nearest-neighbor reorder (with stroke reversal and merging of
+   strokes that join end-to-start) to minimize pen lifts and travel; per color when layers are on
 4. **Paint dips** — ink reload sequences every N strokes (brush mode only)
 5. **Pen dwells** — G4 delays after M3/M5 for pen settle time
 
@@ -589,6 +590,22 @@ async def main():
 
 asyncio.run(main())
 ```
+
+## Tests and evals
+
+```bash
+make test   # pytest suite (coverage on, warnings are errors)
+make eval   # offline eval harness, ~1-2 s on CPU, no API keys or plotter
+```
+
+`evals/` feeds mocked LLM replies (`evals/fixtures/llm_responses.json`) and seeded
+generators through the same parse → expand → `run_pipeline` → `split_color_layers`
+path the CLI uses, then replays the output in an independent toolpath simulator
+(`evals/simulate.py`). It reports safety violations (G0 with pen down, G1 with pen
+up, ink outside the drawable area), missing/spurious ink versus the intended drawing,
+color-layer leaks, pen lifts and travel. `tests/test_evals.py` fails if any safety,
+ink or layer metric regresses. `python -m evals.bench_ordering` times stroke ordering
+on 2k/10k random strokes.
 
 ## License
 

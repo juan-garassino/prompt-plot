@@ -453,3 +453,22 @@ class TestPrimitiveSchemas:
     def test_format_includes_example_json(self):
         block = format_schemas_for_prompt()
         assert '"command": "PRIMITIVE"' in block or '"command":"PRIMITIVE"' in block
+
+
+def test_unknown_primitive_params_are_dropped_not_fatal():
+    """An extra key from the LLM must not discard the whole drawing."""
+    from promptplot.config import PenConfig
+    from promptplot.primitives import expand_primitive
+
+    cmds = expand_primitive(
+        "circle", {"cx": 50, "cy": 50, "radius": 10, "stroke_width": 1}, PenConfig()
+    )
+    assert any(c.command == "G1" for c in cmds)
+
+
+def test_missing_primitive_param_names_accepted_params():
+    from promptplot.config import PenConfig
+    from promptplot.primitives import expand_primitive
+
+    with pytest.raises(ValueError, match="radius"):
+        expand_primitive("circle", {"cx": 50, "cy": 50, "r": 10}, PenConfig())

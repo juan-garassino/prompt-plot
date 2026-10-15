@@ -68,6 +68,9 @@ async def test_batch_refinement_prefers_improved_result(monkeypatch, tmp_path):
     config.vision.max_feedback_iterations = 1
     config.workflow.planning_enabled = False
     config.workflow.multipass.enabled = False
+    # The stub supports multimodal, which enables candidate search (default 5
+    # LLM calls); this test feeds exactly one initial reply.
+    config.workflow.candidate_count = 1
 
     wf = BatchGCodeWorkflow(llm=provider, config=config)
     result = await wf.run(prompt="clouds")

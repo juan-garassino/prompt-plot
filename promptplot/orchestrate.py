@@ -334,9 +334,12 @@ def split_color_layers(program: GCodeProgram) -> List[Tuple[int, List[GCodeComma
     Concatenating the returned layers in order reproduces the input exactly.
     """
     def _is_penup_tail(cmd: GCodeCommand) -> bool:
-        # travel / lift / dwell that carries no colour → belongs to the NEXT stroke
+        # travel / lift / dwell that carries no colour → belongs to the NEXT stroke.
+        # An untagged M3 also belongs to the next stroke: the LLM colour prompt
+        # tags G1s only and ensure_pen_safety inserts untagged M3s, so leaving
+        # it here would lower the OLD pen at the new colour's start (a stray dot).
         return cmd.command in ("M5", "G0", "G4") or (
-            cmd.command == "G1" and getattr(cmd, "color", None) is None
+            cmd.command in ("G1", "M3") and getattr(cmd, "color", None) is None
         )
 
     layers: List[Tuple[int, List[GCodeCommand]]] = []

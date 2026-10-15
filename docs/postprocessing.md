@@ -14,7 +14,13 @@ Raw GCode → bounds validation → pen safety → stroke optimization → paint
 Checks all X/Y coordinates against paper dimensions. Runs before everything else to prevent hardware damage.
 
 Three modes:
-- **clamp** (default): Coordinates outside `[0, paper.width]` / `[0, paper.height]` are clamped to the nearest valid value
+- **clamp** (default): `G1` draw coordinates are clamped into the drawable area
+  (paper minus margins, `paper.get_drawable_area()`). A `G0` that positions the
+  pen for a stroke (its next XY move is a `G1`) is clamped there too, because it
+  is the stroke's first inked point. Other `G0` travel only has to stay on the
+  machine (`[0, paper.width]` × `[0, paper.height]`), so a return to `X0 Y0` is allowed.
+  Clamping moves endpoints; a segment that crosses the margin is bent onto the edge
+  rather than clipped.
 - **reject**: Out-of-bounds commands are removed entirely
 - **warn**: Commands are kept but violations are logged
 
@@ -39,11 +45,22 @@ The S-value for M3 is configurable via `pen.pen_down_s_value` (default 1000).
 
 ## 2. Stroke optimization (`optimize_gcode_program`)
 
-Reduces pen lifts and travel distance:
+Reduces pen lifts and travel distance without changing the ink:
 
-1. Extracts individual strokes (M3 → G1s → M5)
-2. Reorders using nearest-neighbor heuristic
-3. Rebuilds with G0 repositioning between strokes
+1. Extracts individual strokes (M3 → G1s → M5). Each stroke starts with a `G0`
+   to the position where the pen actually went down, tracked from all preceding
+   moves (a Z-only `G0 Z5`, or an `M5`/`M3` with no travel in between, no longer
+   loses the start point).
+2. Reorders with a nearest-neighbor tour over stroke endpoints (grid-indexed, so
+   thousands of strokes stay fast). A stroke may be drawn end-to-start when that
+   end is closer. If the tour would not reduce travel, the input order is kept.
+3. Merges consecutive strokes of the same color where one starts exactly where the
+   previous ended, so the pen stays down (skipped in brush mode, where every
+   pen-down counts towards the next paint reload).
+4. Rebuilds with G0 repositioning between strokes.
+
+With color layers enabled, `reorder_by_color` does the same per color and never
+moves a stroke across a color boundary.
 
 ## 3. Paint dips (`insert_paint_dips`)
 
