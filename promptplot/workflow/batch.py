@@ -279,7 +279,10 @@ class BatchGCodeWorkflow(Workflow):
             if isinstance(result, DrawProgram):
                 from ..primitives import expand_primitives
 
-                result = expand_primitives(result, self.config.pen)
+                try:
+                    result = expand_primitives(result, self.config.pen)
+                except Exception as e:  # a bad candidate must not abort the search
+                    result = e
             if isinstance(result, Exception) or not isinstance(result, GCodeProgram):
                 continue
             report = score_gcode(result, self.config.paper, creative_mode=creative_mode)
@@ -450,7 +453,10 @@ class BatchGCodeWorkflow(Workflow):
             if isinstance(result, DrawProgram):
                 from ..primitives import expand_primitives
 
-                result = expand_primitives(result, self.config.pen)
+                try:
+                    result = expand_primitives(result, self.config.pen)
+                except Exception as e:  # fall through to "keeping original"
+                    result = e
             if isinstance(result, Exception) or not isinstance(result, GCodeProgram):
                 logger.step_warning("Refinement produced invalid output, keeping original")
                 return ValidatedGCodeEvent(

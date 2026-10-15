@@ -8,6 +8,7 @@ deterministic code here expands them into exact G1 segments.
 
 import inspect
 import json
+import logging
 import math
 from typing import List, Dict, Any, Callable, Tuple, Optional, get_type_hints
 
@@ -776,6 +777,39 @@ FREEFORM_REGISTRY: Dict[str, Callable[..., List[GCodeCommand]]] = {
 }
 
 
+_log = logging.getLogger(__name__)
+
+
+def _call_expander(fn: Callable, params: Dict[str, Any], kind: str, name: str):
+    """Call an ``expand_*`` function with LLM-supplied ``params``.
+
+    LLMs often add harmless extras (``stroke_width``, ``label``). Those are
+    dropped with a log line instead of raising ``TypeError``, which used to
+    discard the whole drawing for one stray key. Missing required parameters
+    still raise, as a ``ValueError`` that lists the accepted names so a retry
+    prompt can correct it.
+    """
+    sig = inspect.signature(fn)
+    accepted = sig.parameters
+    if not any(p.kind is inspect.Parameter.VAR_KEYWORD for p in accepted.values()):
+        unknown = [k for k in params if k not in accepted]
+        if unknown:
+            _log.warning("%s %r: ignoring unknown params %s", kind, name, unknown)
+            params = {k: v for k, v in params.items() if k in accepted}
+    missing = [
+        n for n, p in accepted.items()
+        if p.default is inspect.Parameter.empty
+        and p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
+        and n not in params
+    ]
+    if missing:
+        raise ValueError(
+            f"{kind} {name!r} is missing required params {missing}; "
+            f"accepted params: {[n for n in accepted if n not in ('feed', 's_value')]}"
+        )
+    return fn(**params)
+
+
 def expand_primitive(
     ptype: str, params: Dict[str, Any], pen_config: PenConfig,
 ) -> List[GCodeCommand]:
@@ -787,7 +821,7 @@ def expand_primitive(
     params = dict(params)  # copy
     params.setdefault("feed", pen_config.feed_rate)
     params.setdefault("s_value", pen_config.pen_down_s_value)
-    return fn(**params)
+    return _call_expander(fn, params, "PRIMITIVE", ptype)
 
 
 def expand_freeform(
@@ -800,7 +834,7 @@ def expand_freeform(
     params = dict(params)
     params.setdefault("feed", pen_config.feed_rate)
     params.setdefault("s_value", pen_config.pen_down_s_value)
-    return fn(**params)
+    return _call_expander(fn, params, "FREEFORM", ftype)
 
 
 def _apply_color(commands: List[GCodeCommand], color) -> None:
